@@ -79,6 +79,33 @@ class AIAssistant:
             print(f"Error identifying causal factors: {e}")
             return []
     
+    def chat(self, prompt: str, model: str = "gpt-4o") -> str:
+        """Generate a simple chat completion using the specified OpenAI chat model.
+
+        Args:
+            prompt (str): The user prompt to send to the model.
+            model (str, optional): The OpenAI model to use. Defaults to "gpt-4o".
+
+        Returns:
+            str: The model's response content.
+
+        Raises:
+            ValueError: If the OpenAI client is not initialized.
+            RuntimeError: If the OpenAI API call fails.
+        """
+        if not self.client:
+            raise ValueError("OpenAI client is not initialized")
+
+        try:
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            raise RuntimeError(f"OpenAI API call failed: {e}")
+    
     def improve_analysis_text(self, analysis_text: str, supporting_findings: List[Finding]) -> str:
         """Improve analysis section text"""
         if not self.client:
@@ -369,4 +396,3 @@ Please identify any consistency issues in JSON format:
         except:
             pass
         return []
-
