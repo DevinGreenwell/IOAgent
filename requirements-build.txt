@@ -1,0 +1,6 @@
+# Minimal requirements for static build only
+# These are the only dependencies needed to run build_static.py
+
+# No external dependencies needed for the build script
+# build_static.py only uses standard library modules:
+# - os, shutil, json, pathlib
