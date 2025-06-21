@@ -20,6 +20,12 @@ class IOAgent {
         this.init();
     }
 
+    init() {
+        this.setupEventListeners();
+        this.loadDashboard();
+        this.setupFileUpload();
+    }
+
     setupEventListeners() {
         // Navigation
         document.querySelectorAll('#mainNav .nav-link').forEach(link => {
