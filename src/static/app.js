@@ -53,6 +53,48 @@ class IOAgent {
             e.preventDefault();
             this.addTimelineEntry();
         });
+
+        // Button event listeners to replace onclick attributes
+        this.setupButtonListeners();
+    }
+
+    setupButtonListeners() {
+        // Find buttons by their onclick attribute text and add proper event listeners
+        const buttons = document.querySelectorAll('button[onclick]');
+        buttons.forEach(button => {
+            const onclickText = button.getAttribute('onclick');
+            button.removeAttribute('onclick'); // Remove the onclick attribute
+            
+            if (onclickText.includes('showCreateProjectModal')) {
+                button.addEventListener('click', () => this.showCreateProjectModal());
+            } else if (onclickText.includes('showAddTimelineModal')) {
+                button.addEventListener('click', () => this.showAddTimelineModal());
+            } else if (onclickText.includes('runCausalAnalysis')) {
+                button.addEventListener('click', () => this.runCausalAnalysis());
+            } else if (onclickText.includes('generateROI')) {
+                button.addEventListener('click', () => this.generateROI());
+            } else if (onclickText.includes('checkReadiness')) {
+                button.addEventListener('click', () => this.checkReadiness());
+            } else if (onclickText.includes('closeProject')) {
+                button.addEventListener('click', () => this.closeProject());
+            }
+        });
+
+        // File input
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', (event) => {
+                this.handleFileUpload(event.target.files);
+            });
+        }
+
+        // Upload area clicks
+        const uploadAreas = document.querySelectorAll('.upload-area');
+        uploadAreas.forEach(area => {
+            area.addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+        });
     }
 
     setupFileUpload() {
@@ -690,31 +732,59 @@ class IOAgent {
 
 // Global functions for onclick handlers
 function showCreateProjectModal() {
-    app.showCreateProjectModal();
+    if (window.app) {
+        app.showCreateProjectModal();
+    } else {
+        console.error('App not initialized yet');
+    }
 }
 
 function showAddTimelineModal() {
-    app.showAddTimelineModal();
+    if (window.app) {
+        app.showAddTimelineModal();
+    } else {
+        console.error('App not initialized yet');
+    }
 }
 
 function runCausalAnalysis() {
-    app.runCausalAnalysis();
+    if (window.app) {
+        app.runCausalAnalysis();
+    } else {
+        console.error('App not initialized yet');
+    }
 }
 
 function generateROI() {
-    app.generateROI();
+    if (window.app) {
+        app.generateROI();
+    } else {
+        console.error('App not initialized yet');
+    }
 }
 
 function checkReadiness() {
-    app.checkReadiness();
+    if (window.app) {
+        app.checkReadiness();
+    } else {
+        console.error('App not initialized yet');
+    }
 }
 
 function closeProject() {
-    app.closeProject();
+    if (window.app) {
+        app.closeProject();
+    } else {
+        console.error('App not initialized yet');
+    }
 }
 
 function handleFileUpload(event) {
-    app.handleFileUpload(event.target.files);
+    if (window.app) {
+        app.handleFileUpload(event.target.files);
+    } else {
+        console.error('App not initialized yet');
+    }
 }
 
 // Initialize app when DOM is loaded
