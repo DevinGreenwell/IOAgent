@@ -23,7 +23,7 @@ def build_static():
     
     # Create configuration for production
     config = {
-        'API_BASE_URL': 'https://ioagent.onrender.com/api',
+        'API_BASE_URL': 'https://ioagent.onrender.com/api',  # Your Render backend URL
         'ENVIRONMENT': 'production'
     }
     
@@ -35,6 +35,21 @@ window.CONFIG = {json.dumps(config, indent=2)};
     
     with open(dist_dir / 'config.js', 'w') as f:
         f.write(config_js)
+    
+    # Update app.js to use the config
+    app_js_path = dist_dir / 'app.js'
+    if app_js_path.exists():
+        with open(app_js_path, 'r') as f:
+            content = f.read()
+        
+        # Replace the API base URL configuration
+        content = content.replace(
+            "this.apiBase = window.location.origin + '/api';",
+            """this.apiBase = window.CONFIG ? window.CONFIG.API_BASE_URL : window.location.origin + '/api';"""
+        )
+        
+        with open(app_js_path, 'w') as f:
+            f.write(content)
     
     # Update index.html to include config
     index_path = dist_dir / 'index.html'
@@ -54,12 +69,9 @@ window.CONFIG = {json.dumps(config, indent=2)};
     # Create .nojekyll file to bypass Jekyll processing
     (dist_dir / '.nojekyll').touch()
     
-    # Create CNAME file if custom domain is needed
-    # (dist_dir / 'CNAME').write_text('your-domain.com')
-    
     print("Static build completed successfully!")
     print(f"Files built in: {dist_dir.absolute()}")
+    print("Don't forget to update the API_BASE_URL in the config with your actual Heroku URL!")
 
 if __name__ == '__main__':
     build_static()
-

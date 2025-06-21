@@ -11,7 +11,7 @@ from src.models.user import db
 from src.routes.user import user_bp
 from src.routes.api import api_bp
 
-app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'static'))
+app = Flask(__name__, static_folder=os.path.dirname(__file__))
 
 # Use environment variable for secret key, generate secure fallback
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
