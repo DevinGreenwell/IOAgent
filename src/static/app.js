@@ -11,6 +11,21 @@ class IOAgent {
             this.apiBase = window.location.origin + '/api';
         }
         
+        // File upload configuration
+        this.maxFileSize = 16 * 1024 * 1024; // 16MB
+        this.allowedFileTypes = {
+            'application/pdf': ['.pdf'],
+            'application/msword': ['.doc'],
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+            'image/jpeg': ['.jpg', '.jpeg'],
+            'image/png': ['.png'],
+            'image/gif': ['.gif'],
+            'video/mp4': ['.mp4'],
+            'video/x-msvideo': ['.avi'],
+            'audio/mpeg': ['.mp3'],
+            'audio/wav': ['.wav']
+        };
+        
         this.init();
     }
 
@@ -31,22 +46,31 @@ class IOAgent {
         });
 
         // Project info form
-        document.getElementById('projectInfoForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveProjectInfo();
-        });
+        const projectInfoForm = document.getElementById('projectInfoForm');
+        if (projectInfoForm) {
+            projectInfoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveProjectInfo();
+            });
+        }
 
         // Create project form
-        document.getElementById('createProjectForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.createProject();
-        });
+        const createProjectForm = document.getElementById('createProjectForm');
+        if (createProjectForm) {
+            createProjectForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createProject();
+            });
+        }
 
         // Timeline form
-        document.getElementById('addTimelineForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addTimelineEntry();
-        });
+        const addTimelineForm = document.getElementById('addTimelineForm');
+        if (addTimelineForm) {
+            addTimelineForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.addTimelineEntry();
+            });
+        }
 
         // Button event listeners to replace onclick attributes
         this.setupButtonListeners();
@@ -86,7 +110,8 @@ class IOAgent {
         const uploadAreas = document.querySelectorAll('.upload-area');
         uploadAreas.forEach(area => {
             area.addEventListener('click', () => {
-                document.getElementById('fileInput').click();
+                const fileInput = document.getElementById('fileInput');
+                if (fileInput) fileInput.click();
             });
         });
     }
@@ -95,66 +120,81 @@ class IOAgent {
         const uploadArea = document.querySelector('.upload-area');
         const fileInput = document.getElementById('fileInput');
 
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
+        if (!uploadArea || !fileInput) return;
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, this.preventDefaults, false);
+            document.body.addEventListener(eventName, this.preventDefaults, false);
         });
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
+        // Highlight drop area when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.add('dragover');
+            });
         });
 
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.remove('dragover');
+            });
+        });
+
+        // Handle dropped files
         uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
             const files = e.dataTransfer.files;
             this.handleFileUpload(files);
         });
     }
 
+    preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
     showSection(sectionName) {
         try {
-            console.log('showSection called with:', sectionName);
+            console.log('Showing section:', sectionName);
             
             // Hide all sections
-            console.log('Hiding all content sections');
             document.querySelectorAll('.content-section').forEach(section => {
                 section.style.display = 'none';
             });
 
             // Show selected section
-            console.log('Showing section:', `${sectionName}-section`);
             const targetSection = document.getElementById(`${sectionName}-section`);
             if (targetSection) {
                 targetSection.style.display = 'block';
             } else {
                 console.error('Section not found:', `${sectionName}-section`);
+                return;
             }
 
             // Update navigation
-            console.log('Updating navigation');
             document.querySelectorAll('#mainNav .nav-link').forEach(link => {
                 link.classList.remove('active');
             });
+            
             const activeLink = document.querySelector(`[data-section="${sectionName}"]`);
             if (activeLink) {
                 activeLink.classList.add('active');
-            } else {
-                console.error('Navigation link not found for section:', sectionName);
             }
 
             // Load section data
-            console.log('Loading section data for:', sectionName);
             this.loadSectionData(sectionName);
-            console.log('showSection completed');
         } catch (error) {
             console.error('Error in showSection:', error);
+            this.showAlert('Error loading section', 'danger');
         }
     }
 
     loadSectionData(sectionName) {
-        if (!this.currentProject) return;
+        if (!this.currentProject && sectionName !== 'dashboard') {
+            this.showAlert('Please select a project first', 'warning');
+            this.showSection('dashboard');
+            return;
+        }
 
         switch (sectionName) {
             case 'project-info':
@@ -178,20 +218,29 @@ class IOAgent {
     async loadDashboard() {
         try {
             const response = await fetch(`${this.apiBase}/projects`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
 
             if (data.success) {
                 this.displayProjects(data.projects);
                 this.updateDashboardStats(data.projects);
+            } else {
+                throw new Error(data.error || 'Failed to load projects');
             }
         } catch (error) {
             console.error('Error loading dashboard:', error);
-            this.showAlert('Error loading projects', 'danger');
+            this.showAlert('Error loading projects: ' + error.message, 'danger');
         }
     }
 
     displayProjects(projects) {
         const projectsList = document.getElementById('projectsList');
+        
+        if (!projectsList) return;
         
         if (projects.length === 0) {
             projectsList.innerHTML = `
@@ -204,10 +253,10 @@ class IOAgent {
         }
 
         projectsList.innerHTML = projects.map(project => `
-            <div class="project-card" onclick="app.openProject('${project.id}')">
+            <div class="project-card" data-project-id="${project.id}">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h5 class="mb-2">${project.title}</h5>
+                        <h5 class="mb-2">${this.escapeHtml(project.title)}</h5>
                         <p class="text-muted mb-2">
                             <i class="fas fa-calendar me-2"></i>
                             Created: ${new Date(project.created_at).toLocaleDateString()}
@@ -223,12 +272,24 @@ class IOAgent {
                 </div>
             </div>
         `).join('');
+
+        // Add click handlers to project cards
+        projectsList.querySelectorAll('.project-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const projectId = card.dataset.projectId;
+                this.openProject(projectId);
+            });
+        });
     }
 
     updateDashboardStats(projects) {
-        document.getElementById('totalProjects').textContent = projects.length;
-        document.getElementById('draftProjects').textContent = projects.filter(p => p.status === 'draft').length;
-        document.getElementById('completeProjects').textContent = projects.filter(p => p.status === 'complete').length;
+        const totalProjectsEl = document.getElementById('totalProjects');
+        const draftProjectsEl = document.getElementById('draftProjects');
+        const completeProjectsEl = document.getElementById('completeProjects');
+        
+        if (totalProjectsEl) totalProjectsEl.textContent = projects.length;
+        if (draftProjectsEl) draftProjectsEl.textContent = projects.filter(p => p.status === 'draft').length;
+        if (completeProjectsEl) completeProjectsEl.textContent = projects.filter(p => p.status === 'complete').length;
     }
 
     showCreateProjectModal() {
@@ -243,10 +304,19 @@ class IOAgent {
         }
         this.creatingProject = true;
         
-        const title = document.getElementById('newProjectTitle').value;
-        const investigatingOfficer = document.getElementById('newInvestigatingOfficer').value;
+        const titleInput = document.getElementById('newProjectTitle');
+        const officerInput = document.getElementById('newInvestigatingOfficer');
+        
+        if (!titleInput || !officerInput) {
+            this.showAlert('Form elements not found', 'danger');
+            this.creatingProject = false;
+            return;
+        }
+        
+        const title = titleInput.value.trim();
+        const investigatingOfficer = officerInput.value.trim();
 
-        if (!title.trim()) {
+        if (!title) {
             this.showAlert('Please enter a project title', 'warning');
             this.creatingProject = false;
             return;
@@ -261,34 +331,34 @@ class IOAgent {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    title: title.trim(),
-                    investigating_officer: investigatingOfficer.trim()
+                    title: title,
+                    investigating_officer: investigatingOfficer
                 })
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
 
             if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('createProjectModal')).hide();
+                const modalEl = document.getElementById('createProjectModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                
                 document.getElementById('createProjectForm').reset();
                 this.showAlert('Project created successfully', 'success');
                 
-                // Hide loading first, then load dashboard and open project
-                this.hideLoading();
-                this.creatingProject = false;
-                
-                // Add a small delay to ensure project is fully saved before opening
-                setTimeout(() => {
-                    this.loadDashboard();
-                    this.openProject(data.project.id);
-                }, 100);
-                return; // Exit early to avoid the finally block
+                // Reload dashboard and open the new project
+                await this.loadDashboard();
+                this.openProject(data.project.id);
             } else {
-                this.showAlert(data.error || 'Failed to create project', 'danger');
+                throw new Error(data.error || 'Failed to create project');
             }
         } catch (error) {
             console.error('Error creating project:', error);
-            this.showAlert('Error creating project', 'danger');
+            this.showAlert('Error creating project: ' + error.message, 'danger');
         } finally {
             this.hideLoading();
             this.creatingProject = false;
@@ -297,45 +367,48 @@ class IOAgent {
 
     async openProject(projectId) {
         try {
-            console.log('Starting openProject for ID:', projectId);
+            console.log('Opening project:', projectId);
             this.showLoading('Loading project...');
             
-            console.log('Making fetch request to:', `${this.apiBase}/projects/${projectId}`);
             const response = await fetch(`${this.apiBase}/projects/${projectId}`);
-            console.log('Fetch response received:', response.status, response.statusText);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             
             const data = await response.json();
-            console.log('JSON data parsed:', data);
 
             if (data.success) {
-                console.log('Setting currentProject');
                 this.currentProject = data.project;
-                console.log('Calling updateCurrentProjectDisplay');
                 this.updateCurrentProjectDisplay();
-                console.log('Calling showSection');
                 this.showSection('project-info');
-                console.log('Showing success alert');
                 this.showAlert('Project loaded successfully', 'success');
             } else {
-                console.log('API returned error:', data.error);
-                this.showAlert(data.error || 'Failed to load project', 'danger');
+                throw new Error(data.error || 'Failed to load project');
             }
         } catch (error) {
             console.error('Error loading project:', error);
             this.showAlert('Error loading project: ' + error.message, 'danger');
         } finally {
-            console.log('Hiding loading in finally block');
             this.hideLoading();
         }
     }
 
     updateCurrentProjectDisplay() {
-        if (this.currentProject) {
-            document.getElementById('currentProject').style.display = 'block';
-            document.getElementById('projectTitle').textContent = this.currentProject.metadata.title;
-            document.getElementById('projectStatus').textContent = `Status: ${this.currentProject.metadata.status}`;
-        } else {
-            document.getElementById('currentProject').style.display = 'none';
+        const currentProjectDiv = document.getElementById('currentProject');
+        const projectTitleEl = document.getElementById('projectTitle');
+        const projectStatusEl = document.getElementById('projectStatus');
+        
+        if (this.currentProject && currentProjectDiv) {
+            currentProjectDiv.style.display = 'block';
+            if (projectTitleEl) {
+                projectTitleEl.textContent = this.currentProject.metadata?.title || 'Untitled Project';
+            }
+            if (projectStatusEl) {
+                projectStatusEl.textContent = `Status: ${this.currentProject.metadata?.status || 'unknown'}`;
+            }
+        } else if (currentProjectDiv) {
+            currentProjectDiv.style.display = 'none';
         }
     }
 
@@ -350,26 +423,40 @@ class IOAgent {
         if (!this.currentProject) return;
 
         const project = this.currentProject;
-        document.getElementById('projectTitleInput').value = project.metadata.title || '';
-        document.getElementById('investigatingOfficer').value = project.metadata.investigating_officer || '';
-        document.getElementById('incidentDate').value = project.incident_info.incident_date ? 
-            new Date(project.incident_info.incident_date).toISOString().slice(0, 16) : '';
-        document.getElementById('incidentLocation').value = project.incident_info.location || '';
-        document.getElementById('incidentType').value = project.incident_info.incident_type || '';
-        document.getElementById('projectStatus').value = project.metadata.status || 'draft';
+        const metadata = project.metadata || {};
+        const incidentInfo = project.incident_info || {};
+        
+        // Update form fields with null checks
+        this.setInputValue('projectTitleInput', metadata.title);
+        this.setInputValue('investigatingOfficer', metadata.investigating_officer);
+        this.setInputValue('incidentDate', incidentInfo.incident_date ? 
+            new Date(incidentInfo.incident_date).toISOString().slice(0, 16) : '');
+        this.setInputValue('incidentLocation', incidentInfo.location);
+        this.setInputValue('incidentType', incidentInfo.incident_type);
+        this.setInputValue('projectStatus', metadata.status || 'draft');
+    }
+
+    setInputValue(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.value = value || '';
+        }
     }
 
     async saveProjectInfo() {
-        if (!this.currentProject) return;
+        if (!this.currentProject) {
+            this.showAlert('No project selected', 'warning');
+            return;
+        }
 
         const formData = {
-            title: document.getElementById('projectTitleInput').value,
-            investigating_officer: document.getElementById('investigatingOfficer').value,
-            status: document.getElementById('projectStatus').value,
+            title: document.getElementById('projectTitleInput')?.value || '',
+            investigating_officer: document.getElementById('investigatingOfficer')?.value || '',
+            status: document.getElementById('projectStatus')?.value || 'draft',
             incident_info: {
-                incident_date: document.getElementById('incidentDate').value,
-                location: document.getElementById('incidentLocation').value,
-                incident_type: document.getElementById('incidentType').value
+                incident_date: document.getElementById('incidentDate')?.value || '',
+                location: document.getElementById('incidentLocation')?.value || '',
+                incident_type: document.getElementById('incidentType')?.value || ''
             }
         };
 
@@ -384,6 +471,10 @@ class IOAgent {
                 body: JSON.stringify(formData)
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
 
             if (data.success) {
@@ -391,11 +482,11 @@ class IOAgent {
                 this.updateCurrentProjectDisplay();
                 this.showAlert('Project information saved successfully', 'success');
             } else {
-                this.showAlert(data.error || 'Failed to save project', 'danger');
+                throw new Error(data.error || 'Failed to save project');
             }
         } catch (error) {
             console.error('Error saving project:', error);
-            this.showAlert('Error saving project', 'danger');
+            this.showAlert('Error saving project: ' + error.message, 'danger');
         } finally {
             this.hideLoading();
         }
@@ -407,53 +498,98 @@ class IOAgent {
             return;
         }
 
-        const fileList = files instanceof FileList ? files : [files];
+        const fileList = Array.from(files);
+        let uploadedCount = 0;
+        let failedCount = 0;
         
-        for (let file of fileList) {
-            await this.uploadFile(file);
+        this.showLoading(`Uploading ${fileList.length} file(s)...`);
+        
+        for (const file of fileList) {
+            const result = await this.uploadFile(file);
+            if (result.success) {
+                uploadedCount++;
+            } else {
+                failedCount++;
+            }
         }
         
-        this.loadEvidence();
+        this.hideLoading();
+        
+        if (uploadedCount > 0) {
+            this.showAlert(`Successfully uploaded ${uploadedCount} file(s)${failedCount > 0 ? `, ${failedCount} failed` : ''}`, 
+                failedCount > 0 ? 'warning' : 'success');
+            this.loadEvidence();
+        } else if (failedCount > 0) {
+            this.showAlert(`Failed to upload ${failedCount} file(s)`, 'danger');
+        }
+    }
+
+    validateFile(file) {
+        // Check file size
+        if (file.size > this.maxFileSize) {
+            return {
+                valid: false,
+                error: `File "${file.name}" is too large. Maximum size is ${this.formatFileSize(this.maxFileSize)}.`
+            };
+        }
+
+        // Check file type
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        let isValidType = false;
+
+        // Check by MIME type
+        for (const [mimeType, extensions] of Object.entries(this.allowedFileTypes)) {
+            if (file.type === mimeType || extensions.includes(fileExtension)) {
+                isValidType = true;
+                break;
+            }
+        }
+
+        if (!isValidType) {
+            return {
+                valid: false,
+                error: `File type not supported: "${file.name}". Allowed types: PDF, Word documents, images, videos, and audio files.`
+            };
+        }
+
+        return { valid: true };
     }
 
     async uploadFile(file) {
+        // Validate file before upload
+        const validation = this.validateFile(file);
+        if (!validation.valid) {
+            this.showAlert(validation.error, 'danger');
+            return { success: false, error: validation.error };
+        }
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('description', `Uploaded file: ${file.name}`);
+        formData.append('type', file.type);
+        formData.append('source', 'user_upload');
 
         try {
-            this.showLoading(`Uploading ${file.name}...`);
-            
-            console.log(`Uploading to: ${this.apiBase}/projects/${this.currentProject.id}/upload`);
-            console.log(`File size: ${file.size} bytes`);
-            
             const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/upload`, {
                 method: 'POST',
                 body: formData
             });
-
-            console.log(`Response status: ${response.status}`);
-            console.log(`Response headers:`, response.headers);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('Upload response:', data);
 
             if (data.success) {
-                this.showAlert(`File ${file.name} uploaded successfully`, 'success');
-                // Refresh project data to get updated evidence list
-                await this.loadProject(this.currentProject.id);
+                return { success: true, data: data };
             } else {
-                this.showAlert(`Failed to upload ${file.name}: ${data.error}`, 'danger');
+                throw new Error(data.error || 'Upload failed');
             }
         } catch (error) {
             console.error('Error uploading file:', error);
-            this.showAlert(`Error uploading ${file.name}: ${error.message}`, 'danger');
-        } finally {
-            this.hideLoading();
+            this.showAlert(`Error uploading "${file.name}": ${error.message}`, 'danger');
+            return { success: false, error: error.message };
         }
     }
 
@@ -461,6 +597,8 @@ class IOAgent {
         if (!this.currentProject || !this.currentProject.evidence_library) return;
 
         const evidenceList = document.getElementById('evidenceList');
+        if (!evidenceList) return;
+        
         const evidence = this.currentProject.evidence_library;
 
         if (evidence.length === 0) {
@@ -476,15 +614,70 @@ class IOAgent {
         evidenceList.innerHTML = evidence.map(item => `
             <div class="evidence-item">
                 <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6><i class="fas fa-file me-2"></i>${item.filename}</h6>
-                        <p class="mb-1">${item.description}</p>
-                        <small class="text-muted">Type: ${item.type} | Source: ${item.source}</small>
+                    <div class="flex-grow-1">
+                        <h6><i class="${this.getFileIcon(item.type)} me-2"></i>${this.escapeHtml(item.filename)}</h6>
+                        <p class="mb-1">${this.escapeHtml(item.description)}</p>
+                        <small class="text-muted">
+                            Type: ${this.escapeHtml(item.type)} | 
+                            Source: ${this.escapeHtml(item.source)} | 
+                            Uploaded: ${new Date(item.uploaded_at || Date.now()).toLocaleString()}
+                        </small>
                     </div>
-                    <span class="badge bg-primary">${item.reliability}</span>
+                    <div class="ms-3">
+                        <span class="badge bg-primary">${this.escapeHtml(item.reliability || 'Unrated')}</span>
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="app.deleteEvidence('${item.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `).join('');
+    }
+
+    getFileIcon(fileType) {
+        if (!fileType) return 'fas fa-file';
+        
+        if (fileType.includes('pdf')) return 'fas fa-file-pdf';
+        if (fileType.includes('word') || fileType.includes('document')) return 'fas fa-file-word';
+        if (fileType.includes('image')) return 'fas fa-file-image';
+        if (fileType.includes('video')) return 'fas fa-file-video';
+        if (fileType.includes('audio')) return 'fas fa-file-audio';
+        
+        return 'fas fa-file';
+    }
+
+    async deleteEvidence(evidenceId) {
+        if (!confirm('Are you sure you want to delete this evidence?')) {
+            return;
+        }
+
+        try {
+            this.showLoading('Deleting evidence...');
+            
+            const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/evidence/${evidenceId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showAlert('Evidence deleted successfully', 'success');
+                // Reload project to get updated evidence list
+                await this.openProject(this.currentProject.id);
+                this.loadEvidence();
+            } else {
+                throw new Error(data.error || 'Failed to delete evidence');
+            }
+        } catch (error) {
+            console.error('Error deleting evidence:', error);
+            this.showAlert('Error deleting evidence: ' + error.message, 'danger');
+        } finally {
+            this.hideLoading();
+        }
     }
 
     showAddTimelineModal() {
@@ -500,13 +693,25 @@ class IOAgent {
     async addTimelineEntry() {
         if (!this.currentProject) return;
 
+        const timestampEl = document.getElementById('entryTimestamp');
+        const typeEl = document.getElementById('entryType');
+        const descriptionEl = document.getElementById('entryDescription');
+        const confidenceEl = document.getElementById('entryConfidence');
+        const initiatingEl = document.getElementById('isInitiatingEvent');
+        const assumptionsEl = document.getElementById('entryAssumptions');
+
+        if (!timestampEl || !typeEl || !descriptionEl) {
+            this.showAlert('Form elements not found', 'danger');
+            return;
+        }
+
         const entryData = {
-            timestamp: document.getElementById('entryTimestamp').value,
-            type: document.getElementById('entryType').value,
-            description: document.getElementById('entryDescription').value,
-            confidence_level: document.getElementById('entryConfidence').value,
-            is_initiating_event: document.getElementById('isInitiatingEvent').checked,
-            assumptions: document.getElementById('entryAssumptions').value.split('\n').filter(a => a.trim())
+            timestamp: timestampEl.value,
+            type: typeEl.value,
+            description: descriptionEl.value,
+            confidence_level: confidenceEl?.value || 'medium',
+            is_initiating_event: initiatingEl?.checked || false,
+            assumptions: assumptionsEl?.value.split('\n').filter(a => a.trim()) || []
         };
 
         if (!entryData.timestamp || !entryData.type || !entryData.description) {
@@ -525,26 +730,29 @@ class IOAgent {
                 body: JSON.stringify(entryData)
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
 
             if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('addTimelineModal')).hide();
+                const modalEl = document.getElementById('addTimelineModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                
                 document.getElementById('addTimelineForm').reset();
                 this.showAlert('Timeline entry added successfully', 'success');
                 
                 // Reload project data to get updated timeline
-                const projectResponse = await fetch(`${this.apiBase}/projects/${this.currentProject.id}`);
-                const projectData = await projectResponse.json();
-                if (projectData.success) {
-                    this.currentProject = projectData.project;
-                    this.loadTimeline();
-                }
+                await this.openProject(this.currentProject.id);
+                this.loadTimeline();
             } else {
-                this.showAlert(data.error || 'Failed to add timeline entry', 'danger');
+                throw new Error(data.error || 'Failed to add timeline entry');
             }
         } catch (error) {
             console.error('Error adding timeline entry:', error);
-            this.showAlert('Error adding timeline entry', 'danger');
+            this.showAlert('Error adding timeline entry: ' + error.message, 'danger');
         } finally {
             this.hideLoading();
         }
@@ -554,6 +762,8 @@ class IOAgent {
         if (!this.currentProject || !this.currentProject.timeline) return;
 
         const timelineList = document.getElementById('timelineList');
+        if (!timelineList) return;
+        
         const timeline = this.currentProject.timeline;
 
         if (timeline.length === 0) {
@@ -567,7 +777,7 @@ class IOAgent {
         }
 
         // Sort timeline by timestamp
-        const sortedTimeline = timeline.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const sortedTimeline = [...timeline].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
         timelineList.innerHTML = sortedTimeline.map(entry => `
             <div class="timeline-entry ${entry.type}">
@@ -576,12 +786,17 @@ class IOAgent {
                         ${new Date(entry.timestamp).toLocaleString()}
                         ${entry.is_initiating_event ? '<span class="badge bg-danger ms-2">Initiating Event</span>' : ''}
                     </h6>
-                    <span class="badge bg-secondary">${entry.type.toUpperCase()}</span>
+                    <div>
+                        <span class="badge bg-secondary">${entry.type.toUpperCase()}</span>
+                        <button class="btn btn-sm btn-outline-danger ms-2" onclick="app.deleteTimelineEntry('${entry.id}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-                <p class="mb-2">${entry.description}</p>
+                <p class="mb-2">${this.escapeHtml(entry.description)}</p>
                 ${entry.assumptions && entry.assumptions.length > 0 ? `
                     <div class="small text-muted">
-                        <strong>Assumptions:</strong> ${entry.assumptions.join(', ')}
+                        <strong>Assumptions:</strong> ${entry.assumptions.map(a => this.escapeHtml(a)).join(', ')}
                     </div>
                 ` : ''}
                 <div class="small text-muted">
@@ -589,6 +804,39 @@ class IOAgent {
                 </div>
             </div>
         `).join('');
+    }
+
+    async deleteTimelineEntry(entryId) {
+        if (!confirm('Are you sure you want to delete this timeline entry?')) {
+            return;
+        }
+
+        try {
+            this.showLoading('Deleting timeline entry...');
+            
+            const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/timeline/${entryId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showAlert('Timeline entry deleted successfully', 'success');
+                await this.openProject(this.currentProject.id);
+                this.loadTimeline();
+            } else {
+                throw new Error(data.error || 'Failed to delete timeline entry');
+            }
+        } catch (error) {
+            console.error('Error deleting timeline entry:', error);
+            this.showAlert('Error deleting timeline entry: ' + error.message, 'danger');
+        } finally {
+            this.hideLoading();
+        }
     }
 
     async runCausalAnalysis() {
@@ -609,24 +857,24 @@ class IOAgent {
                 method: 'POST'
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
 
             if (data.success) {
                 this.showAlert('Causal analysis completed successfully', 'success');
                 
                 // Reload project data to get updated causal factors
-                const projectResponse = await fetch(`${this.apiBase}/projects/${this.currentProject.id}`);
-                const projectData = await projectResponse.json();
-                if (projectData.success) {
-                    this.currentProject = projectData.project;
-                    this.loadAnalysis();
-                }
+                await this.openProject(this.currentProject.id);
+                this.loadAnalysis();
             } else {
-                this.showAlert(data.error || 'Failed to run causal analysis', 'danger');
+                throw new Error(data.error || 'Failed to run causal analysis');
             }
         } catch (error) {
             console.error('Error running causal analysis:', error);
-            this.showAlert('Error running causal analysis', 'danger');
+            this.showAlert('Error running causal analysis: ' + error.message, 'danger');
         } finally {
             this.hideLoading();
         }
@@ -636,6 +884,8 @@ class IOAgent {
         if (!this.currentProject || !this.currentProject.causal_factors) return;
 
         const causalFactorsList = document.getElementById('causalFactorsList');
+        if (!causalFactorsList) return;
+        
         const factors = this.currentProject.causal_factors;
 
         if (factors.length === 0) {
@@ -651,13 +901,13 @@ class IOAgent {
         causalFactorsList.innerHTML = factors.map(factor => `
             <div class="causal-factor ${factor.category}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-0">${factor.title || 'Untitled Factor'}</h6>
+                    <h6 class="mb-0">${this.escapeHtml(factor.title || 'Untitled Factor')}</h6>
                     <span class="badge bg-primary">${factor.category.toUpperCase()}</span>
                 </div>
-                <p class="mb-2">${factor.description}</p>
+                <p class="mb-2">${this.escapeHtml(factor.description)}</p>
                 ${factor.analysis_text ? `
                     <div class="small">
-                        <strong>Analysis:</strong> ${factor.analysis_text}
+                        <strong>Analysis:</strong> ${this.escapeHtml(factor.analysis_text)}
                     </div>
                 ` : ''}
                 <div class="small text-muted mt-2">
@@ -673,6 +923,13 @@ class IOAgent {
             return;
         }
 
+        // Check readiness first
+        const isReady = this.checkReadiness(true);
+        if (!isReady) {
+            this.showAlert('Please complete all required sections before generating ROI', 'warning');
+            return;
+        }
+
         try {
             this.showLoading('Generating ROI document...');
             
@@ -680,74 +937,100 @@ class IOAgent {
                 method: 'POST'
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
 
             if (data.success) {
                 this.showAlert('ROI document generated successfully', 'success');
                 
-                // Add download link
+                // Update generated docs display
                 const generatedDocs = document.getElementById('generatedDocs');
-                generatedDocs.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6>ROI Document</h6>
-                            <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
+                if (generatedDocs) {
+                    generatedDocs.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                            <div>
+                                <h6 class="mb-1">ROI Document</h6>
+                                <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
+                            </div>
+                            <a href="${data.download_url}" class="btn btn-outline-primary btn-sm" download>
+                                <i class="fas fa-download me-2"></i>Download
+                            </a>
                         </div>
-                        <a href="${data.download_url}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-download me-2"></i>Download
-                        </a>
-                    </div>
-                `;
+                    `;
+                }
             } else {
-                this.showAlert(data.error || 'Failed to generate ROI', 'danger');
+                throw new Error(data.error || 'Failed to generate ROI');
             }
         } catch (error) {
             console.error('Error generating ROI:', error);
-            this.showAlert('Error generating ROI', 'danger');
+            this.showAlert('Error generating ROI: ' + error.message, 'danger');
         } finally {
             this.hideLoading();
         }
     }
 
-    checkReadiness() {
-        if (!this.currentProject) return;
+    checkReadiness(returnResult = false) {
+        if (!this.currentProject) {
+            if (returnResult) return false;
+            return;
+        }
 
         const project = this.currentProject;
+        let allReady = true;
         
         // Check project info
-        const hasProjectInfo = project.metadata.title && project.incident_info.incident_date;
-        document.getElementById('checkProjectInfo').className = `badge ${hasProjectInfo ? 'bg-success' : 'bg-warning'}`;
-        document.getElementById('checkProjectInfo').textContent = hasProjectInfo ? 'Complete' : 'Incomplete';
+        const hasProjectInfo = project.metadata?.title && project.incident_info?.incident_date;
+        this.updateReadinessCheck('checkProjectInfo', hasProjectInfo);
+        if (!hasProjectInfo) allReady = false;
 
         // Check evidence
         const hasEvidence = project.evidence_library && project.evidence_library.length > 0;
-        document.getElementById('checkEvidence').className = `badge ${hasEvidence ? 'bg-success' : 'bg-warning'}`;
-        document.getElementById('checkEvidence').textContent = hasEvidence ? 'Complete' : 'Incomplete';
+        this.updateReadinessCheck('checkEvidence', hasEvidence);
+        if (!hasEvidence) allReady = false;
 
         // Check timeline
         const hasTimeline = project.timeline && project.timeline.length > 0;
-        document.getElementById('checkTimeline').className = `badge ${hasTimeline ? 'bg-success' : 'bg-warning'}`;
-        document.getElementById('checkTimeline').textContent = hasTimeline ? 'Complete' : 'Incomplete';
+        this.updateReadinessCheck('checkTimeline', hasTimeline);
+        if (!hasTimeline) allReady = false;
 
         // Check analysis
         const hasAnalysis = project.causal_factors && project.causal_factors.length > 0;
-        document.getElementById('checkAnalysis').className = `badge ${hasAnalysis ? 'bg-success' : 'bg-warning'}`;
-        document.getElementById('checkAnalysis').textContent = hasAnalysis ? 'Complete' : 'Incomplete';
+        this.updateReadinessCheck('checkAnalysis', hasAnalysis);
+        if (!hasAnalysis) allReady = false;
+
+        if (returnResult) {
+            return allReady;
+        }
+    }
+
+    updateReadinessCheck(elementId, isComplete) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.className = `badge ${isComplete ? 'bg-success' : 'bg-warning'}`;
+            element.textContent = isComplete ? 'Complete' : 'Incomplete';
+        }
     }
 
     showLoading(message = 'Loading...') {
-        console.log('showLoading called with message:', message);
-        document.getElementById('loadingMessage').textContent = message;
+        const loadingMessage = document.getElementById('loadingMessage');
+        if (loadingMessage) {
+            loadingMessage.textContent = message;
+        }
+        
         const overlay = document.getElementById('loadingOverlay');
-        overlay.style.display = 'flex';
-        console.log('Loading overlay shown');
+        if (overlay) {
+            overlay.style.display = 'flex';
+        }
     }
 
     hideLoading() {
-        console.log('hideLoading called');
         const overlay = document.getElementById('loadingOverlay');
-        overlay.style.display = 'none';
-        console.log('Loading overlay hidden');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
     }
 
     showAlert(message, type = 'info') {
@@ -759,13 +1042,15 @@ class IOAgent {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.innerHTML = `
-            ${message}
+            ${this.escapeHtml(message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
 
         // Insert at top of content area
         const contentArea = document.querySelector('.content-area');
-        contentArea.insertBefore(alertDiv, contentArea.firstChild);
+        if (contentArea) {
+            contentArea.insertBefore(alertDiv, contentArea.firstChild);
+        }
 
         // Auto-dismiss after 5 seconds
         setTimeout(() => {
@@ -774,67 +1059,69 @@ class IOAgent {
             }
         }, 5000);
     }
+
+    // Utility functions
+    escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
 }
 
-// Global functions for onclick handlers
-function showCreateProjectModal() {
+// Global functions for onclick handlers (maintain backwards compatibility)
+window.showCreateProjectModal = function() {
     if (window.app) {
         app.showCreateProjectModal();
-    } else {
-        console.error('App not initialized yet');
     }
-}
+};
 
-function showAddTimelineModal() {
+window.showAddTimelineModal = function() {
     if (window.app) {
         app.showAddTimelineModal();
-    } else {
-        console.error('App not initialized yet');
     }
-}
+};
 
-function runCausalAnalysis() {
+window.runCausalAnalysis = function() {
     if (window.app) {
         app.runCausalAnalysis();
-    } else {
-        console.error('App not initialized yet');
     }
-}
+};
 
-function generateROI() {
+window.generateROI = function() {
     if (window.app) {
         app.generateROI();
-    } else {
-        console.error('App not initialized yet');
     }
-}
+};
 
-function checkReadiness() {
+window.checkReadiness = function() {
     if (window.app) {
         app.checkReadiness();
-    } else {
-        console.error('App not initialized yet');
     }
-}
+};
 
-function closeProject() {
+window.closeProject = function() {
     if (window.app) {
         app.closeProject();
-    } else {
-        console.error('App not initialized yet');
     }
-}
+};
 
-function handleFileUpload(event) {
-    if (window.app) {
+window.handleFileUpload = function(event) {
+    if (window.app && event.target.files) {
         app.handleFileUpload(event.target.files);
-    } else {
-        console.error('App not initialized yet');
     }
-}
+};
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new IOAgent();
+    console.log('IOAgent initialized');
 });
-
