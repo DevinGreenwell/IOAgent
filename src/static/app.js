@@ -120,22 +120,43 @@ class IOAgent {
     }
 
     showSection(sectionName) {
-        // Hide all sections
-        document.querySelectorAll('.content-section').forEach(section => {
-            section.style.display = 'none';
-        });
+        try {
+            console.log('showSection called with:', sectionName);
+            
+            // Hide all sections
+            console.log('Hiding all content sections');
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
 
-        // Show selected section
-        document.getElementById(`${sectionName}-section`).style.display = 'block';
+            // Show selected section
+            console.log('Showing section:', `${sectionName}-section`);
+            const targetSection = document.getElementById(`${sectionName}-section`);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            } else {
+                console.error('Section not found:', `${sectionName}-section`);
+            }
 
-        // Update navigation
-        document.querySelectorAll('#mainNav .nav-link').forEach(link => {
-            link.classList.remove('active');
-        });
-        document.querySelector(`[data-section="${sectionName}"]`).classList.add('active');
+            // Update navigation
+            console.log('Updating navigation');
+            document.querySelectorAll('#mainNav .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            const activeLink = document.querySelector(`[data-section="${sectionName}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            } else {
+                console.error('Navigation link not found for section:', sectionName);
+            }
 
-        // Load section data
-        this.loadSectionData(sectionName);
+            // Load section data
+            console.log('Loading section data for:', sectionName);
+            this.loadSectionData(sectionName);
+            console.log('showSection completed');
+        } catch (error) {
+            console.error('Error in showSection:', error);
+        }
     }
 
     loadSectionData(sectionName) {
@@ -282,23 +303,34 @@ class IOAgent {
 
     async openProject(projectId) {
         try {
+            console.log('Starting openProject for ID:', projectId);
             this.showLoading('Loading project...');
             
+            console.log('Making fetch request to:', `${this.apiBase}/projects/${projectId}`);
             const response = await fetch(`${this.apiBase}/projects/${projectId}`);
+            console.log('Fetch response received:', response.status, response.statusText);
+            
             const data = await response.json();
+            console.log('JSON data parsed:', data);
 
             if (data.success) {
+                console.log('Setting currentProject');
                 this.currentProject = data.project;
+                console.log('Calling updateCurrentProjectDisplay');
                 this.updateCurrentProjectDisplay();
+                console.log('Calling showSection');
                 this.showSection('project-info');
+                console.log('Showing success alert');
                 this.showAlert('Project loaded successfully', 'success');
             } else {
+                console.log('API returned error:', data.error);
                 this.showAlert(data.error || 'Failed to load project', 'danger');
             }
         } catch (error) {
             console.error('Error loading project:', error);
-            this.showAlert('Error loading project', 'danger');
+            this.showAlert('Error loading project: ' + error.message, 'danger');
         } finally {
+            console.log('Hiding loading in finally block');
             this.hideLoading();
         }
     }
