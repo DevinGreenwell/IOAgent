@@ -3,7 +3,8 @@
 class IOAgent {
     constructor() {
         this.currentProject = null;
-        this.apiBase = '/api';
+        // Use absolute URL for API base to avoid routing conflicts
+        this.apiBase = window.location.origin + '/api';
         this.init();
     }
 
