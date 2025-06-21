@@ -115,6 +115,7 @@ class ProjectManager:
         
         # Save file to uploads directory
         uploads_dir = os.path.join(self._get_project_dir(project_id), "uploads")
+        os.makedirs(uploads_dir, exist_ok=True)
         file_path = os.path.join(uploads_dir, filename)
         
         # Handle duplicate filenames
