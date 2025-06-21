@@ -85,11 +85,20 @@ def update_project(project_id):
         if 'incident_info' in data:
             incident_data = data['incident_info']
             if 'incident_date' in incident_data:
-                project.incident_info.incident_date = datetime.fromisoformat(incident_data['incident_date'])
+                try:
+                    # Validate and parse datetime
+                    if incident_data['incident_date']:
+                        project.incident_info.incident_date = datetime.fromisoformat(incident_data['incident_date'])
+                except (ValueError, TypeError) as e:
+                    return jsonify({'success': False, 'error': f'Invalid incident date format: {str(e)}'}), 400
             if 'location' in incident_data:
-                project.incident_info.location = incident_data['location']
+                # Sanitize location input (limit length and remove potentially dangerous characters)
+                location = str(incident_data['location'])[:500]  # Limit to 500 chars
+                project.incident_info.location = location
             if 'incident_type' in incident_data:
-                project.incident_info.incident_type = incident_data['incident_type']
+                # Sanitize incident type input
+                incident_type = str(incident_data['incident_type'])[:100]  # Limit to 100 chars
+                project.incident_info.incident_type = incident_type
         
         project_manager.save_project(project)
         
@@ -121,7 +130,29 @@ def upload_file(project_id):
             return jsonify({'success': False, 'error': 'No file provided'}), 400
         
         file = request.files['file']
-        description = request.form.get('description', '')
+        
+        # File security validation
+        if file.filename == '':
+            return jsonify({'success': False, 'error': 'No file selected'}), 400
+        
+        # Check file size (limit to 50MB)
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)  # Reset file pointer
+        
+        if file_size > 50 * 1024 * 1024:  # 50MB limit
+            return jsonify({'success': False, 'error': 'File size exceeds 50MB limit'}), 400
+        
+        # Validate file extension
+        allowed_extensions = {'.pdf', '.txt', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif', '.zip', '.csv', '.xlsx'}
+        filename = secure_filename(file.filename)
+        file_ext = os.path.splitext(filename)[1].lower()
+        
+        if file_ext not in allowed_extensions:
+            return jsonify({'success': False, 'error': f'File type {file_ext} not allowed'}), 400
+        
+        # Sanitize description
+        description = str(request.form.get('description', ''))[:500]  # Limit to 500 chars
         
         evidence = project_manager.upload_file(project_id, file, description)
         if evidence:
@@ -176,11 +207,14 @@ def update_timeline_entry(project_id, entry_id):
         
         # Update entry fields
         if 'timestamp' in data:
-            entry.timestamp = datetime.fromisoformat(data['timestamp'])
+            try:
+                entry.timestamp = datetime.fromisoformat(data['timestamp'])
+            except (ValueError, TypeError) as e:
+                return jsonify({'success': False, 'error': f'Invalid timestamp format: {str(e)}'}), 400
         if 'type' in data:
-            entry.type = data['type']
+            entry.type = str(data['type'])[:50]  # Limit length
         if 'description' in data:
-            entry.description = data['description']
+            entry.description = str(data['description'])[:1000]  # Limit length
         if 'evidence_ids' in data:
             entry.evidence_ids = data['evidence_ids']
         if 'assumptions' in data:
