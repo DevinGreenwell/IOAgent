@@ -444,6 +444,8 @@ class IOAgent {
 
             if (data.success) {
                 this.showAlert(`File ${file.name} uploaded successfully`, 'success');
+                // Refresh project data to get updated evidence list
+                await this.loadProject(this.currentProject.id);
             } else {
                 this.showAlert(`Failed to upload ${file.name}: ${data.error}`, 'danger');
             }
