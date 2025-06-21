@@ -167,11 +167,18 @@ class IOAgent {
     }
 
     async createProject() {
+        // Prevent multiple simultaneous submissions
+        if (this.creatingProject) {
+            return;
+        }
+        this.creatingProject = true;
+        
         const title = document.getElementById('newProjectTitle').value;
         const investigatingOfficer = document.getElementById('newInvestigatingOfficer').value;
 
         if (!title.trim()) {
             this.showAlert('Please enter a project title', 'warning');
+            this.creatingProject = false;
             return;
         }
 
@@ -195,8 +202,12 @@ class IOAgent {
                 bootstrap.Modal.getInstance(document.getElementById('createProjectModal')).hide();
                 document.getElementById('createProjectForm').reset();
                 this.showAlert('Project created successfully', 'success');
-                this.loadDashboard();
-                this.openProject(data.project.id);
+                
+                // Add a small delay to ensure project is fully saved before opening
+                setTimeout(() => {
+                    this.loadDashboard();
+                    this.openProject(data.project.id);
+                }, 100);
             } else {
                 this.showAlert(data.error || 'Failed to create project', 'danger');
             }
@@ -205,6 +216,7 @@ class IOAgent {
             this.showAlert('Error creating project', 'danger');
         } finally {
             this.hideLoading();
+            this.creatingProject = false;
         }
     }
 
@@ -421,9 +433,13 @@ class IOAgent {
                 document.getElementById('addTimelineForm').reset();
                 this.showAlert('Timeline entry added successfully', 'success');
                 
-                // Reload project to get updated timeline
-                await this.openProject(this.currentProject.id);
-                this.loadTimeline();
+                // Reload project data to get updated timeline
+                const projectResponse = await fetch(`${this.apiBase}/projects/${this.currentProject.id}`);
+                const projectData = await projectResponse.json();
+                if (projectData.success) {
+                    this.currentProject = projectData.project;
+                    this.loadTimeline();
+                }
             } else {
                 this.showAlert(data.error || 'Failed to add timeline entry', 'danger');
             }
@@ -499,9 +515,13 @@ class IOAgent {
             if (data.success) {
                 this.showAlert('Causal analysis completed successfully', 'success');
                 
-                // Reload project to get updated causal factors
-                await this.openProject(this.currentProject.id);
-                this.loadAnalysis();
+                // Reload project data to get updated causal factors
+                const projectResponse = await fetch(`${this.apiBase}/projects/${this.currentProject.id}`);
+                const projectData = await projectResponse.json();
+                if (projectData.success) {
+                    this.currentProject = projectData.project;
+                    this.loadAnalysis();
+                }
             } else {
                 this.showAlert(data.error || 'Failed to run causal analysis', 'danger');
             }
@@ -660,16 +680,8 @@ function showCreateProjectModal() {
     app.showCreateProjectModal();
 }
 
-function createProject() {
-    app.createProject();
-}
-
 function showAddTimelineModal() {
     app.showAddTimelineModal();
-}
-
-function addTimelineEntry() {
-    app.addTimelineEntry();
 }
 
 function runCausalAnalysis() {

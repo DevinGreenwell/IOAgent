@@ -27,10 +27,33 @@ class BaseModel:
         return result
     
     def from_dict(self, data: Dict[str, Any]):
-        """Load model from dictionary"""
+        """Load model from dictionary with proper object reconstruction"""
         for key, value in data.items():
             if key in ['created_at', 'updated_at'] and isinstance(value, str):
                 setattr(self, key, datetime.fromisoformat(value))
+            elif isinstance(value, dict) and hasattr(self, key):
+                # Handle nested objects
+                current_attr = getattr(self, key)
+                if isinstance(current_attr, BaseModel):
+                    current_attr.from_dict(value)
+            elif isinstance(value, list) and hasattr(self, key):
+                # Handle lists of objects
+                current_attr = getattr(self, key, None)
+                if current_attr is not None and len(current_attr) > 0 and isinstance(current_attr[0], BaseModel):
+                    # Reconstruct list of model objects
+                    obj_type = type(current_attr[0])
+                    new_list = []
+                    for item in value:
+                        if isinstance(item, dict):
+                            new_obj = obj_type()
+                            new_obj.from_dict(item)
+                            new_list.append(new_obj)
+                        else:
+                            new_list.append(item)
+                    setattr(self, key, new_list)
+                else:
+                    # Handle empty lists or lists of simple types
+                    setattr(self, key, value)
             else:
                 setattr(self, key, value)
 
@@ -166,6 +189,15 @@ class ROIDocument(BaseModel):
         self.conclusions = []
         self.actions_taken = ""
         self.recommendations = ""
+    
+    def from_dict(self, data: Dict[str, Any]):
+        """Custom from_dict for ROIDocument with proper nested object handling"""
+        # Handle basic fields
+        super().from_dict(data)
+        
+        # Handle nested ExecutiveSummary
+        if 'executive_summary' in data and isinstance(data['executive_summary'], dict):
+            self.executive_summary.from_dict(data['executive_summary'])
 
 class InvestigationProject(BaseModel):
     """Main project container"""
@@ -190,4 +222,53 @@ class InvestigationProject(BaseModel):
         with open(filepath, 'r') as f:
             data = json.load(f)
             self.from_dict(data)
+    
+    def from_dict(self, data: Dict[str, Any]):
+        """Custom from_dict for InvestigationProject with proper nested object handling"""
+        # Handle basic fields first
+        for key, value in data.items():
+            if key in ['created_at', 'updated_at'] and isinstance(value, str):
+                setattr(self, key, datetime.fromisoformat(value))
+            elif key in ['id']:
+                setattr(self, key, value)
+        
+        # Handle nested objects explicitly
+        if 'metadata' in data and isinstance(data['metadata'], dict):
+            self.metadata.from_dict(data['metadata'])
+        
+        if 'incident_info' in data and isinstance(data['incident_info'], dict):
+            self.incident_info.from_dict(data['incident_info'])
+        
+        if 'roi_document' in data and isinstance(data['roi_document'], dict):
+            self.roi_document.from_dict(data['roi_document'])
+        
+        # Handle lists with proper object reconstruction
+        if 'timeline' in data and isinstance(data['timeline'], list):
+            self.timeline = []
+            for item in data['timeline']:
+                if isinstance(item, dict):
+                    entry = TimelineEntry()
+                    entry.from_dict(item)
+                    self.timeline.append(entry)
+        
+        if 'evidence_library' in data and isinstance(data['evidence_library'], list):
+            self.evidence_library = []
+            for item in data['evidence_library']:
+                if isinstance(item, dict):
+                    evidence = Evidence()
+                    evidence.from_dict(item)
+                    self.evidence_library.append(evidence)
+        
+        if 'causal_factors' in data and isinstance(data['causal_factors'], list):
+            self.causal_factors = []
+            for item in data['causal_factors']:
+                if isinstance(item, dict):
+                    factor = CausalFactor()
+                    factor.from_dict(item)
+                    self.causal_factors.append(factor)
+        
+        # Handle other simple lists
+        for key in ['vessels', 'personnel']:
+            if key in data:
+                setattr(self, key, data[key])
 
