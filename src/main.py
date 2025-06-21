@@ -16,7 +16,7 @@ app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'sta
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
 
 # Configure CORS more securely - restrict origins in production
-cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://127.0.0.1:5000').split(',')
+cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://127.0.0.1:5000,https://devingreenwell.github.io').split(',')
 CORS(app, origins=cors_origins)
 
 # Register API blueprints FIRST (order matters!)

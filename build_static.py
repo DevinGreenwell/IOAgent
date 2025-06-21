@@ -23,7 +23,7 @@ def build_static():
     
     # Create configuration for production
     config = {
-        'API_BASE_URL': 'https://your-backend-url.herokuapp.com/api',  # Update this
+        'API_BASE_URL': 'https://ioagent.onrender.com/api',
         'ENVIRONMENT': 'production'
     }
     

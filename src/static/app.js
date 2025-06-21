@@ -1,17 +1,23 @@
-// IOAgent Frontend JavaScript
-
 class IOAgent {
     constructor() {
         this.currentProject = null;
-        // Use absolute URL for API base to avoid routing conflicts
-        this.apiBase = window.location.origin + '/api';
+        
+        // Configure API base URL based on environment
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // Local development
+            this.apiBase = 'http://localhost:5000/api';
+        } else if (window.location.hostname.includes('github.io') || window.location.hostname.includes('netlify') || window.location.hostname.includes('vercel')) {
+            // Static hosting - point to your deployed backend
+            this.apiBase = 'https://ioagent.onrender.com/api';
+        } else if (window.location.hostname.includes('onrender.com')) {
+            // Running on Render - use same origin
+            this.apiBase = window.location.origin + '/api';
+        } else {
+            // Default fallback to hosted backend
+            this.apiBase = 'https://ioagent.onrender.com/api';
+        }
+        
         this.init();
-    }
-
-    init() {
-        this.setupEventListeners();
-        this.loadDashboard();
-        this.setupFileUpload();
     }
 
     setupEventListeners() {
