@@ -731,92 +731,16 @@ class IOAgent {
     showLoading(message = 'Loading...') {
         console.log('showLoading called with message:', message);
         document.getElementById('loadingMessage').textContent = message;
-        
-        // Dispose of any existing modal instance first
-        const modalElement = document.getElementById('loadingModal');
-        const existingModal = bootstrap.Modal.getInstance(modalElement);
-        if (existingModal) {
-            console.log('Disposing existing modal instance');
-            existingModal.dispose();
-        }
-        
-        const modal = new bootstrap.Modal(modalElement);
-        console.log('Showing new modal instance');
-        modal.show();
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'flex';
+        console.log('Loading overlay shown');
     }
 
     hideLoading() {
-        try {
-            console.log('hideLoading called');
-            const modalElement = document.getElementById('loadingModal');
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            
-            if (modal) {
-                console.log('Found modal instance, calling hide()');
-                modal.hide();
-                
-                // Add event listener to clean up after modal is hidden
-                modalElement.addEventListener('hidden.bs.modal', function cleanup() {
-                    console.log('Modal hidden event fired, disposing modal');
-                    modal.dispose();
-                    modalElement.removeEventListener('hidden.bs.modal', cleanup);
-                }, { once: true });
-                
-                // Fallback: force cleanup after 2 seconds if modal doesn't hide properly
-                setTimeout(() => {
-                    if (modalElement.classList.contains('show') || document.body.classList.contains('modal-open')) {
-                        console.log('Modal did not hide properly, forcing cleanup');
-                        this.forceCleanupModal();
-                    }
-                }, 2000);
-            } else {
-                console.log('No modal instance found, manual cleanup');
-                // If no modal instance, remove backdrop and classes manually
-                modalElement.classList.remove('show');
-                modalElement.style.display = 'none';
-                modalElement.setAttribute('aria-hidden', 'true');
-                modalElement.removeAttribute('aria-modal');
-                document.body.classList.remove('modal-open');
-                
-                const backdrops = document.querySelectorAll('.modal-backdrop');
-                console.log('Removing', backdrops.length, 'modal backdrops');
-                backdrops.forEach(backdrop => backdrop.remove());
-            }
-        } catch (error) {
-            console.error('Error hiding loading modal:', error);
-            // Force remove modal elements if there's an error
-            this.forceCleanupModal();
-        }
-    }
-
-    forceCleanupModal() {
-        console.log('Force cleanup modal');
-        const modalElement = document.getElementById('loadingModal');
-        
-        // Remove all modal classes and attributes
-        modalElement.classList.remove('show', 'fade');
-        modalElement.style.display = 'none';
-        modalElement.setAttribute('aria-hidden', 'true');
-        modalElement.removeAttribute('aria-modal');
-        
-        // Remove body classes
-        document.body.classList.remove('modal-open');
-        document.body.style.removeProperty('overflow');
-        document.body.style.removeProperty('padding-right');
-        
-        // Remove all backdrops
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach(backdrop => backdrop.remove());
-        
-        // Dispose any modal instances
-        try {
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.dispose();
-            }
-        } catch (e) {
-            console.log('Could not dispose modal:', e);
-        }
+        console.log('hideLoading called');
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'none';
+        console.log('Loading overlay hidden');
     }
 
     showAlert(message, type = 'info') {
