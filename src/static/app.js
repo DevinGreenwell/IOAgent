@@ -424,12 +424,23 @@ class IOAgent {
         try {
             this.showLoading(`Uploading ${file.name}...`);
             
+            console.log(`Uploading to: ${this.apiBase}/projects/${this.currentProject.id}/upload`);
+            console.log(`File size: ${file.size} bytes`);
+            
             const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/upload`, {
                 method: 'POST',
                 body: formData
             });
 
+            console.log(`Response status: ${response.status}`);
+            console.log(`Response headers:`, response.headers);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
+            console.log('Upload response:', data);
 
             if (data.success) {
                 this.showAlert(`File ${file.name} uploaded successfully`, 'success');
@@ -438,7 +449,7 @@ class IOAgent {
             }
         } catch (error) {
             console.error('Error uploading file:', error);
-            this.showAlert(`Error uploading ${file.name}`, 'danger');
+            this.showAlert(`Error uploading ${file.name}: ${error.message}`, 'danger');
         } finally {
             this.hideLoading();
         }
