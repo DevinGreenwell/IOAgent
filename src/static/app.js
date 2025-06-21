@@ -686,12 +686,21 @@ class IOAgent {
             return;
         }
         
+        // Reset the modal for adding new entry
+        this.resetTimelineModal();
+        document.getElementById('addTimelineForm').reset();
+        
         const modal = new bootstrap.Modal(document.getElementById('addTimelineModal'));
         modal.show();
     }
 
     async addTimelineEntry() {
         if (!this.currentProject) return;
+
+        // Check if we're editing an existing entry
+        if (this.editingEntryId) {
+            return this.updateTimelineEntry();
+        }
 
         const timestampEl = document.getElementById('entryTimestamp');
         const typeEl = document.getElementById('entryType');
@@ -788,6 +797,9 @@ class IOAgent {
                     </h6>
                     <div>
                         <span class="badge bg-secondary">${entry.type.toUpperCase()}</span>
+                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="app.editTimelineEntry('${entry.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
                         <button class="btn btn-sm btn-outline-danger ms-2" onclick="app.deleteTimelineEntry('${entry.id}')">
                             <i class="fas fa-trash"></i>
                         </button>
@@ -837,6 +849,119 @@ class IOAgent {
         } finally {
             this.hideLoading();
         }
+    }
+
+    editTimelineEntry(entryId) {
+        // Find the entry to edit
+        const entry = this.currentProject.timeline.find(e => e.id === entryId);
+        if (!entry) {
+            this.showAlert('Timeline entry not found', 'danger');
+            return;
+        }
+
+        // Populate the form with existing data
+        document.getElementById('entryTimestamp').value = entry.timestamp ? 
+            new Date(entry.timestamp).toISOString().slice(0, 16) : '';
+        document.getElementById('entryType').value = entry.type || '';
+        document.getElementById('entryDescription').value = entry.description || '';
+        document.getElementById('entryConfidence').value = entry.confidence_level || 'medium';
+        document.getElementById('isInitiatingEvent').checked = entry.is_initiating_event || false;
+        document.getElementById('entryAssumptions').value = entry.assumptions ? 
+            entry.assumptions.join('\n') : '';
+
+        // Store the entry ID for updating
+        this.editingEntryId = entryId;
+
+        // Change modal title and button text
+        const modalTitle = document.querySelector('#addTimelineModal .modal-title');
+        const submitBtn = document.querySelector('#addTimelineModal .btn-primary');
+        if (modalTitle) modalTitle.textContent = 'Edit Timeline Entry';
+        if (submitBtn) submitBtn.textContent = 'Update Entry';
+
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('addTimelineModal'));
+        modal.show();
+    }
+
+    async updateTimelineEntry() {
+        if (!this.currentProject || !this.editingEntryId) return;
+
+        const timestampEl = document.getElementById('entryTimestamp');
+        const typeEl = document.getElementById('entryType');
+        const descriptionEl = document.getElementById('entryDescription');
+        const confidenceEl = document.getElementById('entryConfidence');
+        const initiatingEl = document.getElementById('isInitiatingEvent');
+        const assumptionsEl = document.getElementById('entryAssumptions');
+
+        if (!timestampEl || !typeEl || !descriptionEl) {
+            this.showAlert('Form elements not found', 'danger');
+            return;
+        }
+
+        const entryData = {
+            timestamp: timestampEl.value,
+            type: typeEl.value,
+            description: descriptionEl.value,
+            confidence_level: confidenceEl?.value || 'medium',
+            is_initiating_event: initiatingEl?.checked || false,
+            assumptions: assumptionsEl?.value.split('\n').filter(a => a.trim()) || []
+        };
+
+        if (!entryData.timestamp || !entryData.type || !entryData.description) {
+            this.showAlert('Please fill in all required fields', 'warning');
+            return;
+        }
+
+        try {
+            this.showLoading('Updating timeline entry...');
+            
+            const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/timeline/${this.editingEntryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(entryData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                const modalEl = document.getElementById('addTimelineModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                
+                // Reset form and editing state
+                document.getElementById('addTimelineForm').reset();
+                this.resetTimelineModal();
+                this.editingEntryId = null;
+                
+                this.showAlert('Timeline entry updated successfully', 'success');
+                
+                // Reload project data to get updated timeline
+                await this.openProject(this.currentProject.id);
+                this.loadTimeline();
+            } else {
+                throw new Error(data.error || 'Failed to update timeline entry');
+            }
+        } catch (error) {
+            console.error('Error updating timeline entry:', error);
+            this.showAlert('Error updating timeline entry: ' + error.message, 'danger');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    resetTimelineModal() {
+        // Reset modal title and button text
+        const modalTitle = document.querySelector('#addTimelineModal .modal-title');
+        const submitBtn = document.querySelector('#addTimelineModal .btn-primary');
+        if (modalTitle) modalTitle.textContent = 'Add Timeline Entry';
+        if (submitBtn) submitBtn.textContent = 'Add Entry';
+        this.editingEntryId = null;
     }
 
     async runCausalAnalysis() {

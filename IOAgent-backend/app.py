@@ -129,87 +129,7 @@ def handle_internal_error(e):
 app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(user_bp, url_prefix='/api')
 
-# File upload endpoint
-@app.route('/api/projects/<project_id>/upload', methods=['POST'])
-def upload_file(project_id):
-    """Handle file uploads for a project"""
-    try:
-        # Check if project exists (you'll need to implement this)
-        # project = Project.query.get(project_id)
-        # if not project:
-        #     return jsonify({'success': False, 'error': 'Project not found'}), 404
-        
-        # Check if file is in request
-        if 'file' not in request.files:
-            return jsonify({'success': False, 'error': 'No file provided'}), 400
-        
-        file = request.files['file']
-        
-        # Check if file is selected
-        if file.filename == '':
-            return jsonify({'success': False, 'error': 'No file selected'}), 400
-        
-        # Validate file
-        if not allowed_file(file.filename):
-            return jsonify({
-                'success': False, 
-                'error': f'File type not allowed. Allowed types: {", ".join(ALLOWED_EXTENSIONS.keys())}'
-            }), 400
-        
-        # Generate unique filename
-        original_filename = file.filename
-        unique_filename = generate_unique_filename(original_filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        
-        # Create project-specific subfolder
-        project_folder = os.path.join(app.config['UPLOAD_FOLDER'], f'project_{project_id}')
-        os.makedirs(project_folder, exist_ok=True)
-        filepath = os.path.join(project_folder, unique_filename)
-        
-        # Save file
-        file.save(filepath)
-        logger.info(f"File saved: {filepath}")
-        
-        # Get additional metadata from request
-        description = request.form.get('description', f'Uploaded file: {original_filename}')
-        file_type = request.form.get('type', get_file_type(original_filename))
-        source = request.form.get('source', 'user_upload')
-        
-        # Here you would typically:
-        # 1. Create an Evidence record in the database
-        # 2. Associate it with the project
-        # 3. Store metadata like file size, upload time, etc.
-        
-        # For now, return success with file info
-        file_info = {
-            'id': secrets.token_urlsafe(16),  # Generate a unique ID
-            'filename': original_filename,
-            'stored_filename': unique_filename,
-            'description': description,
-            'type': file_type,
-            'source': source,
-            'size': os.path.getsize(filepath),
-            'uploaded_at': datetime.now().isoformat(),
-            'project_id': project_id
-        }
-        
-        return jsonify({
-            'success': True,
-            'file': file_info,
-            'message': f'File {original_filename} uploaded successfully'
-        }), 200
-        
-    except RequestEntityTooLarge:
-        return jsonify({
-            'success': False,
-            'error': 'File too large. Maximum file size is 16MB.'
-        }), 413
-    except Exception as e:
-        logger.error(f"Error uploading file: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': f'Error uploading file: {str(e)}'
-        }), 500
+# Note: File upload endpoint is handled by api_bp blueprint in src/routes/api.py
 
 # File download endpoint
 @app.route('/api/projects/<project_id>/download/<filename>', methods=['GET'])
@@ -326,6 +246,62 @@ def add_timeline_entry(project_id):
         return jsonify({
             'success': False,
             'error': f'Error adding timeline entry: {str(e)}'
+        }), 500
+
+# Update timeline entry endpoint
+@app.route('/api/projects/<project_id>/timeline/<entry_id>', methods=['PUT'])
+def update_timeline_entry(project_id, entry_id):
+    """Update an existing timeline entry"""
+    try:
+        # Get JSON data from request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        # Validate timestamp format if provided
+        if 'timestamp' in data:
+            try:
+                from datetime import datetime
+                datetime.fromisoformat(data['timestamp'])
+            except (ValueError, TypeError):
+                return jsonify({
+                    'success': False, 
+                    'error': 'Invalid timestamp format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'
+                }), 400
+        
+        # Here you would typically:
+        # 1. Check if the timeline entry exists in the database
+        # 2. Update the entry with the new data
+        # 3. Save to database
+        
+        # For now, simulate successful update
+        updated_entry = {
+            'id': entry_id,
+            'timestamp': data.get('timestamp'),
+            'type': data.get('type', '')[:50] if data.get('type') else '',
+            'description': data.get('description', '')[:1000] if data.get('description') else '',
+            'confidence_level': data.get('confidence_level', 'medium'),
+            'is_initiating_event': data.get('is_initiating_event', False),
+            'assumptions': data.get('assumptions', []),
+            'evidence_ids': data.get('evidence_ids', []),
+            'personnel_involved': data.get('personnel_involved', []),
+            'updated_at': datetime.now().isoformat(),
+            'project_id': project_id
+        }
+        
+        logger.info(f"Timeline entry updated for project {project_id}: {entry_id}")
+        
+        return jsonify({
+            'success': True,
+            'entry': updated_entry,
+            'message': 'Timeline entry updated successfully'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error updating timeline entry: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error updating timeline entry: {str(e)}'
         }), 500
 
 # Delete timeline entry endpoint
