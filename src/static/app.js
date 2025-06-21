@@ -258,11 +258,16 @@ class IOAgent {
                 document.getElementById('createProjectForm').reset();
                 this.showAlert('Project created successfully', 'success');
                 
+                // Hide loading first, then load dashboard and open project
+                this.hideLoading();
+                this.creatingProject = false;
+                
                 // Add a small delay to ensure project is fully saved before opening
                 setTimeout(() => {
                     this.loadDashboard();
                     this.openProject(data.project.id);
                 }, 100);
+                return; // Exit early to avoid the finally block
             } else {
                 this.showAlert(data.error || 'Failed to create project', 'danger');
             }
@@ -698,9 +703,25 @@ class IOAgent {
     }
 
     hideLoading() {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('loadingModal'));
-        if (modal) {
-            modal.hide();
+        try {
+            const modalElement = document.getElementById('loadingModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            } else {
+                // If no modal instance, remove backdrop and classes manually
+                modalElement.classList.remove('show');
+                modalElement.style.display = 'none';
+                document.body.classList.remove('modal-open');
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
+            }
+        } catch (error) {
+            console.error('Error hiding loading modal:', error);
+            // Force remove modal elements if there's an error
+            document.body.classList.remove('modal-open');
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
         }
     }
 
