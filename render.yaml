@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ioagent
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r IOAgent-backend/requirements.txt
+    startCommand: cd IOAgent-backend && python app.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        value: bFecBfKDmkpK0k0qoxcpugXS7aSfRxJUbGUCSyt3Yz0
+      - key: JWT_SECRET_KEY
+        value: BlXZXyhPV-C8VRuaaLp7BEjKF8sX4c9lhsLJGFbpq0o
+      - key: PROD_CORS_ORIGINS
+        value: https://ioagent.onrender.com
+      - key: PYTHON_VERSION
+        value: 3.11.0

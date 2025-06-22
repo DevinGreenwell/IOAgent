@@ -25,6 +25,13 @@ pip install -r IOAgent-backend/requirements.txt
 cd IOAgent-backend && python app.py
 ```
 
+**Python Version:**
+```
+3.11.0
+```
+
+⚠️ **IMPORTANT**: Make sure your Render service is configured exactly as shown below.
+
 ### 3. Database Initialization
 
 Add this to your build command or run once after deployment:
