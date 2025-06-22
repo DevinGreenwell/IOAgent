@@ -71,16 +71,15 @@ logger.info(f"Upload folder created/verified at: {UPLOAD_FOLDER}")
 def get_cors_origins():
     """Get CORS origins based on environment"""
     if os.environ.get('FLASK_ENV') == 'production':
-        # Production: Only allow specific production domains
-        production_origins = os.environ.get('PROD_CORS_ORIGINS', 'https://ioagent.onrender.com').split(',')
-        return [origin.strip() for origin in production_origins if origin.strip()]
+        # Production: Only allow the actual production domain
+        return ['https://ioagent.onrender.com']
     else:
         # Development: Allow localhost and specified domains
-        dev_origins = os.environ.get(
-            'DEV_CORS_ORIGINS', 
-            'http://localhost:3000,http://127.0.0.1:5000,http://localhost:5000'
-        ).split(',')
-        return [origin.strip() for origin in dev_origins if origin.strip()]
+        return [
+            'http://localhost:3000',
+            'http://127.0.0.1:5000',
+            'http://localhost:5000'
+        ]
 
 cors_origins = get_cors_origins()
 logger.info(f"CORS origins configured: {cors_origins}")

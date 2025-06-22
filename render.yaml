@@ -10,9 +10,9 @@ services:
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
-        value: bFecBfKDmkpK0k0qoxcpugXS7aSfRxJUbGUCSyt3Yz0
+        generateValue: true
       - key: JWT_SECRET_KEY
-        value: BlXZXyhPV-C8VRuaaLp7BEjKF8sX4c9lhsLJGFbpq0o
+        generateValue: true
       - key: PROD_CORS_ORIGINS
         value: https://ioagent.onrender.com
       - key: PYTHON_VERSION

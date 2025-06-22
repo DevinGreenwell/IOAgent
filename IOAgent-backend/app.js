@@ -274,48 +274,44 @@ class IOAgent {
 
     // Helper method to make authenticated API calls
     async makeAuthenticatedRequest(url, options = {}) {
-        // Demo mode: show alert instead of making real API calls
-        if (this.accessToken === 'demo-token') {
-            console.log('Demo mode: API call to', url);
-            this.showAlert('Demo Mode: API calls are disabled. Please login with real credentials to access backend features.', 'info');
-            return { 
-                json: () => Promise.resolve({ 
-                    success: false, 
-                    error: 'Demo mode - authentication required for backend access',
-                    projects: []
-                })
-            };
-        }
-
         const headers = {
-            'Content-Type': 'application/json',
             ...options.headers
         };
 
-        if (this.accessToken) {
-            headers['Authorization'] = `Bearer ${this.accessToken}`;
+        // Don't set Content-Type for FormData - let browser set it with boundary
+        if (!(options.body instanceof FormData)) {
+            headers['Content-Type'] = 'application/json';
         }
 
-        const response = await fetch(url, {
-            ...options,
-            headers
-        });
-
-        // Handle token expiration - but be more careful
-        if (response.status === 401) {
-            console.log('Got 401 response, but checking if we should logout');
-            // Only logout if this isn't the initial token validation
-            if (url.includes('/auth/me')) {
-                console.log('Token validation failed, logging out');
-                this.logout();
-            } else {
-                console.log('API call failed with 401, showing error message');
-                this.showAlert('Authentication error. You may need to login again.', 'warning');
-            }
+        // Always add Authorization header if token exists
+        if (this.accessToken) {
+            headers['Authorization'] = `Bearer ${this.accessToken}`;
+        } else {
+            // No token, redirect to login
+            console.log('No access token, redirecting to login');
+            this.logout();
             throw new Error('Authentication required');
         }
 
-        return response;
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            // Handle 401 responses
+            if (response.status === 401) {
+                console.log('401 Unauthorized - token may be expired');
+                // Clear stored auth and redirect to login
+                this.logout();
+                throw new Error('Authentication required');
+            }
+
+            return response;
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
     }
 
     setupEventListeners() {
@@ -329,25 +325,97 @@ class IOAgent {
         });
 
         // Project info form
-        document.getElementById('projectInfoForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveProjectInfo();
-        });
+        const projectInfoForm = document.getElementById('projectInfoForm');
+        if (projectInfoForm) {
+            projectInfoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveProjectInfo();
+            });
+        }
 
         // Create project form
-        document.getElementById('createProjectForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.createProject();
-        });
+        const createProjectForm = document.getElementById('createProjectForm');
+        if (createProjectForm) {
+            createProjectForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createProject();
+            });
+        }
 
         // Timeline form
-        document.getElementById('addTimelineForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addTimelineEntry();
-        });
+        const addTimelineForm = document.getElementById('addTimelineForm');
+        if (addTimelineForm) {
+            addTimelineForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.addTimelineEntry();
+            });
+        }
 
+        // Main action buttons
+        this.setupMainButtonListeners();
+        
         // Button event listeners to replace onclick attributes
         this.setupButtonListeners();
+    }
+
+    setupMainButtonListeners() {
+        // Logout button
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.logout());
+        }
+
+        // New project button
+        const newProjectBtn = document.getElementById('newProjectBtn');
+        if (newProjectBtn) {
+            newProjectBtn.addEventListener('click', () => this.showCreateProjectModal());
+        }
+
+        // Upload evidence button
+        const uploadEvidenceBtn = document.getElementById('uploadEvidenceBtn');
+        if (uploadEvidenceBtn) {
+            uploadEvidenceBtn.addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+        }
+
+        // Upload area
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.addEventListener('click', () => {
+                document.getElementById('fileInput').click();
+            });
+        }
+
+        // Add timeline button
+        const addTimelineBtn = document.getElementById('addTimelineBtn');
+        if (addTimelineBtn) {
+            addTimelineBtn.addEventListener('click', () => this.showAddTimelineModal());
+        }
+
+        // Run analysis button
+        const runAnalysisBtn = document.getElementById('runAnalysisBtn');
+        if (runAnalysisBtn) {
+            runAnalysisBtn.addEventListener('click', () => this.runCausalAnalysis());
+        }
+
+        // Generate ROI button
+        const generateROIBtn = document.getElementById('generateROIBtn');
+        if (generateROIBtn) {
+            generateROIBtn.addEventListener('click', () => this.generateROI());
+        }
+
+        // Check readiness button
+        const checkReadinessBtn = document.getElementById('checkReadinessBtn');
+        if (checkReadinessBtn) {
+            checkReadinessBtn.addEventListener('click', () => this.checkReadiness());
+        }
+
+        // Close project button
+        const closeProjectBtn = document.getElementById('closeProjectBtn');
+        if (closeProjectBtn) {
+            closeProjectBtn.addEventListener('click', () => this.closeProject());
+        }
     }
 
     setupButtonListeners() {
@@ -476,15 +544,24 @@ class IOAgent {
     async loadDashboard() {
         try {
             const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
 
             if (data.success) {
                 this.displayProjects(data.projects);
                 this.updateDashboardStats(data.projects);
+            } else {
+                throw new Error(data.error || 'Failed to load projects');
             }
         } catch (error) {
             console.error('Error loading dashboard:', error);
-            this.showAlert('Error loading projects', 'danger');
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error loading projects: ' + error.message, 'danger');
+            }
         }
     }
 
@@ -502,10 +579,10 @@ class IOAgent {
         }
 
         projectsList.innerHTML = projects.map(project => `
-            <div class="project-card" onclick="app.openProject('${project.id}')">
+            <div class="project-card" data-project-id="${project.id}">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h5 class="mb-2">${project.title}</h5>
+                        <h5 class="mb-2">${this.escapeHtml(project.title)}</h5>
                         <p class="text-muted mb-2">
                             <i class="fas fa-calendar me-2"></i>
                             Created: ${new Date(project.created_at).toLocaleDateString()}
@@ -521,6 +598,14 @@ class IOAgent {
                 </div>
             </div>
         `).join('');
+
+        // Add click handlers to project cards
+        projectsList.querySelectorAll('.project-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const projectId = card.dataset.projectId;
+                this.openProject(projectId);
+            });
+        });
     }
 
     updateDashboardStats(projects) {
@@ -592,34 +677,31 @@ class IOAgent {
 
     async openProject(projectId) {
         try {
-            console.log('Starting openProject for ID:', projectId);
+            console.log('Opening project:', projectId);
             this.showLoading('Loading project...');
             
-            console.log('Making fetch request to:', `${this.apiBase}/projects/${projectId}`);
-            const response = await fetch(`${this.apiBase}/projects/${projectId}`);
-            console.log('Fetch response received:', response.status, response.statusText);
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${projectId}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             
             const data = await response.json();
-            console.log('JSON data parsed:', data);
 
             if (data.success) {
-                console.log('Setting currentProject');
                 this.currentProject = data.project;
-                console.log('Calling updateCurrentProjectDisplay');
                 this.updateCurrentProjectDisplay();
-                console.log('Calling showSection');
                 this.showSection('project-info');
-                console.log('Showing success alert');
                 this.showAlert('Project loaded successfully', 'success');
             } else {
-                console.log('API returned error:', data.error);
-                this.showAlert(data.error || 'Failed to load project', 'danger');
+                throw new Error(data.error || 'Failed to load project');
             }
         } catch (error) {
             console.error('Error loading project:', error);
-            this.showAlert('Error loading project: ' + error.message, 'danger');
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error loading project: ' + error.message, 'danger');
+            }
         } finally {
-            console.log('Hiding loading in finally block');
             this.hideLoading();
         }
     }
@@ -655,29 +737,33 @@ class IOAgent {
     }
 
     async saveProjectInfo() {
-        if (!this.currentProject) return;
+        if (!this.currentProject) {
+            this.showAlert('No project selected', 'warning');
+            return;
+        }
 
         const formData = {
-            title: document.getElementById('projectTitleInput').value,
-            investigating_officer: document.getElementById('investigatingOfficer').value,
-            status: document.getElementById('projectStatus').value,
+            title: document.getElementById('projectTitleInput')?.value || '',
+            investigating_officer: document.getElementById('investigatingOfficer')?.value || '',
+            status: document.getElementById('projectStatus')?.value || 'draft',
             incident_info: {
-                incident_date: document.getElementById('incidentDate').value,
-                location: document.getElementById('incidentLocation').value,
-                incident_type: document.getElementById('incidentType').value
+                incident_date: document.getElementById('incidentDate')?.value || '',
+                location: document.getElementById('incidentLocation')?.value || '',
+                incident_type: document.getElementById('incidentType')?.value || ''
             }
         };
 
         try {
             this.showLoading('Saving project...');
             
-            const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}`, {
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify(formData)
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
 
@@ -686,11 +772,13 @@ class IOAgent {
                 this.updateCurrentProjectDisplay();
                 this.showAlert('Project information saved successfully', 'success');
             } else {
-                this.showAlert(data.error || 'Failed to save project', 'danger');
+                throw new Error(data.error || 'Failed to save project');
             }
         } catch (error) {
             console.error('Error saving project:', error);
-            this.showAlert('Error saving project', 'danger');
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error saving project: ' + error.message, 'danger');
+            }
         } finally {
             this.hideLoading();
         }
@@ -719,10 +807,14 @@ class IOAgent {
         try {
             this.showLoading(`Uploading ${file.name}...`);
             
-            const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/upload`, {
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/upload`, {
                 method: 'POST',
                 body: formData
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
 
@@ -733,7 +825,9 @@ class IOAgent {
             }
         } catch (error) {
             console.error('Error uploading file:', error);
-            this.showAlert(`Error uploading ${file.name}`, 'danger');
+            if (error.message !== 'Authentication required') {
+                this.showAlert(`Error uploading ${file.name}: ${error.message}`, 'danger');
+            }
         } finally {
             this.hideLoading();
         }
@@ -758,15 +852,33 @@ class IOAgent {
         evidenceList.innerHTML = evidence.map(item => `
             <div class="evidence-item">
                 <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h6><i class="fas fa-file me-2"></i>${item.filename}</h6>
-                        <p class="mb-1">${item.description}</p>
-                        <small class="text-muted">Type: ${item.type} | Source: ${item.source}</small>
+                    <div class="flex-grow-1">
+                        <h6><i class="${this.getFileIcon(item.type)} me-2"></i>${this.escapeHtml(item.filename)}</h6>
+                        <p class="mb-1">${this.escapeHtml(item.description)}</p>
+                        <small class="text-muted">
+                            Type: ${this.escapeHtml(item.type)} | 
+                            Source: ${this.escapeHtml(item.source)} | 
+                            Uploaded: ${new Date(item.uploaded_at || Date.now()).toLocaleString()}
+                        </small>
                     </div>
-                    <span class="badge bg-primary">${item.reliability}</span>
+                    <div class="ms-3">
+                        <span class="badge bg-primary">${this.escapeHtml(item.reliability || 'Unrated')}</span>
+                        <button class="btn btn-sm btn-outline-danger ms-2 btn-delete-evidence" data-evidence-id="${item.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         `).join('');
+
+        // Add event listeners for delete buttons
+        evidenceList.querySelectorAll('.btn-delete-evidence').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const evidenceId = btn.dataset.evidenceId;
+                this.deleteEvidence(evidenceId);
+            });
+        });
     }
 
     showAddTimelineModal() {
@@ -799,13 +911,14 @@ class IOAgent {
         try {
             this.showLoading('Adding timeline entry...');
             
-            const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/timeline`, {
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/timeline`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify(entryData)
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
 
@@ -815,18 +928,16 @@ class IOAgent {
                 this.showAlert('Timeline entry added successfully', 'success');
                 
                 // Reload project data to get updated timeline
-                const projectResponse = await fetch(`${this.apiBase}/projects/${this.currentProject.id}`);
-                const projectData = await projectResponse.json();
-                if (projectData.success) {
-                    this.currentProject = projectData.project;
-                    this.loadTimeline();
-                }
+                await this.openProject(this.currentProject.id);
+                this.loadTimeline();
             } else {
-                this.showAlert(data.error || 'Failed to add timeline entry', 'danger');
+                throw new Error(data.error || 'Failed to add timeline entry');
             }
         } catch (error) {
             console.error('Error adding timeline entry:', error);
-            this.showAlert('Error adding timeline entry', 'danger');
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error adding timeline entry: ' + error.message, 'danger');
+            }
         } finally {
             this.hideLoading();
         }
@@ -858,12 +969,20 @@ class IOAgent {
                         ${new Date(entry.timestamp).toLocaleString()}
                         ${entry.is_initiating_event ? '<span class="badge bg-danger ms-2">Initiating Event</span>' : ''}
                     </h6>
-                    <span class="badge bg-secondary">${entry.type.toUpperCase()}</span>
+                    <div>
+                        <span class="badge bg-secondary">${entry.type.toUpperCase()}</span>
+                        <button class="btn btn-sm btn-outline-primary ms-2 btn-edit-timeline" data-entry-id="${entry.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger ms-2 btn-delete-timeline" data-entry-id="${entry.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
-                <p class="mb-2">${entry.description}</p>
+                <p class="mb-2">${this.escapeHtml(entry.description)}</p>
                 ${entry.assumptions && entry.assumptions.length > 0 ? `
                     <div class="small text-muted">
-                        <strong>Assumptions:</strong> ${entry.assumptions.join(', ')}
+                        <strong>Assumptions:</strong> ${entry.assumptions.map(a => this.escapeHtml(a)).join(', ')}
                     </div>
                 ` : ''}
                 <div class="small text-muted">
@@ -871,6 +990,23 @@ class IOAgent {
                 </div>
             </div>
         `).join('');
+
+        // Add event listeners for timeline action buttons
+        timelineList.querySelectorAll('.btn-edit-timeline').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const entryId = btn.dataset.entryId;
+                this.editTimelineEntry(entryId);
+            });
+        });
+
+        timelineList.querySelectorAll('.btn-delete-timeline').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const entryId = btn.dataset.entryId;
+                this.deleteTimelineEntry(entryId);
+            });
+        });
     }
 
     async runCausalAnalysis() {
@@ -887,9 +1023,13 @@ class IOAgent {
         try {
             this.showLoading('Running causal analysis...');
             
-            const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/causal-analysis`, {
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/causal-analysis`, {
                 method: 'POST'
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
 
@@ -897,18 +1037,16 @@ class IOAgent {
                 this.showAlert('Causal analysis completed successfully', 'success');
                 
                 // Reload project data to get updated causal factors
-                const projectResponse = await fetch(`${this.apiBase}/projects/${this.currentProject.id}`);
-                const projectData = await projectResponse.json();
-                if (projectData.success) {
-                    this.currentProject = projectData.project;
-                    this.loadAnalysis();
-                }
+                await this.openProject(this.currentProject.id);
+                this.loadAnalysis();
             } else {
-                this.showAlert(data.error || 'Failed to run causal analysis', 'danger');
+                throw new Error(data.error || 'Failed to run causal analysis');
             }
         } catch (error) {
             console.error('Error running causal analysis:', error);
-            this.showAlert('Error running causal analysis', 'danger');
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error running causal analysis: ' + error.message, 'danger');
+            }
         } finally {
             this.hideLoading();
         }
@@ -958,9 +1096,13 @@ class IOAgent {
         try {
             this.showLoading('Generating ROI document...');
             
-            const response = await fetch(`${this.apiBase}/projects/${this.currentProject.id}/generate-roi`, {
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/generate-roi`, {
                 method: 'POST'
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
 
@@ -969,23 +1111,27 @@ class IOAgent {
                 
                 // Add download link
                 const generatedDocs = document.getElementById('generatedDocs');
-                generatedDocs.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6>ROI Document</h6>
-                            <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
+                if (generatedDocs) {
+                    generatedDocs.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6>ROI Document</h6>
+                                <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
+                            </div>
+                            <a href="${data.download_url}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-download me-2"></i>Download
+                            </a>
                         </div>
-                        <a href="${data.download_url}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-download me-2"></i>Download
-                        </a>
-                    </div>
-                `;
+                    `;
+                }
             } else {
-                this.showAlert(data.error || 'Failed to generate ROI', 'danger');
+                throw new Error(data.error || 'Failed to generate ROI');
             }
         } catch (error) {
             console.error('Error generating ROI:', error);
-            this.showAlert('Error generating ROI', 'danger');
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error generating ROI: ' + error.message, 'danger');
+            }
         } finally {
             this.hideLoading();
         }

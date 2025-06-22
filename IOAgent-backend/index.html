@@ -280,7 +280,7 @@
                 <span class="navbar-text text-white me-3" id="userInfo" style="display: none;">
                     Welcome, <span id="currentUser"></span>
                 </span>
-                <button class="btn btn-outline-light btn-sm" id="logoutBtn" style="display: none;" onclick="logout()">
+                <button class="btn btn-outline-light btn-sm" id="logoutBtn" style="display: none;">
                     <i class="fas fa-sign-out-alt me-1"></i>Logout
                 </button>
                 <span class="navbar-text text-white" id="appTitle">
@@ -444,7 +444,7 @@
                         <h6>Current Project</h6>
                         <div class="small text-muted" id="projectTitle">No project selected</div>
                         <div class="small text-muted" id="projectStatus"></div>
-                        <button class="btn btn-outline-primary btn-sm mt-2" onclick="closeProject()">
+                        <button class="btn btn-outline-primary btn-sm mt-2" id="closeProjectBtn">
                             <i class="fas fa-times me-1"></i>Close
                         </button>
                     </div>
@@ -458,7 +458,7 @@
                     <div id="dashboard-section" class="content-section">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
-                            <button class="btn btn-primary" onclick="showCreateProjectModal()">
+                            <button class="btn btn-primary" id="newProjectBtn">
                                 <i class="fas fa-plus me-2"></i>New Investigation
                             </button>
                         </div>
@@ -568,16 +568,16 @@
                     <div id="evidence-section" class="content-section" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2><i class="fas fa-folder-open me-2"></i>Evidence Management</h2>
-                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            <button class="btn btn-primary" id="uploadEvidenceBtn">
                                 <i class="fas fa-upload me-2"></i>Upload Evidence
                             </button>
                         </div>
 
-                        <div class="upload-area mb-4" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-area mb-4" id="uploadArea">
                             <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                             <h5>Drop files here or click to upload</h5>
                             <p class="text-muted">Supported formats: PDF, DOCX, images, videos, audio files</p>
-                            <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileUpload(event)">
+                            <input type="file" id="fileInput" multiple style="display: none;">
                         </div>
 
                         <div id="evidenceList">
@@ -592,7 +592,7 @@
                     <div id="timeline-section" class="content-section" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2><i class="fas fa-clock me-2"></i>Timeline Builder</h2>
-                            <button class="btn btn-primary" onclick="showAddTimelineModal()">
+                            <button class="btn btn-primary" id="addTimelineBtn">
                                 <i class="fas fa-plus me-2"></i>Add Entry
                             </button>
                         </div>
@@ -619,7 +619,7 @@
                     <div id="analysis-section" class="content-section" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2><i class="fas fa-search me-2"></i>Causal Analysis</h2>
-                            <button class="btn btn-primary" onclick="runCausalAnalysis()">
+                            <button class="btn btn-primary" id="runAnalysisBtn">
                                 <i class="fas fa-cogs me-2"></i>Run Analysis
                             </button>
                         </div>
@@ -648,7 +648,7 @@
                     <div id="roi-generator-section" class="content-section" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2><i class="fas fa-file-alt me-2"></i>ROI Generator</h2>
-                            <button class="btn btn-primary" onclick="generateROI()">
+                            <button class="btn btn-primary" id="generateROIBtn">
                                 <i class="fas fa-file-download me-2"></i>Generate ROI
                             </button>
                         </div>
@@ -683,7 +683,7 @@
                                                 <span id="checkAnalysis" class="badge bg-secondary">Not checked</span>
                                             </div>
                                         </div>
-                                        <button class="btn btn-outline-primary btn-sm mt-3" onclick="checkReadiness()">
+                                        <button class="btn btn-outline-primary btn-sm mt-3" id="checkReadinessBtn">
                                             <i class="fas fa-sync me-2"></i>Check Readiness
                                         </button>
                                     </div>
