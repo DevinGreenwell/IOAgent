@@ -59,7 +59,9 @@ class IOAgent {
         
         // Only load dashboard if we have a real token, not demo mode
         if (this.accessToken !== 'demo-token') {
-            this.validateTokenAndLoadDashboard();
+            // For now, skip token validation and try loading dashboard directly
+            console.log('Loading dashboard with token...');
+            this.loadDashboard();
         } else {
             // Demo mode - show empty dashboard
             this.displayProjects([]);
@@ -71,6 +73,8 @@ class IOAgent {
 
     async validateTokenAndLoadDashboard() {
         try {
+            console.log('Validating token:', this.accessToken ? this.accessToken.substring(0, 20) + '...' : 'No token');
+            
             // Test the token with a simple API call first
             const response = await fetch(`${this.apiBase}/auth/me`, {
                 headers: {
@@ -79,15 +83,27 @@ class IOAgent {
                 }
             });
 
+            console.log('Token validation response status:', response.status);
+            
             if (response.ok) {
-                console.log('Token is valid, loading dashboard');
+                const userData = await response.json();
+                console.log('Token is valid, user data:', userData);
                 this.loadDashboard();
             } else {
-                console.log('Token invalid, redirecting to login');
-                this.logout();
+                const errorData = await response.text();
+                console.log('Token validation failed:', response.status, errorData);
+                
+                // Try to load dashboard anyway and see what happens
+                console.log('Attempting to load dashboard despite token validation failure...');
+                try {
+                    await this.loadDashboard();
+                } catch (dashboardError) {
+                    console.log('Dashboard load failed, logging out');
+                    this.logout();
+                }
             }
         } catch (error) {
-            console.error('Token validation failed:', error);
+            console.error('Token validation network error:', error);
             this.showAlert('Connection error. Please check your internet connection.', 'warning');
             // Don't logout on network errors, just show empty dashboard
             this.displayProjects([]);
@@ -138,7 +154,13 @@ class IOAgent {
                 this.showAuthMessage('Login successful!', 'success');
                 setTimeout(() => this.showMainApp(), 1000);
             } else {
-                this.showAuthMessage(data.error || 'Login failed', 'error');
+                // If login fails and we're trying admin credentials, try to bootstrap
+                if (username === 'admin' && data.error?.includes('Invalid credentials')) {
+                    this.showAuthMessage('Creating admin user...', 'info');
+                    await this.bootstrapAdminUser();
+                } else {
+                    this.showAuthMessage(data.error || 'Login failed', 'error');
+                }
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -186,6 +208,34 @@ class IOAgent {
         } catch (error) {
             console.error('Registration error:', error);
             this.showAuthMessage('Connection error. Please try again.', 'error');
+        }
+    }
+
+    async bootstrapAdminUser() {
+        try {
+            const response = await fetch(`${this.apiBase}/auth/bootstrap`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                this.showAuthMessage('Admin user created! Trying login again...', 'success');
+                setTimeout(() => {
+                    // Auto-fill and try login again
+                    document.getElementById('loginUsername').value = 'admin';
+                    document.getElementById('loginPassword').value = 'AdminPass123!';
+                    this.login();
+                }, 2000);
+            } else {
+                this.showAuthMessage(data.error || 'Failed to create admin user', 'error');
+            }
+        } catch (error) {
+            console.error('Bootstrap error:', error);
+            this.showAuthMessage('Failed to create admin user', 'error');
         }
     }
 

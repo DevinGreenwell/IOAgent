@@ -232,3 +232,34 @@ def refresh_token():
     except Exception as e:
         current_app.logger.error(f"Error refreshing token: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to refresh token'}), 500
+
+@auth_bp.route('/bootstrap', methods=['POST'])
+def bootstrap_admin():
+    """Create admin user if no users exist"""
+    try:
+        # Check if any users exist
+        user_count = User.query.count()
+        if user_count > 0:
+            return jsonify({'success': False, 'error': 'Users already exist'}), 409
+        
+        # Create admin user
+        admin = User(
+            username='admin',
+            email='admin@ioagent.onrender.com',
+            role='admin'
+        )
+        admin.set_password('AdminPass123!')
+        
+        db.session.add(admin)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Admin user created successfully',
+            'username': 'admin'
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error creating admin user: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to create admin user'}), 500
