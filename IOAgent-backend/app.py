@@ -55,11 +55,23 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 logger.info(f"Upload folder created/verified at: {UPLOAD_FOLDER}")
 
-# Configure CORS
-cors_origins = os.environ.get(
-    'CORS_ORIGINS', 
-    'http://localhost:3000,http://127.0.0.1:5000,http://localhost:5000,https://devingreenwell.github.io'
-).split(',')
+# Configure CORS securely
+def get_cors_origins():
+    """Get CORS origins based on environment"""
+    if os.environ.get('FLASK_ENV') == 'production':
+        # Production: Only allow specific production domains
+        production_origins = os.environ.get('PROD_CORS_ORIGINS', 'https://ioagent.onrender.com').split(',')
+        return [origin.strip() for origin in production_origins if origin.strip()]
+    else:
+        # Development: Allow localhost and specified domains
+        dev_origins = os.environ.get(
+            'DEV_CORS_ORIGINS', 
+            'http://localhost:3000,http://127.0.0.1:5000,http://localhost:5000'
+        ).split(',')
+        return [origin.strip() for origin in dev_origins if origin.strip()]
+
+cors_origins = get_cors_origins()
+logger.info(f"CORS origins configured: {cors_origins}")
 CORS(app, origins=cors_origins, supports_credentials=True)
 
 # Database configuration
@@ -80,6 +92,41 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def validate_file_content(file_path, expected_extension):
+    """Validate file content matches the claimed extension using python-magic"""
+    try:
+        import magic
+        
+        # Get the MIME type of the actual file content
+        mime_type = magic.from_file(file_path, mime=True)
+        
+        # Map of extensions to expected MIME types
+        extension_mime_map = {
+            'pdf': ['application/pdf'],
+            'doc': ['application/msword'],
+            'docx': ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+            'png': ['image/png'],
+            'jpg': ['image/jpeg'],
+            'jpeg': ['image/jpeg'],
+            'gif': ['image/gif'],
+            'mp4': ['video/mp4'],
+            'avi': ['video/x-msvideo'],
+            'mp3': ['audio/mpeg'],
+            'wav': ['audio/wav', 'audio/x-wav'],
+            'txt': ['text/plain']
+        }
+        
+        expected_mimes = extension_mime_map.get(expected_extension.lower(), [])
+        return mime_type in expected_mimes
+        
+    except ImportError:
+        # If python-magic is not available, fall back to extension checking
+        logger.warning("python-magic not available, using extension-only validation")
+        return True
+    except Exception as e:
+        logger.error(f"Error validating file content: {e}")
+        return False
+
 def get_file_type(filename):
     """Get MIME type for a given filename"""
     ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
@@ -93,6 +140,49 @@ def generate_unique_filename(original_filename):
     # Limit filename length
     name = name[:50] if len(name) > 50 else name
     return f"{timestamp}_{name}{ext}"
+
+def validate_project_id(project_id):
+    """Validate project ID to prevent path traversal attacks"""
+    import re
+    # Allow only alphanumeric characters, hyphens, and underscores
+    # Typical UUID format or similar safe identifiers
+    if not project_id or not isinstance(project_id, str):
+        return False
+    if len(project_id) > 100:  # Reasonable length limit
+        return False
+    # Only allow safe characters
+    if not re.match(r'^[a-zA-Z0-9_-]+$', project_id):
+        return False
+    # Prevent obvious path traversal attempts
+    if '..' in project_id or '/' in project_id or '\\' in project_id:
+        return False
+    return True
+
+def validate_filename_for_download(filename):
+    """Validate filename for download to prevent path traversal"""
+    if not filename or not isinstance(filename, str):
+        return False
+    # Use secure_filename and additional checks
+    safe_name = secure_filename(filename)
+    if safe_name != filename:
+        return False
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return False
+    return True
+
+def sanitize_error_message(error_msg, expose_details=False):
+    """Sanitize error messages to prevent information disclosure"""
+    if not expose_details:
+        # In production, return generic messages
+        if 'not found' in error_msg.lower() or '404' in error_msg:
+            return 'Resource not found'
+        elif 'permission' in error_msg.lower() or 'forbidden' in error_msg.lower():
+            return 'Access denied'
+        elif 'invalid' in error_msg.lower() or 'bad request' in error_msg.lower():
+            return 'Invalid request'
+        else:
+            return 'An error occurred while processing your request'
+    return error_msg
 
 # Error handlers
 @app.errorhandler(413)
@@ -134,14 +224,38 @@ app.register_blueprint(user_bp, url_prefix='/api')
 # File download endpoint
 @app.route('/api/projects/<project_id>/download/<filename>', methods=['GET'])
 def download_file(project_id, filename):
-    """Handle file downloads"""
+    """Handle file downloads with security validation"""
     try:
+        # Validate project ID to prevent path traversal
+        if not validate_project_id(project_id):
+            logger.warning(f"Invalid project ID attempted: {project_id}")
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
         # Validate filename to prevent directory traversal
+        if not validate_filename_for_download(filename):
+            logger.warning(f"Invalid filename attempted: {filename}")
+            return jsonify({'success': False, 'error': 'Invalid filename'}), 400
+        
+        # Use validated inputs
         safe_filename = secure_filename(filename)
         project_folder = os.path.join(app.config['UPLOAD_FOLDER'], f'project_{project_id}')
         
+        # Ensure project folder exists and is within upload directory
+        upload_folder_real = os.path.realpath(app.config['UPLOAD_FOLDER'])
+        project_folder_real = os.path.realpath(project_folder)
+        if not project_folder_real.startswith(upload_folder_real):
+            logger.error(f"Path traversal attempt blocked: {project_folder}")
+            return jsonify({'success': False, 'error': 'Invalid path'}), 403
+        
         # Check if file exists
         filepath = os.path.join(project_folder, safe_filename)
+        filepath_real = os.path.realpath(filepath)
+        
+        # Ensure file is within the project folder
+        if not filepath_real.startswith(project_folder_real):
+            logger.error(f"File access outside project folder blocked: {filepath}")
+            return jsonify({'success': False, 'error': 'Access denied'}), 403
+        
         if not os.path.exists(filepath):
             return jsonify({'success': False, 'error': 'File not found'}), 404
         
@@ -150,9 +264,11 @@ def download_file(project_id, filename):
         
     except Exception as e:
         logger.error(f"Error downloading file: {str(e)}")
+        is_debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+        error_msg = sanitize_error_message(str(e), expose_details=is_debug)
         return jsonify({
             'success': False,
-            'error': f'Error downloading file: {str(e)}'
+            'error': error_msg
         }), 500
 
 # Delete file endpoint
@@ -184,10 +300,10 @@ def delete_evidence(project_id, evidence_id):
 def add_timeline_entry(project_id):
     """Add a new timeline entry to a project"""
     try:
-        # Check if project exists (you'll need to implement this)
-        # project = Project.query.get(project_id)
-        # if not project:
-        #     return jsonify({'success': False, 'error': 'Project not found'}), 404
+        # Validate project ID to prevent path traversal
+        if not validate_project_id(project_id):
+            logger.warning(f"Invalid project ID attempted: {project_id}")
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
         
         # Get JSON data from request
         data = request.get_json()
@@ -253,6 +369,15 @@ def add_timeline_entry(project_id):
 def update_timeline_entry(project_id, entry_id):
     """Update an existing timeline entry"""
     try:
+        # Validate project ID to prevent path traversal
+        if not validate_project_id(project_id):
+            logger.warning(f"Invalid project ID attempted: {project_id}")
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        # Validate entry ID
+        if not validate_project_id(entry_id):  # Same validation logic applies
+            logger.warning(f"Invalid entry ID attempted: {entry_id}")
+            return jsonify({'success': False, 'error': 'Invalid entry identifier'}), 400
         # Get JSON data from request
         data = request.get_json()
         if not data:
@@ -309,6 +434,15 @@ def update_timeline_entry(project_id, entry_id):
 def delete_timeline_entry(project_id, entry_id):
     """Delete timeline entry"""
     try:
+        # Validate project ID to prevent path traversal
+        if not validate_project_id(project_id):
+            logger.warning(f"Invalid project ID attempted: {project_id}")
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        # Validate entry ID
+        if not validate_project_id(entry_id):  # Same validation logic applies
+            logger.warning(f"Invalid entry ID attempted: {entry_id}")
+            return jsonify({'success': False, 'error': 'Invalid entry identifier'}), 400
         # Here you would:
         # 1. Check if the timeline entry exists
         # 2. Remove it from the project's timeline
