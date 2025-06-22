@@ -1,11 +1,14 @@
 # Flask routes for IOAgent API endpoints
 
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file, current_app
 from werkzeug.utils import secure_filename
 import os
 import json
+import uuid
+import secrets
 from datetime import datetime
 
+from src.models.user import db, Project, Evidence, TimelineEntry, CausalFactor
 from src.models.project_manager import ProjectManager, TimelineBuilder
 from src.models.roi_generator import ROIGenerator, CausalAnalysisEngine
 from src.models.ai_assistant import AIAssistant
@@ -13,98 +16,137 @@ from src.models.ai_assistant import AIAssistant
 # Create blueprint
 api_bp = Blueprint('api', __name__)
 
-# Initialize managers
+# Initialize managers (keep for legacy functionality and AI features)
 project_manager = ProjectManager()
 timeline_builder = TimelineBuilder()
 roi_generator = ROIGenerator()
 causal_engine = CausalAnalysisEngine()
 ai_assistant = AIAssistant()
 
+# Helper function to validate project ID
+def validate_project_id(project_id):
+    """Validate project ID format"""
+    import re
+    if not project_id or not isinstance(project_id, str):
+        return False
+    if len(project_id) > 100:
+        return False
+    if not re.match(r'^[a-zA-Z0-9_-]+$', project_id):
+        return False
+    if '..' in project_id or '/' in project_id or '\\' in project_id:
+        return False
+    return True
+
 @api_bp.route('/projects', methods=['GET'])
 def list_projects():
     """List all projects"""
     try:
-        projects = project_manager.list_projects()
-        return jsonify({'success': True, 'projects': projects})
+        projects = Project.query.all()
+        projects_data = [project.to_dict(include_relationships=False) for project in projects]
+        return jsonify({'success': True, 'projects': projects_data})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.error(f"Error listing projects: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve projects'}), 500
 
 @api_bp.route('/projects', methods=['POST'])
 def create_project():
     """Create a new project"""
     try:
         data = request.get_json()
-        title = data.get('title', 'Untitled Investigation')
-        investigating_officer = data.get('investigating_officer', '')
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
         
-        project = project_manager.create_project(title, investigating_officer)
+        title = data.get('title', '').strip()
+        if not title:
+            return jsonify({'success': False, 'error': 'Project title is required'}), 400
+        
+        investigating_officer = data.get('investigating_officer', '').strip()
+        
+        # Create new project
+        project = Project(
+            id=str(uuid.uuid4()),
+            title=title[:200],  # Limit length
+            investigating_officer=investigating_officer[:100] if investigating_officer else None,
+            status='draft'
+        )
+        
+        db.session.add(project)
+        db.session.commit()
         
         return jsonify({
             'success': True,
-            'project': {
-                'id': project.id,
-                'title': project.metadata.title,
-                'status': project.metadata.status,
-                'created_at': project.metadata.created_at.isoformat()
-            }
+            'project': project.to_dict(include_relationships=True)
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error creating project: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to create project'}), 500
 
 @api_bp.route('/projects/<project_id>', methods=['GET'])
 def get_project(project_id):
     """Get project details"""
     try:
-        project = project_manager.load_project(project_id)
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
         
-        return jsonify({'success': True, 'project': project.to_dict()})
+        return jsonify({'success': True, 'project': project.to_dict(include_relationships=True)})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.error(f"Error getting project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve project'}), 500
 
 @api_bp.route('/projects/<project_id>', methods=['PUT'])
 def update_project(project_id):
     """Update project"""
     try:
-        project = project_manager.load_project(project_id)
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
         
         data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
         
-        # Update metadata
-        if 'title' in data:
-            project.metadata.title = data['title']
+        # Update basic fields
+        if 'title' in data and data['title']:
+            project.title = str(data['title'])[:200]
         if 'investigating_officer' in data:
-            project.metadata.investigating_officer = data['investigating_officer']
-        if 'status' in data:
-            project.metadata.status = data['status']
+            project.investigating_officer = str(data['investigating_officer'])[:100] if data['investigating_officer'] else None
+        if 'status' in data and data['status'] in ['draft', 'in_progress', 'complete']:
+            project.status = data['status']
         
         # Update incident info
         if 'incident_info' in data:
             incident_data = data['incident_info']
             if 'incident_date' in incident_data:
                 try:
-                    # Validate and parse datetime
                     if incident_data['incident_date']:
-                        project.incident_info.incident_date = datetime.fromisoformat(incident_data['incident_date'])
+                        project.incident_date = datetime.fromisoformat(incident_data['incident_date'])
+                    else:
+                        project.incident_date = None
                 except (ValueError, TypeError) as e:
                     return jsonify({'success': False, 'error': f'Invalid incident date format: {str(e)}'}), 400
             if 'location' in incident_data:
-                # Sanitize location input (limit length and remove potentially dangerous characters)
-                location = str(incident_data['location'])[:500]  # Limit to 500 chars
-                project.incident_info.location = location
+                project.incident_location = str(incident_data['location'])[:500] if incident_data['location'] else None
             if 'incident_type' in incident_data:
-                # Sanitize incident type input
-                incident_type = str(incident_data['incident_type'])[:100]  # Limit to 100 chars
-                project.incident_info.incident_type = incident_type
+                project.incident_type = str(incident_data['incident_type'])[:100] if incident_data['incident_type'] else None
         
-        project_manager.save_project(project)
+        project.updated_at = datetime.utcnow()
+        db.session.commit()
         
-        return jsonify({'success': True, 'project': project.to_dict()})
+        return jsonify({'success': True, 'project': project.to_dict(include_relationships=True)})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error updating project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to update project'}), 500
 
 @api_bp.route('/projects/<project_id>', methods=['DELETE'])
 def delete_project(project_id):
@@ -122,7 +164,11 @@ def delete_project(project_id):
 def upload_file(project_id):
     """Upload file to project"""
     try:
-        project = project_manager.load_project(project_id)
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
         
@@ -151,39 +197,112 @@ def upload_file(project_id):
         if file_ext not in allowed_extensions:
             return jsonify({'success': False, 'error': f'File type {file_ext} not allowed'}), 400
         
-        # Sanitize description
-        description = str(request.form.get('description', ''))[:500]  # Limit to 500 chars
+        # Generate unique filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        unique_filename = f"{timestamp}_{secrets.token_hex(8)}_{filename}"
         
-        evidence = project_manager.upload_file(project_id, file, description)
-        if evidence:
-            project.evidence_library.append(evidence)
-            project_manager.save_project(project)
-            
-            return jsonify({
-                'success': True,
-                'evidence': evidence.to_dict()
-            })
-        else:
-            return jsonify({'success': False, 'error': 'Failed to upload file'}), 500
+        # Create project uploads directory
+        uploads_dir = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), f'project_{project_id}')
+        os.makedirs(uploads_dir, exist_ok=True)
+        
+        # Save file
+        file_path = os.path.join(uploads_dir, unique_filename)
+        file.save(file_path)
+        
+        # Get additional metadata
+        description = str(request.form.get('description', ''))[:500]
+        source = str(request.form.get('source', 'user_upload'))[:100]
+        
+        # Determine file type
+        file_type = 'document'
+        if file_ext in ['.jpg', '.jpeg', '.png', '.gif']:
+            file_type = 'photo'
+        elif file_ext in ['.mp4', '.avi']:
+            file_type = 'video'
+        elif file_ext in ['.mp3', '.wav']:
+            file_type = 'audio'
+        
+        # Create evidence record
+        evidence = Evidence(
+            id=str(uuid.uuid4()),
+            filename=unique_filename,
+            original_filename=file.filename,
+            file_path=os.path.relpath(file_path, current_app.config.get('UPLOAD_FOLDER', 'uploads')),
+            file_size=file_size,
+            mime_type=file.content_type,
+            file_type=file_type,
+            description=description or f"Uploaded file: {file.filename}",
+            source=source,
+            project_id=project_id
+        )
+        
+        db.session.add(evidence)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'evidence': evidence.to_dict()
+        })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error uploading file to project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to upload file'}), 500
 
 @api_bp.route('/projects/<project_id>/timeline', methods=['POST'])
 def add_timeline_entry(project_id):
     """Add timeline entry"""
     try:
-        project = project_manager.load_project(project_id)
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
         
         data = request.get_json()
-        entry = timeline_builder.add_entry(project, data)
-        timeline_builder.sort_timeline(project)
-        project_manager.save_project(project)
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        # Validate required fields
+        required_fields = ['timestamp', 'type', 'description']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+        
+        # Validate timestamp format
+        try:
+            timestamp = datetime.fromisoformat(data['timestamp'])
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'error': 'Invalid timestamp format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'}), 400
+        
+        # Create timeline entry
+        entry = TimelineEntry(
+            id=str(uuid.uuid4()),
+            timestamp=timestamp,
+            entry_type=str(data['type'])[:50],
+            description=str(data['description'])[:1000],
+            confidence_level=data.get('confidence_level', 'medium'),
+            is_initiating_event=bool(data.get('is_initiating_event', False)),
+            project_id=project_id
+        )
+        
+        # Set assumptions if provided
+        if data.get('assumptions'):
+            entry.assumptions_list = data['assumptions']
+        
+        # Set personnel if provided
+        if data.get('personnel_involved'):
+            entry.personnel_involved_list = data['personnel_involved']
+        
+        db.session.add(entry)
+        db.session.commit()
         
         return jsonify({'success': True, 'entry': entry.to_dict()})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error adding timeline entry to project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to add timeline entry'}), 500
 
 @api_bp.route('/projects/<project_id>/timeline/<entry_id>', methods=['PUT'])
 def update_timeline_entry(project_id, entry_id):
