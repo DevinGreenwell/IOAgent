@@ -56,8 +56,43 @@ class IOAgent {
         
         // Initialize main app
         this.setupEventListeners();
-        this.loadDashboard();
+        
+        // Only load dashboard if we have a real token, not demo mode
+        if (this.accessToken !== 'demo-token') {
+            this.validateTokenAndLoadDashboard();
+        } else {
+            // Demo mode - show empty dashboard
+            this.displayProjects([]);
+            this.updateDashboardStats([]);
+        }
+        
         this.setupFileUpload();
+    }
+
+    async validateTokenAndLoadDashboard() {
+        try {
+            // Test the token with a simple API call first
+            const response = await fetch(`${this.apiBase}/auth/me`, {
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                console.log('Token is valid, loading dashboard');
+                this.loadDashboard();
+            } else {
+                console.log('Token invalid, redirecting to login');
+                this.logout();
+            }
+        } catch (error) {
+            console.error('Token validation failed:', error);
+            this.showAlert('Connection error. Please check your internet connection.', 'warning');
+            // Don't logout on network errors, just show empty dashboard
+            this.displayProjects([]);
+            this.updateDashboardStats([]);
+        }
     }
 
     setupAuthEventListeners() {
@@ -155,6 +190,8 @@ class IOAgent {
     }
 
     logout() {
+        console.log('Logout called');
+        
         // Clear stored data
         localStorage.removeItem('ioagent_token');
         localStorage.removeItem('ioagent_user');
@@ -164,9 +201,12 @@ class IOAgent {
         this.currentUser = null;
         this.currentProject = null;
         
-        // Show auth overlay
-        this.showAuthOverlay();
-        this.showAuthMessage('Logged out successfully', 'success');
+        // Add a small delay to prevent flash
+        setTimeout(() => {
+            // Show auth overlay
+            this.showAuthOverlay();
+            this.showAuthMessage('Session expired. Please login again.', 'info');
+        }, 100);
     }
 
     showAuthMessage(message, type) {
@@ -211,10 +251,18 @@ class IOAgent {
             headers
         });
 
-        // Handle token expiration
+        // Handle token expiration - but be more careful
         if (response.status === 401) {
-            this.logout();
-            throw new Error('Session expired. Please login again.');
+            console.log('Got 401 response, but checking if we should logout');
+            // Only logout if this isn't the initial token validation
+            if (url.includes('/auth/me')) {
+                console.log('Token validation failed, logging out');
+                this.logout();
+            } else {
+                console.log('API call failed with 401, showing error message');
+                this.showAlert('Authentication error. You may need to login again.', 'warning');
+            }
+            throw new Error('Authentication required');
         }
 
         return response;
