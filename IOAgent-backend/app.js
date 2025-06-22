@@ -25,11 +25,15 @@ class IOAgent {
         const token = localStorage.getItem('ioagent_token');
         const user = localStorage.getItem('ioagent_user');
         
+        console.log('Checking existing auth:', { hasToken: !!token, hasUser: !!user });
+        
         if (token && user) {
             this.accessToken = token;
             this.currentUser = JSON.parse(user);
+            console.log('Found existing auth, showing main app');
             this.showMainApp();
         } else {
+            console.log('No existing auth, showing login');
             this.showAuthOverlay();
         }
     }
@@ -180,6 +184,19 @@ class IOAgent {
 
     // Helper method to make authenticated API calls
     async makeAuthenticatedRequest(url, options = {}) {
+        // Demo mode: show alert instead of making real API calls
+        if (this.accessToken === 'demo-token') {
+            console.log('Demo mode: API call to', url);
+            this.showAlert('Demo Mode: API calls are disabled. Please login with real credentials to access backend features.', 'info');
+            return { 
+                json: () => Promise.resolve({ 
+                    success: false, 
+                    error: 'Demo mode - authentication required for backend access',
+                    projects: []
+                })
+            };
+        }
+
         const headers = {
             'Content-Type': 'application/json',
             ...options.headers
@@ -959,6 +976,15 @@ function showRegisterForm() {
 function logout() {
     if (window.app) {
         app.logout();
+    }
+}
+
+function skipAuth() {
+    // Temporary demo mode - bypass authentication
+    if (window.app) {
+        app.currentUser = { username: 'demo-user', email: 'demo@example.com' };
+        app.accessToken = 'demo-token';
+        app.showMainApp();
     }
 }
 
