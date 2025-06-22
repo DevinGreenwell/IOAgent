@@ -308,21 +308,22 @@ def add_timeline_entry(project_id):
 def update_timeline_entry(project_id, entry_id):
     """Update timeline entry"""
     try:
-        project = project_manager.load_project(project_id)
-        if not project:
-            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
         
-        # Find entry
-        entry = None
-        for e in project.timeline:
-            if e.id == entry_id:
-                entry = e
-                break
+        # Validate entry ID
+        if not validate_project_id(entry_id):  # Same validation logic applies
+            return jsonify({'success': False, 'error': 'Invalid entry identifier'}), 400
         
+        # Check if timeline entry exists
+        entry = TimelineEntry.query.filter_by(id=entry_id, project_id=project_id).first()
         if not entry:
             return jsonify({'success': False, 'error': 'Timeline entry not found'}), 404
         
         data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
         
         # Update entry fields
         if 'timestamp' in data:
@@ -331,38 +332,53 @@ def update_timeline_entry(project_id, entry_id):
             except (ValueError, TypeError) as e:
                 return jsonify({'success': False, 'error': f'Invalid timestamp format: {str(e)}'}), 400
         if 'type' in data:
-            entry.type = str(data['type'])[:50]  # Limit length
+            entry.entry_type = str(data['type'])[:50]
         if 'description' in data:
-            entry.description = str(data['description'])[:1000]  # Limit length
-        if 'evidence_ids' in data:
-            entry.evidence_ids = data['evidence_ids']
-        if 'assumptions' in data:
-            entry.assumptions = data['assumptions']
+            entry.description = str(data['description'])[:1000]
+        if 'confidence_level' in data:
+            entry.confidence_level = data['confidence_level']
         if 'is_initiating_event' in data:
             entry.is_initiating_event = data['is_initiating_event']
+        if 'assumptions' in data:
+            entry.assumptions_list = data['assumptions']
+        if 'personnel_involved' in data:
+            entry.personnel_involved_list = data['personnel_involved']
         
-        timeline_builder.sort_timeline(project)
-        project_manager.save_project(project)
+        entry.updated_at = datetime.utcnow()
+        db.session.commit()
         
         return jsonify({'success': True, 'entry': entry.to_dict()})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error updating timeline entry {entry_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to update timeline entry'}), 500
 
 @api_bp.route('/projects/<project_id>/timeline/<entry_id>', methods=['DELETE'])
 def delete_timeline_entry(project_id, entry_id):
     """Delete timeline entry"""
     try:
-        project = project_manager.load_project(project_id)
-        if not project:
-            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
         
-        # Remove entry
-        project.timeline = [e for e in project.timeline if e.id != entry_id]
-        project_manager.save_project(project)
+        # Validate entry ID
+        if not validate_project_id(entry_id):  # Same validation logic applies
+            return jsonify({'success': False, 'error': 'Invalid entry identifier'}), 400
+        
+        # Check if timeline entry exists
+        entry = TimelineEntry.query.filter_by(id=entry_id, project_id=project_id).first()
+        if not entry:
+            return jsonify({'success': False, 'error': 'Timeline entry not found'}), 404
+        
+        # Remove the database record
+        db.session.delete(entry)
+        db.session.commit()
         
         return jsonify({'success': True})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting timeline entry {entry_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to delete timeline entry'}), 500
 
 @api_bp.route('/projects/<project_id>/causal-analysis', methods=['POST'])
 def run_causal_analysis(project_id):

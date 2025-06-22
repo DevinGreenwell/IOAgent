@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Flask, send_from_directory, jsonify, request
 from flask_cors import CORS
-from src.models.user import db
+from src.models.user import db, Project, Evidence, TimelineEntry, CausalFactor
 from src.routes.user import user_bp
 from src.routes.api import api_bp
 
@@ -276,23 +276,50 @@ def download_file(project_id, filename):
 def delete_evidence(project_id, evidence_id):
     """Delete evidence file"""
     try:
-        # Here you would:
-        # 1. Check if the evidence exists in the database
-        # 2. Get the filename associated with the evidence
-        # 3. Delete the physical file
-        # 4. Remove the database record
+        # Validate project ID
+        if not validate_project_id(project_id):
+            logger.warning(f"Invalid project ID attempted: {project_id}")
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
         
-        # For now, return success
+        # Validate evidence ID
+        if not validate_project_id(evidence_id):  # Same validation logic applies
+            logger.warning(f"Invalid evidence ID attempted: {evidence_id}")
+            return jsonify({'success': False, 'error': 'Invalid evidence identifier'}), 400
+        
+        # Check if evidence exists in database
+        evidence = Evidence.query.filter_by(id=evidence_id, project_id=project_id).first()
+        if not evidence:
+            return jsonify({'success': False, 'error': 'Evidence not found'}), 404
+        
+        # Delete the physical file
+        if evidence.file_path:
+            full_file_path = os.path.join(app.config['UPLOAD_FOLDER'], evidence.file_path)
+            if os.path.exists(full_file_path):
+                try:
+                    os.remove(full_file_path)
+                    logger.info(f"Deleted file: {full_file_path}")
+                except OSError as e:
+                    logger.error(f"Error deleting file {full_file_path}: {e}")
+                    # Continue with database deletion even if file deletion fails
+        
+        # Remove the database record
+        db.session.delete(evidence)
+        db.session.commit()
+        
+        logger.info(f"Evidence {evidence_id} deleted from project {project_id}")
         return jsonify({
             'success': True,
             'message': 'Evidence deleted successfully'
         }), 200
         
     except Exception as e:
+        db.session.rollback()
         logger.error(f"Error deleting evidence: {str(e)}")
+        is_debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+        error_msg = sanitize_error_message(str(e), expose_details=is_debug)
         return jsonify({
             'success': False,
-            'error': f'Error deleting evidence: {str(e)}'
+            'error': error_msg
         }), 500
 
 # Timeline endpoints
@@ -329,35 +356,38 @@ def add_timeline_entry(project_id):
                 'error': 'Invalid timestamp format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'
             }), 400
         
-        # Create timeline entry data
-        entry_data = {
-            'id': secrets.token_urlsafe(16),  # Generate unique ID
-            'timestamp': data['timestamp'],
-            'type': data['type'][:50],  # Limit length
-            'description': data['description'][:1000],  # Limit length
-            'confidence_level': data.get('confidence_level', 'medium'),
-            'is_initiating_event': data.get('is_initiating_event', False),
-            'assumptions': data.get('assumptions', []),
-            'evidence_ids': data.get('evidence_ids', []),
-            'personnel_involved': data.get('personnel_involved', []),
-            'created_at': datetime.now().isoformat(),
-            'project_id': project_id
-        }
+        # Create timeline entry in database
+        entry = TimelineEntry(
+            id=secrets.token_urlsafe(16),
+            timestamp=datetime.fromisoformat(data['timestamp']),
+            entry_type=str(data['type'])[:50],
+            description=str(data['description'])[:1000],
+            confidence_level=data.get('confidence_level', 'medium'),
+            is_initiating_event=data.get('is_initiating_event', False),
+            project_id=project_id
+        )
         
-        # Here you would typically:
-        # 1. Create a TimelineEntry record in the database
-        # 2. Associate it with the project
-        # 3. Store in project timeline array
+        # Set assumptions if provided
+        if data.get('assumptions'):
+            entry.assumptions_list = data['assumptions']
         
-        logger.info(f"Timeline entry created for project {project_id}: {entry_data['type']}")
+        # Set personnel if provided  
+        if data.get('personnel_involved'):
+            entry.personnel_involved_list = data['personnel_involved']
+        
+        db.session.add(entry)
+        db.session.commit()
+        
+        logger.info(f"Timeline entry created for project {project_id}: {entry.entry_type}")
         
         return jsonify({
             'success': True,
-            'entry': entry_data,
+            'entry': entry.to_dict(),
             'message': 'Timeline entry added successfully'
         }), 200
         
     except Exception as e:
+        db.session.rollback()
         logger.error(f"Error adding timeline entry: {str(e)}")
         return jsonify({
             'success': False,
@@ -394,35 +424,42 @@ def update_timeline_entry(project_id, entry_id):
                     'error': 'Invalid timestamp format. Use ISO format (YYYY-MM-DDTHH:MM:SS)'
                 }), 400
         
-        # Here you would typically:
-        # 1. Check if the timeline entry exists in the database
-        # 2. Update the entry with the new data
-        # 3. Save to database
+        # Check if the timeline entry exists in the database
+        entry = TimelineEntry.query.filter_by(id=entry_id, project_id=project_id).first()
+        if not entry:
+            return jsonify({'success': False, 'error': 'Timeline entry not found'}), 404
         
-        # For now, simulate successful update
-        updated_entry = {
-            'id': entry_id,
-            'timestamp': data.get('timestamp'),
-            'type': data.get('type', '')[:50] if data.get('type') else '',
-            'description': data.get('description', '')[:1000] if data.get('description') else '',
-            'confidence_level': data.get('confidence_level', 'medium'),
-            'is_initiating_event': data.get('is_initiating_event', False),
-            'assumptions': data.get('assumptions', []),
-            'evidence_ids': data.get('evidence_ids', []),
-            'personnel_involved': data.get('personnel_involved', []),
-            'updated_at': datetime.now().isoformat(),
-            'project_id': project_id
-        }
+        # Update the entry with the new data
+        if 'timestamp' in data:
+            entry.timestamp = datetime.fromisoformat(data['timestamp'])
+        if 'type' in data:
+            entry.entry_type = str(data['type'])[:50]
+        if 'description' in data:
+            entry.description = str(data['description'])[:1000]
+        if 'confidence_level' in data:
+            entry.confidence_level = data['confidence_level']
+        if 'is_initiating_event' in data:
+            entry.is_initiating_event = data['is_initiating_event']
+        if 'assumptions' in data:
+            entry.assumptions_list = data['assumptions']
+        if 'personnel_involved' in data:
+            entry.personnel_involved_list = data['personnel_involved']
+        
+        entry.updated_at = datetime.now()
+        
+        # Save to database
+        db.session.commit()
         
         logger.info(f"Timeline entry updated for project {project_id}: {entry_id}")
         
         return jsonify({
             'success': True,
-            'entry': updated_entry,
+            'entry': entry.to_dict(),
             'message': 'Timeline entry updated successfully'
         }), 200
         
     except Exception as e:
+        db.session.rollback()
         logger.error(f"Error updating timeline entry: {str(e)}")
         return jsonify({
             'success': False,
@@ -443,17 +480,23 @@ def delete_timeline_entry(project_id, entry_id):
         if not validate_project_id(entry_id):  # Same validation logic applies
             logger.warning(f"Invalid entry ID attempted: {entry_id}")
             return jsonify({'success': False, 'error': 'Invalid entry identifier'}), 400
-        # Here you would:
-        # 1. Check if the timeline entry exists
-        # 2. Remove it from the project's timeline
-        # 3. Update the database
+        # Check if the timeline entry exists
+        entry = TimelineEntry.query.filter_by(id=entry_id, project_id=project_id).first()
+        if not entry:
+            return jsonify({'success': False, 'error': 'Timeline entry not found'}), 404
         
+        # Remove it from the database
+        db.session.delete(entry)
+        db.session.commit()
+        
+        logger.info(f"Timeline entry {entry_id} deleted from project {project_id}")
         return jsonify({
             'success': True,
             'message': 'Timeline entry deleted successfully'
         }), 200
         
     except Exception as e:
+        db.session.rollback()
         logger.error(f"Error deleting timeline entry: {str(e)}")
         return jsonify({
             'success': False,

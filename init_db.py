@@ -10,7 +10,7 @@ import sys
 # Add the project root to the Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from IOAgent-backend.app import app
+from IOAgent_backend.app import app
 from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor
 
 def init_database():
