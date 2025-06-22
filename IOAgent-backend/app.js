@@ -1,6 +1,8 @@
 class IOAgent {
     constructor() {
         this.currentProject = null;
+        this.currentUser = null;
+        this.accessToken = null;
         
         // Configure API base URL based on environment
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -15,9 +17,190 @@ class IOAgent {
     }
 
     init() {
+        // Check if user is already logged in
+        this.checkExistingAuth();
+    }
+
+    checkExistingAuth() {
+        const token = localStorage.getItem('ioagent_token');
+        const user = localStorage.getItem('ioagent_user');
+        
+        if (token && user) {
+            this.accessToken = token;
+            this.currentUser = JSON.parse(user);
+            this.showMainApp();
+        } else {
+            this.showAuthOverlay();
+        }
+    }
+
+    showAuthOverlay() {
+        document.getElementById('authOverlay').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+        this.setupAuthEventListeners();
+    }
+
+    showMainApp() {
+        document.getElementById('authOverlay').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        
+        // Update navbar with user info
+        document.getElementById('currentUser').textContent = this.currentUser.username;
+        document.getElementById('userInfo').style.display = 'inline';
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        document.getElementById('appTitle').style.display = 'none';
+        
+        // Initialize main app
         this.setupEventListeners();
         this.loadDashboard();
         this.setupFileUpload();
+    }
+
+    setupAuthEventListeners() {
+        // Login form
+        document.getElementById('authLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.login();
+        });
+
+        // Register form
+        document.getElementById('authRegisterForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.register();
+        });
+    }
+
+    // Authentication Methods
+    async login() {
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+
+        this.showAuthMessage('Logging in...', 'info');
+
+        try {
+            const response = await fetch(`${this.apiBase}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.accessToken = data.access_token;
+                this.currentUser = data.user;
+
+                // Store in localStorage
+                localStorage.setItem('ioagent_token', this.accessToken);
+                localStorage.setItem('ioagent_user', JSON.stringify(this.currentUser));
+
+                this.showAuthMessage('Login successful!', 'success');
+                setTimeout(() => this.showMainApp(), 1000);
+            } else {
+                this.showAuthMessage(data.error || 'Login failed', 'error');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showAuthMessage('Connection error. Please try again.', 'error');
+        }
+    }
+
+    async register() {
+        const username = document.getElementById('registerUsername').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (password !== confirmPassword) {
+            this.showAuthMessage('Passwords do not match', 'error');
+            return;
+        }
+
+        this.showAuthMessage('Creating account...', 'info');
+
+        try {
+            const response = await fetch(`${this.apiBase}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.accessToken = data.access_token;
+                this.currentUser = data.user;
+
+                // Store in localStorage
+                localStorage.setItem('ioagent_token', this.accessToken);
+                localStorage.setItem('ioagent_user', JSON.stringify(this.currentUser));
+
+                this.showAuthMessage('Registration successful!', 'success');
+                setTimeout(() => this.showMainApp(), 1000);
+            } else {
+                this.showAuthMessage(data.error || 'Registration failed', 'error');
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            this.showAuthMessage('Connection error. Please try again.', 'error');
+        }
+    }
+
+    logout() {
+        // Clear stored data
+        localStorage.removeItem('ioagent_token');
+        localStorage.removeItem('ioagent_user');
+        
+        // Reset app state
+        this.accessToken = null;
+        this.currentUser = null;
+        this.currentProject = null;
+        
+        // Show auth overlay
+        this.showAuthOverlay();
+        this.showAuthMessage('Logged out successfully', 'success');
+    }
+
+    showAuthMessage(message, type) {
+        const messageDiv = document.getElementById('authMessage');
+        messageDiv.style.display = 'block';
+        messageDiv.className = `alert mt-3 alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'}`;
+        messageDiv.textContent = message;
+
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+    }
+
+    // Helper method to make authenticated API calls
+    async makeAuthenticatedRequest(url, options = {}) {
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+
+        if (this.accessToken) {
+            headers['Authorization'] = `Bearer ${this.accessToken}`;
+        }
+
+        const response = await fetch(url, {
+            ...options,
+            headers
+        });
+
+        // Handle token expiration
+        if (response.status === 401) {
+            this.logout();
+            throw new Error('Session expired. Please login again.');
+        }
+
+        return response;
     }
 
     setupEventListeners() {
@@ -177,7 +360,7 @@ class IOAgent {
 
     async loadDashboard() {
         try {
-            const response = await fetch(`${this.apiBase}/projects`);
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects`);
             const data = await response.json();
 
             if (data.success) {
@@ -255,11 +438,8 @@ class IOAgent {
         try {
             this.showLoading('Creating project...');
             
-            const response = await fetch(`${this.apiBase}/projects`, {
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
                 body: JSON.stringify({
                     title: title.trim(),
                     investigating_officer: investigatingOfficer.trim()
@@ -764,6 +944,24 @@ class IOAgent {
 }
 
 // Global functions for onclick handlers
+function showLoginForm() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('authMessage').style.display = 'none';
+}
+
+function showRegisterForm() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('authMessage').style.display = 'none';
+}
+
+function logout() {
+    if (window.app) {
+        app.logout();
+    }
+}
+
 function showCreateProjectModal() {
     if (window.app) {
         app.showCreateProjectModal();
