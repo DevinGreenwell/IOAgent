@@ -1,9 +1,9 @@
 # 🔧 Render Deployment Troubleshooting for IOAgent
 
-## ❌ Current Error: ModuleNotFoundError: No module named 'flask_jwt_extended'
+## ❌ Current Error: Flask-Migrate==5.1.0 version not found
 
 ### Root Cause
-The build command is not installing dependencies properly, or there's a path issue with the requirements.txt file.
+Flask-Migrate 5.1.0 doesn't exist. The latest version is 4.1.0. The requirements.txt has been updated.
 
 ## ✅ IMMEDIATE FIX
 
@@ -38,13 +38,23 @@ If Option 1 doesn't work, try this build command:
 cd IOAgent-backend && pip install -r requirements.txt
 ```
 
-### Option 3: Extended Build Command
+### Option 3: Use Minimal Requirements
 
-For more verbose debugging:
+For faster deployment with only essential packages:
 
 ```bash
-ls -la && pip install -r IOAgent-backend/requirements.txt && pip list | grep -i flask
+pip install -r requirements-minimal.txt
 ```
+
+### Option 4: Fixed Requirements
+
+The issue was Flask-Migrate==5.1.0 doesn't exist. Use:
+
+```bash
+pip install -r IOAgent-backend/requirements.txt
+```
+
+(Now fixed with Flask-Migrate==4.1.0)
 
 ## 🔍 Debug Steps
 
