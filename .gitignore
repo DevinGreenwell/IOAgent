@@ -128,11 +128,26 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# MIAgent specific
+# IOAgent specific
 projects/
 *.docx
 *.pdf
 uploads/
 exports/
 src/database/app.db
+
+# Environment files with secrets
+.env.production
+.env.local
+.env.development
+
+# Database files
+*.db
+*.sqlite3
+IOAgent-backend/uploads/
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/
 
