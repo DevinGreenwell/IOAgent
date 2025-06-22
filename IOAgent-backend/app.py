@@ -2,7 +2,7 @@ import os
 import sys
 import secrets
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -11,9 +11,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Flask, send_from_directory, jsonify, request
 from flask_cors import CORS
-from src.models.user import db, Project, Evidence, TimelineEntry, CausalFactor
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
+from flask_migrate import Migrate
+from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor
 from src.routes.user import user_bp
 from src.routes.api import api_bp
+from src.routes.auth import auth_bp
 
 # Initialize Flask app
 app = Flask(__name__, static_folder=os.path.dirname(__file__))
@@ -26,7 +29,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Security configuration
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or secrets.token_hex(32)
+if os.environ.get('FLASK_ENV') == 'production':
+    if not os.environ.get('SECRET_KEY'):
+        raise ValueError("SECRET_KEY must be set in production")
+    if not os.environ.get('JWT_SECRET_KEY'):
+        raise ValueError("JWT_SECRET_KEY must be set in production")
+
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-only')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-key-only')
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+app.config['JWT_ALGORITHM'] = 'HS256'
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -83,8 +95,10 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_recycle': 300,
 }
 
-# Initialize database
+# Initialize database and JWT
 db.init_app(app)
+jwt = JWTManager(app)
+migrate = Migrate(app, db)
 
 # Helper functions
 def allowed_file(filename):
@@ -215,7 +229,29 @@ def handle_internal_error(e):
         'error': 'Internal server error'
     }), 500
 
+# JWT error handlers
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({'success': False, 'error': 'Token has expired'}), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({'success': False, 'error': 'Invalid token'}), 401
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    return jsonify({'success': False, 'error': 'Authorization token is required'}), 401
+
+# Helper function to get current user
+def get_current_user():
+    """Get current authenticated user"""
+    user_id = get_jwt_identity()
+    if user_id:
+        return User.query.get(user_id)
+    return None
+
 # Register API blueprints
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(api_bp, url_prefix='/api')
 app.register_blueprint(user_bp, url_prefix='/api')
 
@@ -223,6 +259,7 @@ app.register_blueprint(user_bp, url_prefix='/api')
 
 # File download endpoint
 @app.route('/api/projects/<project_id>/download/<filename>', methods=['GET'])
+@jwt_required()
 def download_file(project_id, filename):
     """Handle file downloads with security validation"""
     try:
@@ -273,6 +310,7 @@ def download_file(project_id, filename):
 
 # Delete file endpoint
 @app.route('/api/projects/<project_id>/evidence/<evidence_id>', methods=['DELETE'])
+@jwt_required()
 def delete_evidence(project_id, evidence_id):
     """Delete evidence file"""
     try:
@@ -324,6 +362,7 @@ def delete_evidence(project_id, evidence_id):
 
 # Timeline endpoints
 @app.route('/api/projects/<project_id>/timeline', methods=['POST'])
+@jwt_required()
 def add_timeline_entry(project_id):
     """Add a new timeline entry to a project"""
     try:
@@ -396,6 +435,7 @@ def add_timeline_entry(project_id):
 
 # Update timeline entry endpoint
 @app.route('/api/projects/<project_id>/timeline/<entry_id>', methods=['PUT'])
+@jwt_required()
 def update_timeline_entry(project_id, entry_id):
     """Update an existing timeline entry"""
     try:
@@ -468,6 +508,7 @@ def update_timeline_entry(project_id, entry_id):
 
 # Delete timeline entry endpoint
 @app.route('/api/projects/<project_id>/timeline/<entry_id>', methods=['DELETE'])
+@jwt_required()
 def delete_timeline_entry(project_id, entry_id):
     """Delete timeline entry"""
     try:

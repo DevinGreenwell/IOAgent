@@ -1,6 +1,7 @@
 # Flask routes for IOAgent API endpoints
 
 from flask import Blueprint, request, jsonify, send_file, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 import os
 import json
@@ -8,7 +9,7 @@ import uuid
 import secrets
 from datetime import datetime
 
-from src.models.user import db, Project, Evidence, TimelineEntry, CausalFactor
+from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor
 from src.models.project_manager import ProjectManager, TimelineBuilder
 from src.models.roi_generator import ROIGenerator, CausalAnalysisEngine
 from src.models.ai_assistant import AIAssistant
@@ -38,6 +39,7 @@ def validate_project_id(project_id):
     return True
 
 @api_bp.route('/projects', methods=['GET'])
+@jwt_required()
 def list_projects():
     """List all projects"""
     try:
@@ -49,6 +51,7 @@ def list_projects():
         return jsonify({'success': False, 'error': 'Failed to retrieve projects'}), 500
 
 @api_bp.route('/projects', methods=['POST'])
+@jwt_required()
 def create_project():
     """Create a new project"""
     try:
@@ -83,6 +86,7 @@ def create_project():
         return jsonify({'success': False, 'error': 'Failed to create project'}), 500
 
 @api_bp.route('/projects/<project_id>', methods=['GET'])
+@jwt_required()
 def get_project(project_id):
     """Get project details"""
     try:
@@ -100,6 +104,7 @@ def get_project(project_id):
         return jsonify({'success': False, 'error': 'Failed to retrieve project'}), 500
 
 @api_bp.route('/projects/<project_id>', methods=['PUT'])
+@jwt_required()
 def update_project(project_id):
     """Update project"""
     try:
@@ -149,6 +154,7 @@ def update_project(project_id):
         return jsonify({'success': False, 'error': 'Failed to update project'}), 500
 
 @api_bp.route('/projects/<project_id>', methods=['DELETE'])
+@jwt_required()
 def delete_project(project_id):
     """Delete project"""
     try:
@@ -161,6 +167,7 @@ def delete_project(project_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @api_bp.route('/projects/<project_id>/upload', methods=['POST'])
+@jwt_required()
 def upload_file(project_id):
     """Upload file to project"""
     try:
@@ -249,6 +256,7 @@ def upload_file(project_id):
         return jsonify({'success': False, 'error': 'Failed to upload file'}), 500
 
 @api_bp.route('/projects/<project_id>/timeline', methods=['POST'])
+@jwt_required()
 def add_timeline_entry(project_id):
     """Add timeline entry"""
     try:
@@ -305,6 +313,7 @@ def add_timeline_entry(project_id):
         return jsonify({'success': False, 'error': 'Failed to add timeline entry'}), 500
 
 @api_bp.route('/projects/<project_id>/timeline/<entry_id>', methods=['PUT'])
+@jwt_required()
 def update_timeline_entry(project_id, entry_id):
     """Update timeline entry"""
     try:
@@ -354,6 +363,7 @@ def update_timeline_entry(project_id, entry_id):
         return jsonify({'success': False, 'error': 'Failed to update timeline entry'}), 500
 
 @api_bp.route('/projects/<project_id>/timeline/<entry_id>', methods=['DELETE'])
+@jwt_required()
 def delete_timeline_entry(project_id, entry_id):
     """Delete timeline entry"""
     try:
@@ -381,6 +391,7 @@ def delete_timeline_entry(project_id, entry_id):
         return jsonify({'success': False, 'error': 'Failed to delete timeline entry'}), 500
 
 @api_bp.route('/projects/<project_id>/causal-analysis', methods=['POST'])
+@jwt_required()
 def run_causal_analysis(project_id):
     """Run causal analysis on timeline"""
     try:
@@ -415,6 +426,7 @@ def run_causal_analysis(project_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @api_bp.route('/projects/<project_id>/generate-roi', methods=['POST'])
+@jwt_required()
 def generate_roi(project_id):
     """Generate ROI document"""
     try:
@@ -447,6 +459,7 @@ def generate_roi(project_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @api_bp.route('/projects/<project_id>/download-roi', methods=['GET'])
+@jwt_required()
 def download_roi(project_id):
     """Download generated ROI document"""
     try:
@@ -465,6 +478,7 @@ def download_roi(project_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @api_bp.route('/projects/<project_id>/ai-suggestions', methods=['POST'])
+@jwt_required()
 def get_ai_suggestions(project_id):
     """Get AI suggestions for timeline entries"""
     try:
@@ -488,6 +502,7 @@ def get_ai_suggestions(project_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @api_bp.route('/projects/<project_id>/consistency-check', methods=['POST'])
+@jwt_required()
 def check_consistency(project_id):
     """Check project consistency"""
     try:
@@ -513,6 +528,7 @@ def check_consistency(project_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @api_bp.route('/generate', methods=['POST'])
+@jwt_required()
 def generate_response():
     try:
         data = request.get_json()
