@@ -16,8 +16,9 @@ services:
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
-      - key: DATABASE_URL
-        value: postgresql://ioagent_user:uOXBZaleReg83smdsLXM371fT6vpVF4C@dpg-d1cbuv6uk2gs73aii0d0-a/ioagent
+      # - key: DATABASE_URL
+      #   value: postgresql://ioagent_user:uOXBZaleReg83smdsLXM371fT6vpVF4C@dpg-d1cbuv6uk2gs73aii0d0-a/ioagent
+      # PostgreSQL temporarily disabled - using SQLite
       - key: PROD_CORS_ORIGINS
         value: https://ioagent.onrender.com
       - key: PYTHON_VERSION

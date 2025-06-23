@@ -101,56 +101,26 @@ logger.info(f"CORS origins configured: {cors_origins}")
 CORS(app, origins=cors_origins, supports_credentials=True)
 
 # Database configuration
-# Use PostgreSQL in production, SQLite for local development
+# TEMPORARY: Use SQLite for production until PostgreSQL driver issues are resolved
 def configure_database():
     """Configure database with proper error handling"""
-    try:
-        if os.environ.get('DATABASE_URL'):
-            # Production: Use Render PostgreSQL database
-            database_url = os.environ.get('DATABASE_URL')
-            logger.info(f"Using DATABASE_URL from environment")
-            app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-            app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-                'pool_pre_ping': True,
-                'pool_recycle': 300,
-                'pool_size': 5,
-                'max_overflow': 10
-            }
-        elif os.environ.get('FLASK_ENV') == 'production':
-            # Production fallback: Use internal database URL for Render deployment
-            database_url = 'postgresql://ioagent_user:uOXBZaleReg83smdsLXM371fT6vpVF4C@dpg-d1cbuv6uk2gs73aii0d0-a/ioagent'
-            logger.info(f"Using production fallback database URL")
-            app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-            app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-                'pool_pre_ping': True,
-                'pool_recycle': 300,
-                'pool_size': 5,
-                'max_overflow': 10
-            }
-        else:
-            # Local development: Use SQLite
-            db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'database', 'app.db')
-            app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
-            logger.info(f"Using SQLite database: {db_path}")
-            app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-                'pool_pre_ping': True,
-                'pool_recycle': 300,
-            }
-        
-        logger.info(f"Database configured successfully")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Database configuration error: {e}")
-        # Fallback to SQLite if PostgreSQL fails
-        db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'database', 'app.db')
-        app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-            'pool_pre_ping': True,
-            'pool_recycle': 300,
-        }
-        logger.warning(f"Falling back to SQLite database: {db_path}")
-        return False
+    
+    # Create database directory
+    db_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'database')
+    os.makedirs(db_dir, exist_ok=True)
+    
+    # Use SQLite for all environments temporarily
+    db_path = os.path.join(db_dir, 'app.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    }
+    
+    logger.info(f"Using SQLite database: {db_path}")
+    logger.warning("PostgreSQL temporarily disabled - using SQLite for all environments")
+    
+    return True
 
 # Configure database
 configure_database()
