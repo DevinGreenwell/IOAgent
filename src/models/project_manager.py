@@ -37,7 +37,6 @@ class ProjectManager:
         project_dir = self._get_project_dir(project.id)
         os.makedirs(project_dir, exist_ok=True)
         os.makedirs(os.path.join(project_dir, "uploads"), exist_ok=True)
-        os.makedirs(os.path.join(project_dir, "evidence"), exist_ok=True)
         os.makedirs(os.path.join(project_dir, "exports"), exist_ok=True)
         
         # Save project
@@ -103,15 +102,15 @@ class ProjectManager:
                 return False
         return False
     
-    def upload_file(self, project_id: str, file, description: str = "") -> Optional[Evidence]:
-        """Upload and process a file for a project"""
+    def upload_file(self, project_id: str, file, description: str = "") -> Dict[str, Any]:
+        """Upload and process a file for a project, returning timeline suggestions"""
         if not file or not file.filename:
-            return None
+            return {"success": False, "error": "No file provided"}
         
         # Secure the filename
         filename = secure_filename(file.filename)
         if not filename:
-            return None
+            return {"success": False, "error": "Invalid filename"}
         
         # Save file to uploads directory
         uploads_dir = os.path.join(self._get_project_dir(project_id), "uploads")
@@ -130,27 +129,25 @@ class ProjectManager:
             file.save(file_path)
         except Exception as e:
             print(f"Error saving file: {e}")
-            return None
+            return {"success": False, "error": f"Failed to save file: {str(e)}"}
         
-        # Create evidence record
-        evidence = Evidence()
-        evidence.filename = os.path.basename(file_path)
-        evidence.description = description or filename
-        evidence.file_path = file_path
-        evidence.type = self._determine_file_type(file_path)
-        evidence.source = "User Upload"
-        
-        # Process file content
+        # Process file content to extract timeline entries
+        timeline_suggestions = []
         content = self._extract_file_content(file_path)
         if content:
             # Use AI to suggest timeline entries
             project = self.load_project(project_id)
             if project:
-                suggestions = self.ai_assistant.suggest_timeline_entries(content, project.timeline)
-                # Store suggestions in evidence metadata (could be expanded)
-                evidence.description += f" (AI found {len(suggestions)} potential timeline entries)"
+                timeline_suggestions = self.ai_assistant.suggest_timeline_entries(content, project.timeline)
         
-        return evidence
+        return {
+            "success": True,
+            "filename": os.path.basename(file_path),
+            "file_path": file_path,
+            "file_type": self._determine_file_type(file_path),
+            "timeline_suggestions": timeline_suggestions,
+            "message": f"File uploaded successfully. Found {len(timeline_suggestions)} potential timeline entries."
+        }
     
     def _get_project_dir(self, project_id: str) -> str:
         """Get project directory path"""

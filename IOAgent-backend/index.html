@@ -269,23 +269,13 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-anchor"></i>
-                IOAgent
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text text-white me-3" id="userInfo" style="display: none;">
-                    Welcome, <span id="currentUser"></span>
-                </span>
-                <button class="btn btn-outline-light btn-sm" id="logoutBtn" style="display: none;">
-                    <i class="fas fa-sign-out-alt me-1"></i>Logout
-                </button>
-                <span class="navbar-text text-white" id="appTitle">
-                    USCG Report of Investigation Generator
-                </span>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#"><i class="fas fa-shield-alt"></i> IOAgent</a>
+            <div id="user-info-nav" class="d-flex align-items-center text-white" style="display: none;">
+                <span>Welcome, <span id="username-display"></span></span>
+                <button id="logoutButton" class="btn btn-outline-light ms-3"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </div>
     </nav>
@@ -404,49 +394,21 @@
             <!-- Sidebar -->
             <div class="col-md-3">
                 <div class="sidebar">
-                    <h5 class="mb-3">Navigation</h5>
-                    <ul class="nav nav-pills flex-column" id="mainNav">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#" data-section="dashboard">
-                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-section="project-info">
-                                <i class="fas fa-info-circle me-2"></i>Project Info
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-section="evidence">
-                                <i class="fas fa-folder-open me-2"></i>Evidence
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-section="timeline">
-                                <i class="fas fa-clock me-2"></i>Timeline
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-section="analysis">
-                                <i class="fas fa-search me-2"></i>Analysis
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" data-section="roi-generator">
-                                <i class="fas fa-file-alt me-2"></i>ROI Generator
-                            </a>
-                        </li>
-                    </ul>
-                    
-                    <hr class="my-4">
-                    
-                    <div id="currentProject" style="display: none;">
-                        <h6>Current Project</h6>
-                        <div class="small text-muted" id="projectTitle">No project selected</div>
-                        <div class="small text-muted" id="projectStatus"></div>
-                        <button class="btn btn-outline-primary btn-sm mt-2" id="closeProjectBtn">
-                            <i class="fas fa-times me-1"></i>Close
-                        </button>
+                    <h5>Navigation</h5>
+                    <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                        <a class="nav-link active" id="v-pills-dashboard-tab" data-section="dashboard" href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                        <a class="nav-link" id="v-pills-project-info-tab" data-section="project-info" href="#"><i class="fas fa-info-circle"></i> Project Info</a>
+                        <a class="nav-link" id="v-pills-evidence-tab" data-section="evidence" href="#"><i class="fas fa-folder-open"></i> Evidence</a>
+                        <a class="nav-link" id="v-pills-timeline-tab" data-section="timeline" href="#"><i class="fas fa-stream"></i> Timeline</a>
+                        <a class="nav-link" id="v-pills-analysis-tab" data-section="analysis" href="#"><i class="fas fa-sitemap"></i> Analysis</a>
+                        <a class="nav-link" id="v-pills-roi-generator-tab" data-section="roi-generator" href="#"><i class="fas fa-chart-line"></i> ROI Generator</a>
+                    </div>
+                    <hr>
+                    <div id="current-project-sidebar" style="display: none;">
+                        <h5>Current Project</h5>
+                        <p class="mb-1" id="sidebar-project-title"></p>
+                        <p><span class="badge" id="sidebar-project-status"></span></p>
+                        <button class="btn btn-sm btn-outline-secondary w-100" id="closeProjectBtn"><i class="fas fa-times-circle"></i> Close Project</button>
                     </div>
                 </div>
             </div>
@@ -457,54 +419,37 @@
                     <!-- Dashboard Section -->
                     <div id="dashboard-section" class="content-section">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
-                            <button class="btn btn-primary" id="newProjectBtn">
-                                <i class="fas fa-plus me-2"></i>New Investigation
-                            </button>
+                            <h4 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h4>
+                            <button class="btn btn-primary" id="newProjectBtnHeader"><i class="fas fa-plus-circle me-2"></i>New Investigation</button>
                         </div>
-
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <div class="card text-center">
                                     <div class="card-body">
-                                        <h5 class="card-title text-primary">
-                                            <i class="fas fa-folder me-2"></i>
-                                            <span id="totalProjects">0</span>
-                                        </h5>
-                                        <p class="card-text">Total Projects</p>
+                                        <h5 class="card-title"><i class="fas fa-folder-open me-2 text-primary"></i>Total Projects</h5>
+                                        <p class="card-text fs-2 fw-bold" id="totalProjects">0</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="card text-center">
                                     <div class="card-body">
-                                        <h5 class="card-title text-warning">
-                                            <i class="fas fa-edit me-2"></i>
-                                            <span id="draftProjects">0</span>
-                                        </h5>
-                                        <p class="card-text">Draft Projects</p>
+                                        <h5 class="card-title"><i class="fas fa-pencil-alt me-2 text-warning"></i>Drafts</h5>
+                                        <p class="card-text fs-2 fw-bold" id="draftProjects">0</p>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="card text-center">
                                     <div class="card-body">
-                                        <h5 class="card-title text-success">
-                                            <i class="fas fa-check me-2"></i>
-                                            <span id="completeProjects">0</span>
-                                        </h5>
-                                        <p class="card-text">Complete Projects</p>
+                                        <h5 class="card-title"><i class="fas fa-check-circle me-2 text-success"></i>Completed</h5>
+                                        <p class="card-text fs-2 fw-bold" id="completeProjects">0</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <h4>Recent Projects</h4>
                         <div id="projectsList">
-                            <div class="text-center text-muted py-5">
-                                <i class="fas fa-folder-open fa-3x mb-3"></i>
-                                <p>No projects found. Create your first investigation to get started.</p>
-                            </div>
+                            <!-- Project cards will be loaded here by displayProjects() -->
                         </div>
                     </div>
 
@@ -573,11 +518,11 @@
                             </button>
                         </div>
 
-                        <div class="upload-area mb-4" id="uploadArea">
-                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                            <h5>Drop files here or click to upload</h5>
-                            <p class="text-muted">Supported formats: PDF, DOCX, images, videos, audio files</p>
-                            <input type="file" id="fileInput" multiple style="display: none;">
+                        <input type="file" id="fileInput" style="display: none;" multiple>
+                        <div class="upload-area text-muted" id="drop-area">
+                            <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                            <p>Drop files here or click to upload</p>
+                            <p class="small">Supported formats: PDF, DOCX, images, videos, audio files</p>
                         </div>
 
                         <div id="evidenceList">
@@ -589,118 +534,35 @@
                     </div>
 
                     <!-- Timeline Section -->
-                    <div id="timeline-section" class="content-section" style="display: none;">
+                    <div id="timeline-section" class="content-section" style="display:none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2><i class="fas fa-clock me-2"></i>Timeline Builder</h2>
-                            <button class="btn btn-primary" id="addTimelineBtn">
-                                <i class="fas fa-plus me-2"></i>Add Entry
-                            </button>
+                            <h4 class="mb-0"><i class="fas fa-stream me-2"></i>Timeline</h4>
+                            <button class="btn btn-primary" id="addTimelineModalBtn"><i class="fas fa-plus-circle me-2"></i>Add Entry</button>
                         </div>
-
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Timeline Entry Types:</strong>
-                            <ul class="mb-0 mt-2">
-                                <li><strong>Action:</strong> Something performed solely by an individual</li>
-                                <li><strong>Condition:</strong> The state of a person, place, or thing at a specific time</li>
-                                <li><strong>Event:</strong> An adverse outcome requiring causal factor analysis</li>
-                            </ul>
-                        </div>
-
                         <div id="timelineList">
-                            <div class="text-center text-muted py-4">
-                                <i class="fas fa-clock fa-2x mb-3"></i>
-                                <p>No timeline entries yet. Add your first entry to get started.</p>
-                            </div>
+                            <!-- Timeline entries will be loaded here -->
                         </div>
                     </div>
 
                     <!-- Analysis Section -->
-                    <div id="analysis-section" class="content-section" style="display: none;">
+                    <div id="analysis-section" class="content-section" style="display:none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2><i class="fas fa-search me-2"></i>Causal Analysis</h2>
-                            <button class="btn btn-primary" id="runAnalysisBtn">
-                                <i class="fas fa-cogs me-2"></i>Run Analysis
-                            </button>
+                            <h4 class="mb-0"><i class="fas fa-sitemap me-2"></i>Causal Analysis</h4>
+                            <button class="btn btn-primary btn-run-analysis"><i class="fas fa-play-circle me-2"></i>Run Analysis</button>
                         </div>
-
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Causal Factor Categories (Swiss Cheese Model):</strong>
-                            <ul class="mb-0 mt-2">
-                                <li><span class="badge bg-danger me-2">Organization</span>Management decisions, policies, culture</li>
-                                <li><span class="badge bg-warning me-2">Workplace</span>Physical environment, equipment, procedures</li>
-                                <li><span class="badge bg-info me-2">Precondition</span>Individual factors, team factors, environmental factors</li>
-                                <li><span class="badge bg-success me-2">Production</span>Unsafe acts, errors, violations</li>
-                                <li><span class="badge bg-primary me-2">Defense</span>Barriers that failed or were absent</li>
-                            </ul>
-                        </div>
-
-                        <div id="causalFactorsList">
-                            <div class="text-center text-muted py-4">
-                                <i class="fas fa-search fa-2x mb-3"></i>
-                                <p>No causal analysis performed yet. Run analysis to identify contributing factors.</p>
-                            </div>
+                        <div id="analysisContent">
+                            <!-- Analysis results will be loaded here -->
                         </div>
                     </div>
 
                     <!-- ROI Generator Section -->
-                    <div id="roi-generator-section" class="content-section" style="display: none;">
+                    <div id="roi-generator-section" class="content-section" style="display:none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2><i class="fas fa-file-alt me-2"></i>ROI Generator</h2>
-                            <button class="btn btn-primary" id="generateROIBtn">
-                                <i class="fas fa-file-download me-2"></i>Generate ROI
-                            </button>
+                            <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>ROI Generator</h4>
+                            <button class="btn btn-primary btn-generate-roi"><i class="fas fa-calculator me-2"></i>Generate ROI</button>
                         </div>
-
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Before generating ROI:</strong> Ensure you have completed project information, uploaded evidence, built timeline, and performed causal analysis.
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5><i class="fas fa-check-circle me-2"></i>Readiness Check</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="readinessCheck">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span>Project Information</span>
-                                                <span id="checkProjectInfo" class="badge bg-secondary">Not checked</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span>Evidence Uploaded</span>
-                                                <span id="checkEvidence" class="badge bg-secondary">Not checked</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span>Timeline Built</span>
-                                                <span id="checkTimeline" class="badge bg-secondary">Not checked</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span>Causal Analysis</span>
-                                                <span id="checkAnalysis" class="badge bg-secondary">Not checked</span>
-                                            </div>
-                                        </div>
-                                        <button class="btn btn-outline-primary btn-sm mt-3" id="checkReadinessBtn">
-                                            <i class="fas fa-sync me-2"></i>Check Readiness
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5><i class="fas fa-download me-2"></i>Generated Documents</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div id="generatedDocs">
-                                            <p class="text-muted">No documents generated yet.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="roi-content">
+                            <!-- ROI results will be loaded here -->
                         </div>
                     </div>
                 </div>
@@ -738,7 +600,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" form="createProjectForm">Create Project</button>
+                    <button type="submit" class="btn btn-primary" id="createProjectSubmitBtn" form="createProjectForm">Create Project</button>
                 </div>
             </div>
         </div>

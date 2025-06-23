@@ -77,7 +77,7 @@ def register():
         
         # Create access token
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),
             expires_delta=timedelta(hours=24)
         )
         
@@ -125,7 +125,7 @@ def login():
         
         # Create access token
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),
             expires_delta=timedelta(hours=24)
         )
         
@@ -146,7 +146,7 @@ def get_current_user():
     """Get current user information"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = User.query.get(int(user_id))
         
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
@@ -169,7 +169,7 @@ def change_password():
     """Change user password"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = User.query.get(int(user_id))
         
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
@@ -213,14 +213,14 @@ def refresh_token():
     """Refresh JWT token"""
     try:
         user_id = get_jwt_identity()
-        user = User.query.get(user_id)
+        user = User.query.get(int(user_id))
         
         if not user or not user.is_active:
             return jsonify({'success': False, 'error': 'Invalid user'}), 401
         
         # Create new access token
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),
             expires_delta=timedelta(hours=24)
         )
         

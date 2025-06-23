@@ -304,7 +304,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#" data-section="evidence">
-                                <i class="fas fa-folder-open me-2"></i>Evidence
+                                <i class="fas fa-folder-open me-2"></i>File Uploads
                             </a>
                         </li>
                         <li class="nav-item">
@@ -453,10 +453,20 @@
                     <!-- Evidence Section -->
                     <div id="evidence-section" class="content-section" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2><i class="fas fa-folder-open me-2"></i>Evidence Management</h2>
+                            <h2><i class="fas fa-folder-open me-2"></i>File Uploads</h2>
                             <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                                <i class="fas fa-upload me-2"></i>Upload Evidence
+                                <i class="fas fa-upload me-2"></i>Upload Files
                             </button>
+                        </div>
+
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Upload documents to extract timeline entries. The AI will analyze files to identify:
+                            <ul class="mb-0 mt-2">
+                                <li><strong>Actions:</strong> Things performed by individuals</li>
+                                <li><strong>Conditions:</strong> States of people, places, or things</li>
+                                <li><strong>Events:</strong> Adverse outcomes requiring analysis</li>
+                            </ul>
                         </div>
 
                         <div class="upload-area mb-4" onclick="document.getElementById('fileInput').click()">
@@ -469,7 +479,7 @@
                         <div id="evidenceList">
                             <div class="text-center text-muted py-4">
                                 <i class="fas fa-file fa-2x mb-3"></i>
-                                <p>No evidence uploaded yet.</p>
+                                <p>No files uploaded yet.</p>
                             </div>
                         </div>
                     </div>
@@ -541,7 +551,7 @@
 
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Before generating ROI:</strong> Ensure you have completed project information, uploaded evidence, built timeline, and performed causal analysis.
+                            <strong>Before generating ROI:</strong> Ensure you have completed project information, built timeline entries, and performed causal analysis.
                         </div>
 
                         <div class="row">
@@ -557,7 +567,7 @@
                                                 <span id="checkProjectInfo" class="badge bg-secondary">Not checked</span>
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span>Evidence Uploaded</span>
+                                                <span>Files Uploaded</span>
                                                 <span id="checkEvidence" class="badge bg-secondary">Not checked</span>
                                             </div>
                                             <div class="d-flex justify-content-between align-items-center mb-2">

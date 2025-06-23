@@ -39,6 +39,14 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-only')
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-key-only')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
 app.config['JWT_ALGORITHM'] = 'HS256'
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
+app.config['JWT_HEADER_NAME'] = 'Authorization'
+app.config['JWT_HEADER_TYPE'] = 'Bearer'
+app.config['JWT_CSRF_IN_COOKIES'] = False
+app.config['JWT_CSRF_CHECK_FORM'] = False
+app.config['JWT_ACCESS_CSRF_HEADER_NAME'] = None
+app.config['JWT_REFRESH_CSRF_HEADER_NAME'] = None
+app.config['JWT_CSRF_METHODS'] = []
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'

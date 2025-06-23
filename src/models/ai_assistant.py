@@ -30,7 +30,7 @@ class AIAssistant:
         else:
             print("Warning: OPENAI_API_KEY not found in environment variables")
     
-    def suggest_timeline_entries(self, evidence_text: str, existing_timeline: List[TimelineEntry]) -> List[Dict[str, Any]]:
+    def suggest_timeline_entries(self, evidence_text: str, existing_timeline: List[Any]) -> List[Dict[str, Any]]:
         """Suggest timeline entries based on evidence text"""
         if not self.client:
             return []
@@ -177,20 +177,28 @@ class AIAssistant:
             print(f"Error checking consistency: {e}")
             return []
     
-    def _create_timeline_suggestion_prompt(self, evidence_text: str, existing_timeline: List[TimelineEntry]) -> str:
+    def _create_timeline_suggestion_prompt(self, evidence_text: str, existing_timeline: List[Any]) -> str:
         """Create prompt for timeline suggestions"""
         existing_entries = "\n".join([
-            f"- {entry.timestamp}: {entry.type.title()} - {entry.description}"
-            for entry in existing_timeline if entry.timestamp
+            f"- {entry.get('timestamp', entry.timestamp if hasattr(entry, 'timestamp') else '')}: "
+            f"{entry.get('type', entry.type if hasattr(entry, 'type') else '').title()} - "
+            f"{entry.get('description', entry.description if hasattr(entry, 'description') else '')}"
+            for entry in existing_timeline 
+            if (hasattr(entry, 'timestamp') and entry.timestamp) or (isinstance(entry, dict) and entry.get('timestamp'))
         ])
         
         return f"""
 Based on the following evidence text, suggest timeline entries for a USCG marine casualty investigation.
 
-Each entry should be classified as:
-- Action: Something performed solely by an individual
-- Condition: The state of a person, place, or thing at a specific time
-- Event: An adverse outcome that requires causal factor analysis
+IMPORTANT CLASSIFICATION RULES:
+- Action: Something performed solely by an individual (e.g., "Captain ordered full astern", "Engineer started pump")
+- Condition: The state of a person, place, or thing at a specific time (e.g., "Visibility was 0.5 miles", "Engine room was flooding")
+- Event: An adverse outcome that requires causal factor analysis (e.g., "Vessel collided with pier", "Fire broke out in engine room")
+
+Look for specific timestamps, dates, and times mentioned in the text. Extract key facts that describe:
+1. What people did (Actions)
+2. Environmental or equipment states (Conditions)
+3. Adverse outcomes or incidents (Events)
 
 Evidence text:
 {evidence_text}
@@ -198,14 +206,15 @@ Evidence text:
 Existing timeline entries:
 {existing_entries}
 
-Please suggest new timeline entries in JSON format:
+Please suggest new timeline entries in JSON format. Include specific timestamps when mentioned in the text:
 [
   {{
     "timestamp": "YYYY-MM-DD HH:MM",
     "type": "action|condition|event",
-    "description": "Clear description of what happened",
+    "description": "Clear, factual description of what happened",
     "confidence": "high|medium|low",
-    "assumptions": ["any assumptions made"]
+    "assumptions": ["any assumptions made if timestamp or details are inferred"],
+    "personnel_involved": ["names or roles of people involved if mentioned"]
   }}
 ]
 """

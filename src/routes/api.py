@@ -169,7 +169,7 @@ def delete_project(project_id):
 @api_bp.route('/projects/<project_id>/upload', methods=['POST'])
 @jwt_required()
 def upload_file(project_id):
-    """Upload file to project"""
+    """Upload file to project and extract timeline entries"""
     try:
         # Validate project ID
         if not validate_project_id(project_id):
@@ -218,18 +218,27 @@ def upload_file(project_id):
         
         # Get additional metadata
         description = str(request.form.get('description', ''))[:500]
-        source = str(request.form.get('source', 'user_upload'))[:100]
         
-        # Determine file type
-        file_type = 'document'
-        if file_ext in ['.jpg', '.jpeg', '.png', '.gif']:
-            file_type = 'photo'
-        elif file_ext in ['.mp4', '.avi']:
-            file_type = 'video'
-        elif file_ext in ['.mp3', '.wav']:
-            file_type = 'audio'
+        # Process file locally instead of using project manager
+        # since we already saved it
+        from src.models.ai_assistant import AIAssistant
+        from src.models.project_manager import ProjectManager
         
-        # Create evidence record
+        # Extract content from saved file
+        pm = ProjectManager()
+        content = pm._extract_file_content(file_path)
+        
+        # Get timeline suggestions if content was extracted
+        timeline_suggestions = []
+        if content:
+            ai = AIAssistant()
+            if ai.client:
+                # Get existing timeline for context
+                existing_timeline = [entry.to_dict() for entry in project.timeline_entries]
+                timeline_suggestions = ai.suggest_timeline_entries(content, existing_timeline)
+        
+        # Store file record for reference (simpler than Evidence)
+        # You might want to create a simpler UploadedFile model instead
         evidence = Evidence(
             id=str(uuid.uuid4()),
             filename=unique_filename,
@@ -237,9 +246,9 @@ def upload_file(project_id):
             file_path=os.path.relpath(file_path, current_app.config.get('UPLOAD_FOLDER', 'uploads')),
             file_size=file_size,
             mime_type=file.content_type,
-            file_type=file_type,
+            file_type=pm._determine_file_type(file_path),
             description=description or f"Uploaded file: {file.filename}",
-            source=source,
+            source='user_upload',
             project_id=project_id
         )
         
@@ -248,7 +257,13 @@ def upload_file(project_id):
         
         return jsonify({
             'success': True,
-            'evidence': evidence.to_dict()
+            'file': {
+                'id': evidence.id,
+                'filename': evidence.original_filename,
+                'uploaded_at': evidence.uploaded_at.isoformat() if evidence.uploaded_at else None
+            },
+            'timeline_suggestions': timeline_suggestions,
+            'message': f'File uploaded successfully. Found {len(timeline_suggestions)} potential timeline entries.'
         })
     except Exception as e:
         db.session.rollback()
@@ -501,6 +516,74 @@ def get_ai_suggestions(project_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@api_bp.route('/projects/<project_id>/timeline/bulk', methods=['POST'])
+@jwt_required()
+def add_timeline_entries_bulk(project_id):
+    """Add multiple timeline entries at once (from AI suggestions)"""
+    try:
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        
+        data = request.get_json()
+        if not data or 'entries' not in data:
+            return jsonify({'success': False, 'error': 'No entries provided'}), 400
+        
+        entries_data = data['entries']
+        if not isinstance(entries_data, list):
+            return jsonify({'success': False, 'error': 'Entries must be a list'}), 400
+        
+        created_entries = []
+        
+        for entry_data in entries_data:
+            # Validate required fields
+            if not entry_data.get('timestamp') or not entry_data.get('type') or not entry_data.get('description'):
+                continue  # Skip invalid entries
+            
+            # Validate timestamp format
+            try:
+                timestamp = datetime.fromisoformat(entry_data['timestamp'])
+            except (ValueError, TypeError):
+                continue  # Skip entries with invalid timestamps
+            
+            # Create timeline entry
+            entry = TimelineEntry(
+                id=str(uuid.uuid4()),
+                timestamp=timestamp,
+                entry_type=str(entry_data['type'])[:50],
+                description=str(entry_data['description'])[:1000],
+                confidence_level=entry_data.get('confidence_level', 'medium'),
+                is_initiating_event=bool(entry_data.get('is_initiating_event', False)),
+                project_id=project_id
+            )
+            
+            # Set assumptions if provided
+            if entry_data.get('assumptions'):
+                entry.assumptions_list = entry_data['assumptions']
+            
+            # Set personnel if provided
+            if entry_data.get('personnel_involved'):
+                entry.personnel_involved_list = entry_data['personnel_involved']
+            
+            db.session.add(entry)
+            created_entries.append(entry)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'created': len(created_entries),
+            'entries': [entry.to_dict() for entry in created_entries]
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error adding bulk timeline entries to project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to add timeline entries'}), 500
+
 @api_bp.route('/projects/<project_id>/consistency-check', methods=['POST'])
 @jwt_required()
 def check_consistency(project_id):
@@ -549,5 +632,42 @@ def generate_response():
         return jsonify({ "content": ai_response })
     except Exception as e:
         return jsonify({ "error": str(e) }), 500
+
+@api_bp.route('/projects/<project_id>/evidence/<int:evidence_id>', methods=['DELETE'])
+@jwt_required()
+def delete_evidence(project_id, evidence_id):
+    """Deletes an evidence file and its database record."""
+    try:
+        user_id = get_jwt_identity()
+        project = Project.query.filter_by(id=project_id, user_id=user_id).first()
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+
+        evidence = Evidence.query.filter_by(id=evidence_id, project_id=project.id).first()
+        if not evidence:
+            return jsonify({'success': False, 'error': 'Evidence not found'}), 404
+
+        # Delete the physical file
+        if evidence.file_path:
+            try:
+                # Construct the full path relative to the app's root or a configured upload folder
+                file_to_delete = os.path.join(current_app.config['UPLOAD_FOLDER'], evidence.file_path)
+                if os.path.exists(file_to_delete):
+                    os.remove(file_to_delete)
+                    current_app.logger.info(f"Deleted evidence file: {file_to_delete}")
+            except Exception as e:
+                # Log if file deletion fails but don't stop the process
+                current_app.logger.error(f"Error deleting file {evidence.file_path}: {e}")
+
+        # Delete the database record
+        db.session.delete(evidence)
+        db.session.commit()
+
+        current_app.logger.info(f"Deleted evidence record {evidence_id} for project {project_id}")
+        return jsonify({'success': True, 'message': 'Evidence deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting evidence {evidence_id} for project {project_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
