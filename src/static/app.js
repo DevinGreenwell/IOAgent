@@ -428,7 +428,6 @@ class IOAgent {
                 this.handleFileUpload(event.target.files);
             });
         }
-        }
 
         const uploadArea = document.querySelector('.upload-area');
 
