@@ -342,35 +342,52 @@ class IOAgent {
         const mainApp = document.getElementById('mainApp');
 
         // Main navigation
-        document.getElementById('v-pills-tab').addEventListener('click', (e) => {
-            if (e.target.tagName === 'A' && e.target.dataset.section) {
-                e.preventDefault();
-                this.showSection(e.target.dataset.section);
-            }
-        });
+        const mainNav = document.getElementById('mainNav');
+        if (mainNav) {
+            mainNav.addEventListener('click', (e) => {
+                if (e.target.tagName === 'A' && e.target.dataset.section) {
+                    e.preventDefault();
+                    this.showSection(e.target.dataset.section);
+                }
+            });
+        }
 
-        // Logout button in navbar
-        document.getElementById('logoutButton').addEventListener('click', () => this.logout());
+        // Note: Logout button is handled by inline onclick in HTML
 
         // Attach handlers to forms for submission
-        document.getElementById('createProjectForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.createProject();
-        });
-        document.getElementById('addTimelineForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addTimelineEntry();
-        });
-        document.getElementById('projectInfoForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveProjectInfo();
-        });
+        const createProjectForm = document.getElementById('createProjectForm');
+        if (createProjectForm) {
+            createProjectForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createProject();
+            });
+        }
+        
+        const addTimelineForm = document.getElementById('addTimelineForm');
+        if (addTimelineForm) {
+            addTimelineForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.addTimelineEntry();
+            });
+        }
+        
+        const projectInfoForm = document.getElementById('projectInfoForm');
+        if (projectInfoForm) {
+            projectInfoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveProjectInfo();
+            });
+        }
         
         // Sidebar close button
-        document.getElementById('closeProjectBtn').addEventListener('click', () => this.closeProject());
+        const closeProjectBtn = document.getElementById('closeProjectBtn');
+        if (closeProjectBtn) {
+            closeProjectBtn.addEventListener('click', () => this.closeProject());
+        }
 
         // Event delegation for dynamically loaded content
-        mainApp.addEventListener('click', (e) => {
+        if (mainApp) {
+            mainApp.addEventListener('click', (e) => {
             const target = e.target;
             const targetId = target.id;
             const targetClosest = (selector) => target.closest(selector);
@@ -411,25 +428,28 @@ class IOAgent {
                 this.handleFileUpload(event.target.files);
             });
         }
+        }
 
         const uploadArea = document.querySelector('.upload-area');
 
         // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
 
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            this.handleFileUpload(files);
-        });
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                this.handleFileUpload(files);
+            });
+        }
     }
 
     showSection(sectionName) {
