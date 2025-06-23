@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 
-# Add the parent directory to Python path to import from src
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add the current directory to Python path to import from src
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, send_from_directory, jsonify, request
 from flask_cors import CORS
@@ -20,7 +20,7 @@ from src.routes.auth import auth_bp
 
 # Initialize Flask app
 # Set static folder to src/static directory
-static_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src', 'static')
+static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src', 'static')
 app = Flask(__name__, static_folder=static_path)
 
 # Configure logging
@@ -110,7 +110,7 @@ def configure_database():
     global db_path
     
     # Create database directory
-    db_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'database')
+    db_dir = os.path.join(os.path.dirname(__file__), 'src', 'database')
     os.makedirs(db_dir, exist_ok=True)
     
     # Use SQLite for all environments temporarily
