@@ -688,7 +688,7 @@ def health_check():
 
 if __name__ == '__main__':
     # Configuration from environment variables
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 5001))
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
     # Don't use debug mode in production
