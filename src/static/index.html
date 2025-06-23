@@ -269,6 +269,85 @@
     </style>
 </head>
 <body>
+    <!-- Authentication Overlay -->
+    <div id="authOverlay" style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--uscg-blue), #004080);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    ">
+        <div style="
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        ">
+            <div class="text-center mb-4">
+                <i class="fas fa-anchor fa-3x text-primary mb-3"></i>
+                <h3>IOAgent Login</h3>
+                <p class="text-muted">USCG Report of Investigation Generator</p>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm">
+                <form id="authLoginForm">
+                    <div class="mb-3">
+                        <label for="loginUsername" class="form-label">Username or Email</label>
+                        <input type="text" class="form-control" id="loginUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                    </button>
+                </form>
+                <div class="text-center">
+                    <button class="btn btn-link" onclick="window.app && window.app.showRegisterForm()">
+                        Don't have an account? Register here
+                    </button>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" style="display: none;">
+                <form id="authRegisterForm">
+                    <div class="mb-3">
+                        <label for="registerUsername" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="registerUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="registerEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerPassword" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="registerPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mb-3">
+                        <i class="fas fa-user-plus me-2"></i>Register
+                    </button>
+                </form>
+                <div class="text-center">
+                    <button class="btn btn-link" onclick="window.app && window.app.showLoginForm()">
+                        Already have an account? Sign in here
+                    </button>
+                </div>
+            </div>
+
+            <div id="authMessage" class="alert" style="display: none;"></div>
+        </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg">
         <div class="container">
@@ -277,13 +356,24 @@
                 IOAgent
             </a>
             <div class="navbar-nav ms-auto">
-                <span class="navbar-text text-white">
+                <div id="user-info-nav" style="display: none;" class="d-flex align-items-center">
+                    <span class="navbar-text text-white me-3">
+                        Welcome, <span id="username-display"></span>
+                    </span>
+                    <button class="btn btn-outline-light btn-sm" onclick="window.app && window.app.logout()">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </button>
+                </div>
+                <span class="navbar-text text-white" id="default-nav-text">
                     USCG Report of Investigation Generator
                 </span>
             </div>
         </div>
     </nav>
 
+    <!-- Main App Container -->
+    <div id="mainApp" style="display: none;">
+    
     <!-- Main Container -->
     <div class="container main-container">
         <div class="row">
@@ -610,6 +700,8 @@
             <p class="mb-0">&copy; 2025 IOAgent - USCG Report of Investigation Generator</p>
         </div>
     </footer>
+    
+    </div> <!-- End mainApp -->
 
     <!-- Modals -->
     <!-- Create Project Modal -->

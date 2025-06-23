@@ -4,7 +4,9 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: pip install -r IOAgent-backend/requirements.txt
+    buildCommand: |
+      pip install -r requirements.txt
+      python init_production_db.py
     startCommand: cd IOAgent-backend && python app.py
     envVars:
       - key: FLASK_ENV
@@ -13,6 +15,8 @@ services:
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
+      - key: DATABASE_URL
+        value: postgresql://ioagent_user:uOXBZaleReg83smdsLXM371fT6vpVF4C@dpg-d1cbuv6uk2gs73aii0d0-a/ioagent
       - key: PROD_CORS_ORIGINS
         value: https://ioagent.onrender.com
       - key: PYTHON_VERSION

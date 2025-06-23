@@ -7,7 +7,7 @@ class IOAgent {
         // Configure API base URL based on environment
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             // Local development
-            this.apiBase = 'http://localhost:5000/api';
+            this.apiBase = 'http://localhost:5001/api';
         } else {
             // Production - use same origin (whether on Render or other hosting)
             this.apiBase = window.location.origin + '/api';
@@ -255,6 +255,18 @@ class IOAgent {
             this.showAuthOverlay();
             this.showAuthMessage('Session expired. Please login again.', 'info');
         }, 100);
+    }
+
+    showRegisterForm() {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('registerForm').style.display = 'block';
+        document.getElementById('authMessage').style.display = 'none';
+    }
+
+    showLoginForm() {
+        document.getElementById('registerForm').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('authMessage').style.display = 'none';
     }
 
     showAuthMessage(message, type) {

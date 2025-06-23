@@ -633,41 +633,4 @@ def generate_response():
     except Exception as e:
         return jsonify({ "error": str(e) }), 500
 
-@api_bp.route('/projects/<project_id>/evidence/<int:evidence_id>', methods=['DELETE'])
-@jwt_required()
-def delete_evidence(project_id, evidence_id):
-    """Deletes an evidence file and its database record."""
-    try:
-        user_id = get_jwt_identity()
-        project = Project.query.filter_by(id=project_id, user_id=user_id).first()
-        if not project:
-            return jsonify({'success': False, 'error': 'Project not found'}), 404
-
-        evidence = Evidence.query.filter_by(id=evidence_id, project_id=project.id).first()
-        if not evidence:
-            return jsonify({'success': False, 'error': 'Evidence not found'}), 404
-
-        # Delete the physical file
-        if evidence.file_path:
-            try:
-                # Construct the full path relative to the app's root or a configured upload folder
-                file_to_delete = os.path.join(current_app.config['UPLOAD_FOLDER'], evidence.file_path)
-                if os.path.exists(file_to_delete):
-                    os.remove(file_to_delete)
-                    current_app.logger.info(f"Deleted evidence file: {file_to_delete}")
-            except Exception as e:
-                # Log if file deletion fails but don't stop the process
-                current_app.logger.error(f"Error deleting file {evidence.file_path}: {e}")
-
-        # Delete the database record
-        db.session.delete(evidence)
-        db.session.commit()
-
-        current_app.logger.info(f"Deleted evidence record {evidence_id} for project {project_id}")
-        return jsonify({'success': True, 'message': 'Evidence deleted successfully'})
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error deleting evidence {evidence_id} for project {project_id}: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 
