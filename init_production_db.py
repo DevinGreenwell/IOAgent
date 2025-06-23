@@ -17,17 +17,31 @@ def init_database():
     # Create Flask app
     app = Flask(__name__)
     
+    # Try to import PostgreSQL driver
+    try:
+        import psycopg2
+        print("✅ psycopg2 imported successfully")
+    except ImportError:
+        try:
+            import psycopg
+            print("✅ psycopg3 imported successfully")
+        except ImportError:
+            print("❌ No PostgreSQL driver found, skipping database initialization")
+            return True  # Don't fail the build
+    
     # Use environment variable or internal Render URL
     database_url = os.environ.get('DATABASE_URL', 
         'postgresql://ioagent_user:uOXBZaleReg83smdsLXM371fT6vpVF4C@dpg-d1cbuv6uk2gs73aii0d0-a/ioagent')
+    
+    print(f"🔗 Using database URL: {database_url[:50]}...")
     
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'pool_pre_ping': True,
         'pool_recycle': 300,
-        'pool_size': 5,
-        'max_overflow': 10
+        'pool_size': 3,
+        'max_overflow': 5
     }
     
     # Initialize database

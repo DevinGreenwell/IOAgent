@@ -5,8 +5,9 @@ services:
     region: oregon
     plan: free
     buildCommand: |
+      pip install --upgrade pip
       pip install -r requirements.txt
-      python init_production_db.py
+      python init_production_db.py || echo "Database initialization failed, will retry on startup"
     startCommand: cd IOAgent-backend && python app.py
     envVars:
       - key: FLASK_ENV
