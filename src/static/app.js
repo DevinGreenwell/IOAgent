@@ -417,6 +417,7 @@ class IOAgent {
                 this.generateROI();
             }
         });
+        }
 
         this.setupFileUpload();
     }
