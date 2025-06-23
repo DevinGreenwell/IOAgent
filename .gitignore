@@ -135,6 +135,12 @@ projects/
 uploads/
 exports/
 src/database/app.db
+IOAgent-backend/
+
+# Test and debug files
+test_*.py
+debug_*.py
+*_test.py
 
 # Environment files with secrets
 .env.production

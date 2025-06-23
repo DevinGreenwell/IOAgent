@@ -1,8 +1,0 @@
-# Minimal requirements for IOAgent - Essential packages only
-Flask==3.1.1
-flask-cors==6.0.0
-Flask-SQLAlchemy==3.1.1
-Flask-JWT-Extended==4.6.0
-Flask-Migrate==4.1.0
-bcrypt==4.2.1
-python-dotenv==1.1.0
