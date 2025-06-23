@@ -171,19 +171,26 @@ class IOAgent {
     }
 
     async register() {
-        const username = document.getElementById('registerUsername').value;
-        const email = document.getElementById('registerEmail').value;
-        const password = document.getElementById('registerPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        if (password !== confirmPassword) {
-            this.showAuthMessage('Passwords do not match', 'error');
-            return;
-        }
-
-        this.showAuthMessage('Creating account...', 'info');
-
         try {
+            const username = document.getElementById('registerUsername').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            console.log('Register attempt:', { username, email, passwordLength: password.length });
+            
+            // Basic validation
+            if (!username || !email || !password) {
+                this.showAuthMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (password.length < 8) {
+                this.showAuthMessage('Password must be at least 8 characters', 'error');
+                return;
+            }
+
+            this.showAuthMessage('Creating account...', 'info');
+
             const response = await fetch(`${this.apiBase}/auth/register`, {
                 method: 'POST',
                 headers: {
