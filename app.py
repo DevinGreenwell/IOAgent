@@ -30,6 +30,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Debug logging for static path
+logger.info(f"Current working directory: {os.getcwd()}")
+logger.info(f"App file location: {os.path.abspath(__file__)}")
+logger.info(f"Static folder path: {static_path}")
+logger.info(f"Static folder exists: {os.path.exists(static_path)}")
+if os.path.exists(static_path):
+    logger.info(f"Static folder contents: {os.listdir(static_path)}")
+index_path = os.path.join(static_path, 'index.html')
+logger.info(f"Index.html path: {index_path}")
+logger.info(f"Index.html exists: {os.path.exists(index_path)}")
+
 # Security configuration
 if os.environ.get('FLASK_ENV') == 'production':
     if not os.environ.get('SECRET_KEY'):
