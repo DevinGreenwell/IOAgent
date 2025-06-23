@@ -27,14 +27,18 @@ class IOAgent {
         
         console.log('Checking existing auth:', { hasToken: !!token, hasUser: !!user });
         
+        // Always show auth overlay first to ensure UI is visible
+        console.log('Showing auth overlay...');
+        this.showAuthOverlay();
+        
+        // For now, skip token validation and just show login
+        // This ensures users can always interact with the app
         if (token && user) {
             this.accessToken = token;
             this.currentUser = JSON.parse(user);
-            console.log('Found existing auth, showing main app');
-            this.showMainApp();
-        } else {
-            console.log('No existing auth, showing login');
-            this.showAuthOverlay();
+            console.log('Found existing auth, but showing login for debugging');
+            // Temporarily comment out auto-login for debugging
+            // this.showMainApp();
         }
     }
 
@@ -1475,6 +1479,27 @@ function handleFileUpload(event) {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.app = new IOAgent();
+    console.log('DOM loaded, initializing IOAgent...');
+    try {
+        window.app = new IOAgent();
+        console.log('IOAgent initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize IOAgent:', error);
+    }
 });
+
+// Fallback initialization if DOMContentLoaded already fired
+if (document.readyState === 'loading') {
+    // Document is still loading
+    console.log('Document still loading, waiting for DOMContentLoaded...');
+} else {
+    // Document has already loaded
+    console.log('Document already loaded, initializing IOAgent immediately...');
+    try {
+        window.app = new IOAgent();
+        console.log('IOAgent initialized successfully (immediate)');
+    } catch (error) {
+        console.error('Failed to initialize IOAgent (immediate):', error);
+    }
+}
 

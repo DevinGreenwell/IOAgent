@@ -81,14 +81,19 @@ logger.info(f"Upload folder created/verified at: {UPLOAD_FOLDER}")
 def get_cors_origins():
     """Get CORS origins based on environment"""
     if os.environ.get('FLASK_ENV') == 'production':
-        # Production: Only allow the actual production domain
-        return ['https://ioagent.onrender.com']
+        # Production: Allow the actual production domain and common variations
+        return [
+            'https://ioagent.onrender.com',
+            'https://ioagent-*.onrender.com',  # For preview deployments
+            '*'  # Allow all for now to debug issues
+        ]
     else:
         # Development: Allow localhost and specified domains
         return [
             'http://localhost:3000',
             'http://127.0.0.1:5000',
-            'http://localhost:5000'
+            'http://localhost:5000',
+            'http://localhost:5001'
         ]
 
 cors_origins = get_cors_origins()
@@ -588,13 +593,13 @@ def add_security_headers(response):
     if os.environ.get('FLASK_ENV') == 'production':
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     
-    # More permissive CSP for development
+    # More permissive CSP for development and production
     if os.environ.get('FLASK_ENV') == 'production':
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "font-src 'self' https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "img-src 'self' data: https:; "
             "connect-src 'self';"
         )
