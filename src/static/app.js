@@ -705,14 +705,27 @@ class IOAgent {
 
     updateCurrentProjectDisplay() {
         const sidebar = document.getElementById('current-project-sidebar');
+        
+        // Check if sidebar elements exist before trying to update them
+        if (!sidebar) {
+            console.log('Project sidebar elements not found in DOM - skipping display update');
+            return;
+        }
 
         if (this.currentProject) {
             sidebar.style.display = 'block';
-            document.getElementById('sidebar-project-title').textContent = this.currentProject.metadata.title;
+            
+            const projectTitle = document.getElementById('sidebar-project-title');
+            if (projectTitle) {
+                projectTitle.textContent = this.currentProject.metadata.title;
+            }
+            
             const statusBadge = document.getElementById('sidebar-project-status');
-            const status = this.currentProject.metadata.status || 'draft';
-            statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
-            statusBadge.className = `project-status status-${status.toLowerCase()}`;
+            if (statusBadge) {
+                const status = this.currentProject.metadata.status || 'draft';
+                statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+                statusBadge.className = `project-status status-${status.toLowerCase()}`;
+            }
         } else {
             sidebar.style.display = 'none';
         }
