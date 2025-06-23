@@ -31,14 +31,16 @@ class IOAgent {
         console.log('Showing auth overlay...');
         this.showAuthOverlay();
         
-        // For now, skip token validation and just show login
-        // This ensures users can always interact with the app
+        // Check if we have stored authentication
         if (token && user) {
             this.accessToken = token;
             this.currentUser = JSON.parse(user);
-            console.log('Found existing auth, but showing login for debugging');
-            // Temporarily comment out auto-login for debugging
-            // this.showMainApp();
+            console.log('Found existing auth, restoring session for user:', this.currentUser.username);
+            
+            // Restore the main app with existing token
+            this.showMainApp();
+        } else {
+            console.log('No existing auth found, showing login');
         }
     }
 
@@ -309,7 +311,7 @@ class IOAgent {
             headers['Authorization'] = `Bearer ${this.accessToken}`;
         } else {
             // No token, redirect to login
-            console.log('No access token, redirecting to login');
+            console.log('No access token found, redirecting to login');
             this.logout();
             throw new Error('Authentication required');
         }
@@ -640,7 +642,10 @@ class IOAgent {
             }
         } catch (error) {
             console.error('Error creating project:', error);
-            this.showAlert('Error creating project', 'danger');
+            // Don't show error message if user was redirected to login due to authentication issues
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error creating project', 'danger');
+            }
         } finally {
             this.hideLoading();
             this.creatingProject = false;
