@@ -102,8 +102,12 @@ CORS(app, origins=cors_origins, supports_credentials=True)
 
 # Database configuration
 # TEMPORARY: Use SQLite for production until PostgreSQL driver issues are resolved
+# Store db_path globally so it can be used later
+db_path = None
+
 def configure_database():
     """Configure database with proper error handling"""
+    global db_path
     
     # Create database directory
     db_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src', 'database')
@@ -612,8 +616,11 @@ def log_request():
 # Database initialization
 with app.app_context():
     # Ensure database directory exists
-    db_dir = os.path.dirname(db_path)
-    os.makedirs(db_dir, exist_ok=True)
+    if db_path:
+        db_dir = os.path.dirname(db_path)
+        os.makedirs(db_dir, exist_ok=True)
+    else:
+        logger.warning("db_path not set, skipping directory creation")
     
     # Create tables
     db.create_all()
