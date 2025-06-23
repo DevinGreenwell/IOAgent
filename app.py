@@ -697,20 +697,31 @@ def health_check():
     }), 200
 
 if __name__ == '__main__':
+    print("🚀 IOAgent starting up...")
+    logger.info("IOAgent application starting")
+    
     # Configuration from environment variables
-    port = int(os.environ.get('PORT', 5001))
+    # Render provides PORT environment variable - no default needed
+    port = int(os.environ.get('PORT', 10000))
+    logger.info(f"Environment PORT={os.environ.get('PORT', 'NOT_SET')}, using port={port}")
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     
     # Don't use debug mode in production
     if os.environ.get('FLASK_ENV') == 'production':
         debug_mode = False
     
-    logger.info(f"Starting application on port {port} (debug={debug_mode})")
+    logger.info(f"Starting application on host=0.0.0.0 port={port} (debug={debug_mode})")
     
-    # Run the application
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=debug_mode,
-        use_reloader=debug_mode
-    )
+    try:
+        # Run the application
+        app.run(
+            host='0.0.0.0',
+            port=port,
+            debug=debug_mode,
+            use_reloader=debug_mode
+        )
+    except Exception as e:
+        logger.error(f"Failed to start Flask application: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
