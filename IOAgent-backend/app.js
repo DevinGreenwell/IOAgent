@@ -537,27 +537,43 @@ class IOAgent {
     }
 
     updateDashboardStats(projects) {
-        document.getElementById('totalProjects').textContent = projects.length;
-        document.getElementById('draftProjects').textContent = projects.filter(p => p.status === 'draft').length;
-        document.getElementById('completeProjects').textContent = projects.filter(p => p.status === 'complete').length;
+        const totalProjects = projects.length;
+        const totalEvidence = projects.reduce((sum, p) => sum + (p.evidence_count || 0), 0);
+        const totalAnalysis = projects.filter(p => p.causal_analysis_run).length;
+        
+        document.getElementById('total-projects-stat').textContent = totalProjects;
+        document.getElementById('total-evidence-stat').textContent = totalEvidence;
+        document.getElementById('total-analysis-stat').textContent = totalAnalysis;
     }
 
     getFileIcon(fileType) {
-        if (!fileType) return 'fas fa-file';
-        const type = fileType.toLowerCase();
-        if (type.startsWith('image/')) return 'fas fa-file-image';
-        if (type.startsWith('audio/')) return 'fas fa-file-audio';
-        if (type.startsWith('video/')) return 'fas fa-file-video';
-        if (type.includes('pdf')) return 'fas fa-file-pdf';
-        if (type.includes('word')) return 'fas fa-file-word';
-        if (type.includes('excel') || type.includes('spreadsheet')) return 'fas fa-file-excel';
-        if (type.includes('presentation') || type.includes('powerpoint')) return 'fas fa-file-powerpoint';
-        if (type.includes('zip') || type.includes('archive')) return 'fas fa-file-archive';
-        if (type.startsWith('text/')) return 'fas fa-file-alt';
-        return 'fas fa-file';
+        const lowerCaseFileType = fileType ? fileType.toLowerCase() : '';
+
+        if (lowerCaseFileType.includes('pdf')) {
+            return 'fas fa-file-pdf text-danger';
+        } else if (lowerCaseFileType.includes('image') || lowerCaseFileType.includes('photo')) {
+            return 'fas fa-file-image text-success';
+        } else if (lowerCaseFileType.includes('video')) {
+            return 'fas fa-file-video text-info';
+        } else if (lowerCaseFileType.includes('audio')) {
+            return 'fas fa-file-audio text-warning';
+        } else if (lowerCaseFileType.includes('word') || lowerCaseFileType.includes('doc')) {
+            return 'fas fa-file-word text-primary';
+        } else if (lowerCaseFileType.includes('excel') || lowerCaseFileType.includes('xls')) {
+            return 'fas fa-file-excel text-success';
+        } else if (lowerCaseFileType.includes('powerpoint') || lowerCaseFileType.includes('ppt')) {
+            return 'fas fa-file-powerpoint text-warning';
+        } else if (lowerCaseFileType.includes('text') || lowerCaseFileType.includes('txt') || lowerCaseFileType.includes('md') || lowerCaseFileType.includes('document')) {
+            return 'fas fa-file-alt text-secondary';
+        } else if (lowerCaseFileType.includes('zip') || lowerCaseFileType.includes('rar') || lowerCaseFileType.includes('archive')) {
+            return 'fas fa-file-archive text-muted';
+        } else {
+            return 'fas fa-file text-dark';
+        }
     }
 
     escapeHtml(str) {
+        if (!str) return '';
         const div = document.createElement('div');
         div.appendChild(document.createTextNode(str || ''));
         return div.innerHTML;

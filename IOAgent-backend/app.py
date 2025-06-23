@@ -19,7 +19,9 @@ from src.routes.api import api_bp
 from src.routes.auth import auth_bp
 
 # Initialize Flask app
-app = Flask(__name__, static_folder=os.path.dirname(__file__))
+# Set static folder to src/static directory
+static_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'src', 'static')
+app = Flask(__name__, static_folder=static_path)
 
 # Configure logging
 logging.basicConfig(
