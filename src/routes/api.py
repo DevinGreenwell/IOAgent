@@ -555,8 +555,8 @@ def generate_roi(project_id):
         
         current_app.logger.info(f"ROI document generated successfully: {output_path}")
         
-        # Generate download URL
-        download_url = f'/api/projects/{project_id}/download/{output_filename}'
+        # Generate download URL (use dedicated ROI download endpoint)
+        download_url = f'/api/projects/{project_id}/download-roi'
         
         return jsonify({
             'success': True,
