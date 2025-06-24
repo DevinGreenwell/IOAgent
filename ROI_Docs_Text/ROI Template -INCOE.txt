@@ -1,0 +1,138 @@
+
+
+Commandant
+United States Coast Guard
+Name of the convening unit
+
+Unit Address
+Unit Address
+Staff Symbol:  
+Phone:  
+
+
+16732
+dd Mmm, yyyy
+
+
+DESCRIPTION OF THE INCIDENT TO INCLUDE OFFICIAL NAME AND PRIMARY VIN (#######) OF THE VESSEL(S) INVOLVED, TYPE AND NATURE OF THE CASUALTY, LOCATION OF THE CASUALTY, WHETHER THERE WERE ANY INJURIES AND/OR LOSS OF LIFE ON MONTH DD, YYYY
+
+
+INVESTIGATING OFFICER’S REPORT
+
+
+Preliminary Statement
+This marine casualty investigation was conducted and this report was submitted in accordance with Title 46, Code of Federal Regulations (CFR), Subpart 4.07, and under the authority of Title 46, United States Code (USC) Chapter 63.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements. 
+See Documentation and Reporting Procedures Section 4 for content and specific requirements. 
+See Documentation and Reporting Procedures Section 4 for content and specific requirements. 
+Vessel Involved in the Incident
+
+Figure 1. Undated Photograph of Vessel provided by Name 
+Official Name:
+Name (Through the report, the names of aircraft, vessels and manned spacecraft are italicized.)
+Identification Number:
+Primary VIN and VIN type from MISLE
+Flag: 
+Official name of the flag 
+Vessel Class/Type/Sub-Type
+Get info from MISLE
+Build Year:
+YYYY
+Gross Tonnage:
+## GT
+Length:
+##  unit of measurement
+Beam/Width:
+##  unit of measurement
+Draft/Depth:
+##  unit of measurement
+Main/Primary Propulsion: (Configuration/System Type,  Ahead Horse Power)
+Get info from MISLE
+Owner:
+Line 1 = Official Name; 
+Line 2 = City, State/Country
+Operator:
+Line 1 = Official Name; 
+Line 2 = City, State/Country
+
+Deceased, Missing, and/or Injured Persons 
+Relationship to Vessel
+Sex
+Age
+Status
+Master
+Male or Female
+##
+Deceased, Missing or Injured
+Crewmember 1
+Male or Female
+##
+Deceased, Missing or Injured
+Passenger 1
+Male or Female
+##
+Deceased, Missing or Injured
+Findings of Fact
+The Incident:
+See Documentation and Reporting Procedures Section 4 for content and specific requirements. 
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Additional/Supporting Information:
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Analysis
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+If needed.
+See Documentation and Reporting Procedures Section 4 for content. and specific requirements.
+If needed. 
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+If needed.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+If needed.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements
+If needed.
+Conclusions
+Determination of Cause:
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements
+See Documentation and Reporting Procedures Section 4 for content and specific requirements
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+.See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Evidence of Act(s) or Violation(s) of Law by Any Coast Guard Credentialed Mariner Subject to Action Under 46 USC Chapter 77:  See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Evidence of Act(s) or Violation(s) of Law by U.S. Coast Guard Personnel, or any other person:  See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Evidence of Act(s) Subject to Civil Penalty:  See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Evidence of Criminal Act(s):  See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Need for New or Amended U.S. Law or Regulation:  See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Unsafe Actions or Conditions that Were Not Causal Factors:
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Actions Taken Since the Incident
+On Date the Coast Guard issued Safety Alert X-XX. Recommend highlighting the focus of the Alert.
+A Findings of Concern titled ‘X’ has been submitted for release to address unsafe/hazardous actions or conditions identified by the efforts of this report with the intention of preventing them from contributing to future casualties.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Recommendations
+Safety Recommendation:
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+Administrative Recommendations:
+Referral. It is recommended that:
+this case be referred to the U.S. Attorney for the District of XXX for violation of 18 U.S.C.§ 1115 [seaman’s manslaughter criminal referral example see INV Policy Letter 3-17] by the vessel owner/operator; and/or
+this case be referred to the agency for potential enforcement action for violation of XX CFR § section.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+See Documentation and Reporting Procedures Section 4 for content and specific requirements.
+
+
+
+NAME OF IO (First Name MI. Last Name)
+Military Grade or GS, U.S. Coast Guard
+Investigating Officer

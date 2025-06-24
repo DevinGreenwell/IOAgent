@@ -1,0 +1,703 @@
+Commandant (CG -INV)  
+U.S. Coast Guard 
+Washington, DC 20593 
+U.S. Coast Gua rd Marine 
+Investigations: 
+Causal A nalysis Procedures 
+Version  2.0 
+DCN:   MPS-P R-INV-05(21) 
+November 2023 
+U.S. Coast Guard Marine Investigations Page ii 
+Causal Analysis Procedures  Version 2.0 Record Of Changes  
+Approving Authority/Owner  
+Captain Eve lynn Samms 
+Commandant (CG -INV)  Document Author  
+Commandant (CG- INV-1) 
+Version  Description of Changes from Previous Version  Approval Date  
+1.0 Initial version of this Procedures Manual  30 SEP 2022  
+2.0 •Inserted new subsection 3.1 , Scope of Analysis for the
+Different Investigative Levels of Effort.  Renumbered ol d
+subsections 3.1 through 3.8 as 3.2 through 3.9.
+•Updated section 2.3.6 to c orrect reference  for SHEL Model03 NOV  2023  
+U.S. Coast Guard Marine Investigations Page iii 
+Causal Analysis Procedures  Version 2.0 Table of Contents  
+ 
+Section  Page  
+1. Preface  1-1 
+1.1. Purpose  1-1 
+1.2. Organization of this Procedures Manual  1-1 
+1.3. Intended Audience  1-1 
+2. Fundamental Principles of Causal Analysis (Underlying Foundation)  2-1 
+2.1. Fundamental Principles  2-1 
+2.2. How Systems Operate  2-1 
+2.2.1.  Model of Production  2-1 
+2.2.2.  The First Element:  Organizations and Decision Makers  2-1 
+2.2.3.  The Second Element:  Workplaces and Line Managers  2-2 
+2.2.4.  The Third Element:  Preconditions  2-2 
+2.2.5.  The Fourth Element:  Production and Line Workers  2-3 
+2.2.6.  The Fifth Element:  Defenses  2-3 
+2.2.7.  The System as a Whole  2-3 
+2.3. How Systems Fail  2-4 
+2.3.1.  Introduction:  Threats, Defenses, and Negative Outcomes  2-4 
+2.3.2.  Active Faillures  and Latent Unsafe Conditions  2-4 
+2.3.2.1.  Active Failures  2-5 
+2.3.2.2.  Latent Unsafe Conditions (LUCs)  2-5 
+2.3.3.  Causes of Systems Accidents:  “Swiss Cheese Diagram”  2-5 
+2.3.4.  Organization Factors  2-6 
+2.3.5.  Workplace Factors  2-7 
+2.3.6.  Preconditions  2-8 
+2.3.7.  Productions Factors  2-9 
+2.3.8.  Defense Factors  2-9 
+3. Analyzing Caus e 3-1 
+3.1 Scope of Analysis for the Different Investigative Levels of Effort  3-1 
+3.1.1.  Scope of Analysis for Standard Level Investigations  3-1 
+3.1.2.  Scope of Analysis for Enhanced Level Investigations  3-1 
+3.1.3.  Scope of Analysis for Formal Level Investigations  3-1 
+3.2. Identifying the Initiating Event  3-1 
+3.3. Identifying the Subsequent Events and Failed Defenses that Allowed them 
+to Occur  3-2 
+3.4. Identifying the Production Factors  3-2 
+3.5. Identifying the Preconditions  3-3 
+3.6. Identifying the Defense Factors that would Prevent the Initiating Event 
+from Occurring  3-3 
+3.7. Identifying the Workplace Factors and Failed Defenses  3-3 
+3.8. Identifying the Organization Factors and Failed Defenses  3-4 
+3.9. What do I do with the results of Causal Analysis  3-4 
+4. [Reserved]  4-1 
+  
+APPENDIX   
+U.S. Coast Guard Marine Investigations  Page iv  
+Causal Analysis Procedures  Version 2.0  Section  Page  
+A-1 Analyzing Cause – Part 1:  Identify the Initiating Event, Subsequent Events & 
+Failed Defenses  A-1 
+A.1.1. Flow Chart  A-1 
+A.1.2.  Worksheet  A-1 
+A-2 Analyzing Cause – Part 2:  Identify Production, Unsafe Acts/Decisions, 
+Preconditions & Failed Defenses  A-4 
+A.2.1.  Flow Chart  A-4 
+A.2.2.  Worksheet  A-4 
+A-3 Analyzing Cause – Part 3:  Identify Workplace and Organizations Factors & 
+Failed Defenses  A-6 
+A.3.1.  Flow Chart  A-6 
+A.3.2.  Worksheet  A-6 
+A-4 Analyzing Cause – Examples of Completed Worksheets  A-8 
+U.S. Coast Guard Marine Investigations  Page 1- 1 
+Causal Analysis Procedures  Version 1.0  1. Preface 
+1.1 Purpose  
+This Procedures Manual  provides  Investigating O fficers  (IOs), members of Marine Boards, and 
+other personnel involved in formal marine investigations, with  procedures, instructions, and 
+guidance on performing causal analysis. 
+1.2 Organization of this Procedures Manual  
+This Procedures Manual  is divided into four  sections  including this Preface  (Section 1).  
+Section 2 provides  background information on how a systematic way to view how systems 
+operate and fail based primarily on the work of Dr. Reasons as adopted by the International 
+Maritime Organization  (IMO) for the investigation of marine casualties and incidents . 
+Section 3  provides guidance and procedures for analysis the facts and circumstances of a marine 
+casualty in order to identify, classify, and describe the causal factors that resulted in a marine incident or casualty . 
+Section 4 – [Reserved] ( future location on other methodologies/processes for analyzing for 
+cause ) 
+1.3 Intended Audience  
+This document has been developed for Commandant, District Commanders, Officer’s in Charge, Marine Inspection (OCMI), members of Marine Boards of Investigation, IOs  and other  personnel  
+at Sectors, Marine Safety Units, Marine Safety Detachments, Districts, Are as, and Headquarters  
+whose responsibilities involve  conducting and reviewing marine casualty investigations. 
+ 
+U.S. Coast Guard Marine Investigations Page 2-1 
+Causal Analysis Procedures  Version 2.0 2. Fundamental Principles of Causal Analysis (Underlying Foundation)  
+2.1 Fundamental Principles  
+Marine investigators shall keep the following fundamental principles in mind when 
+explaining how a specific accident occurred:  
+ 
+Principle #1 : Shipping, diving, oil exploration, fishing, towing, fuel transfers, passenger 
+operations, and recreational boating are complex production systems.  These production systems do not create new cars or refrigerators; instead they produce intangibles such as safe passenger voyages, timely delivery of oil, and so on.  Because maritime transportation is a production system, it shares the elements common to every complex production system. 
+Principle #2:  All accidents (including the most minor) are failures of the system , not simply 
+the human or equipment directly involved. 
+Principle #3 : No human error is entirely to blame.  Human error is a naturally occurring, 
+intrinsic part of human performance.  While holding mariners accountable for their actions and taking steps to reduce human errors, marine investigators should bear Principle #2 firmly in mind.  The human error could not have resulted in an accident unless conditions in the system (especially the system’s defenses) allowed it.  
+Principle #4 : System accidents have their primary origins in the fallible decisions made by 
+the high-level corporate, regulatory, or plant  managers.  These fallible decisions are an 
+inevitable part of the decision -making process, and the process of improving systems 
+involves making fallible decisions harmless as opposed to eliminating high- level error.  
+Principle #5:  The whole point of conducting an investigation and of analyzing the causes of 
+an incident is to improve the system and prevent reoccurrence.  Accordingly, the marine investigator’s job is to identify system failures and propose fixes (recommendations). 
+2.2 How Systems Operate 
+2.2.1 Model of Production 
+Many psychologists view all organized human or technological systems as production systems.  These production systems make energy, a chemical substance, a mechanism, or the mass transportation of any commodity (including people) by road, rail, sea, or air.   In this view the many maritime operations, once thought independent, are products of the maritime transportation system.  In this system, there are many factors that include charts and publications, aids to navigation, V essel Traffic S ystems  (VTS), laws and regulations, safety 
+inspections, navigation equipment as well as all the other systems on vessels, including mariners who stand the watch.  When these factors come together in precise synchronization, the product is the safe and timely transit, fuel transfer, or use of our nation’s waterways.  As a complex production system, the maritime transportation system can be described in terms of the five elements of the model of production.  Additionally, the maritime transportation system is further described by various factors that reside within each of the five elements.  
+2.2.2 The First Element:  Organizations and Decision Makers  
+In order for a system to operate, it must have an initial direction.  At the organizational level, decision makers respond to the pressures, demands, and opportunities in the outside world 
+U.S. Coast Guard Marine Investigations  Page 2- 2 
+Causal Analysis Procedures  Version 2.0  and set the goals for the system.  They also direct, at a strategic level, the ways in which the 
+system will reach these goals.  In practice, decision makers take limited financial and other resources (equipment, people, talent, expertise, and time), and direct how they will be spent in order to get the most productivity with the highest degree of safety (a process of balance).  In the simplest of terms, decision makers provide the money to begin an operation, and an 
+empty facility (or vessel) which, when properly equipped and staffed, will become an 
+operating facility.  The Organization element is where the goals are set and a means to reach 
+them is provided. 
+Decision Makers  are the high level architects and managers of the system.   They set the 
+rules and objectives for the system.  In the maritime transportation system, decision makers 
+include lawmakers and regulators, underwriters and cargo lines, corporate CEOs and owner -
+operator fishers.  
+2.2.3 The Second Element:  Workplaces and Line Managers  
+Below the decision makers are the line managers.  They must create specific plans to carry out operations, including the hiring of personnel, the training of personnel, the purchase and deployment of the right type of equipment, systems for managing ongoing operations, and finally, a means for reacting to all the foreseeable problems that arise.  Again, in simple terms, line managers take the money and empty facility, provided by the decision maker, and transform it into a facility filled with managers, workers and equipment.  The Workplace element is where personnel, buildings, equipment, and vessels have operations that are managed.  Generally speaking, the Workplace is where production occurs  
+Line Managers  are the specialists who take the strategies outlined for them by decision 
+makers and translate them into concrete activities.  In large companies, line managers have specialized areas of authority and operation, and are known as the facility manager or departmental titles such as operations, training, sales, and so on.  In the maritime transportation system, with regard to larger vessels, line managers may be the master and his/her officers.  In a small operation, such as an owner -operator small passenger vessel, the 
+licensed operator may be the line manager, in addition to the decision maker.  
+2.2.4 The Third Element:  Preconditions  
+Although the line managers and decision makers have provided a system, that system cannot be considered ready to operate until both the workers and the equipment they use are properly prepared.  To be ready, the system must possess certain attributes:  
+• Reliable equipment of the right kind;  
+• A skilled and knowledgeable  workforce;  
+• Appropriate attitudes and motivation;   
+• Proper work schedules, supply delivery schedules, and maintenance programs,  
+• Proper conditions allowing safe and efficient operations;  
+• Procedures that give clear guidance about how the job is to be done; and  
+• Clear understandings of what undesirable job performance is.  
+• Suitable environment (internal and/or external)  
+U.S. Coast Guard Marine Investigations  Page 2- 3 
+Causal Analysis Procedures  Version 2.0  The Precondition element contains the conditions that make people and machinery ready to 
+go to work 
+2.2.5 The Fourth Element:  Production and Line Workers  
+Once the system is properly manned, equipped, and managed, a product can be created.  
+Production is the precise synchronization of human and mechanical activities (actions or decisions) to produce the right product at the right time.  The Production element contains the actual operation of the system. (e.g. safe/timely voyages, fuel transfer, etc.)  
+Line Workers  are the professional and recreational mariners (and shore -side maritime 
+workers) who perform the tasks using many types of machinery in order to get the job done.  In the maritime transportation system, line workers are licensed mariners, unlicensed crew, dock workers, VTS personnel, etc.  
+2.2.6 The Fifth Element:  Defenses  
+In any system there are natural and man -made hazards.  Where they can reasonably be 
+foreseen, the system should have safeguards, called Defenses, which protect people and equipment from injury, damage, or production- damaging losses.  Defenses may be human 
+(procedural), such as a buddy system or plotting fixes; or mechanical, such as machinery guards or life jackets; or a combination of both.  Defensive systems perform the following functions:  
+• Create awareness of local hazards and how they might be encountered;  
+• Convey an understanding of how, when, and why hazards occur in the workplace;  
+• Provide means (devices and systems) for detecting the presence of hazards;  
+• Warn people and systems that some hazard is imminent;  
+• Protect potential victims by separating them from the hazard; 
+• Allow people/ system to recover from some “off -normal” or hazardous condition;  
+• Contain/ limit the spread of a  hazard, or limit the number of victims affected; 
+• Provide escape from a  hazard; and  
+• Rescue injured/ threatened individuals from a situation in which negative 
+outcomes have already occurred.  
+2.2.7 The System as a Whol e 
+The five elements in the model of production relate in very specific ways.  This relationship can be represented as below.  
+U.S. Coast Guard Marine Investigations Page 2-4 
+Causal Analysis Procedures  Version 2.0  
+2.3 How Systems Fail 
+2.3.1 Introduction:  Threats, Defenses, and Negative Outcomes 
+In general terms, production systems contain defenses against foreseeable threats.  
+Accidents, which can loosely be defined as the occurrence of a negative outcome (event), happen when there are holes in the system’s defenses through which a threat penetrates. 
+ 
+2.3.2 Active Failures and Latent Unsafe Conditions  
+A system’s defenses can be penetrated for one of two reasons: 
+(1) the system’s defenses are present but do not work properly for some reason; or 
+(2) the system’s defenses are missing or entirely misma tched to the threat they face.  
+These defense penetrations illustrate an important aspect of system failures:  they can be 
+active failures and/or they can be latent unsafe conditions .  Active failures and latent unsafe 
+conditions do not arise only in the defenses.  The threats that penetrate defenses originate within the system itself.  They are the active failures and latent unsafe conditions originating in each of the five elements of production.  Incident  Threats  
+Defenses  Accident  Threats  
+Defenses  
+  
+
+U.S. Coast Guard Marine Investigations Page 2-5 
+Causal Analysis Procedures  Version 2.0 2.3.2.1 Active Failures  
+Active Failures  are unsafe acts and decisions committed in the presence of a hazard 
+(condition).  Generally speaking, we are the most interested in active failures 
+committed by line workers during operations (i.e., in the production and defense elements of the system).  Unsafe acts and decisions are human errors.  Most often, active failures have an immediate impact on safety.  The following are examples of active failures:  
+• “Began a turn into the channel (the action) with an inaccurate mental picture of the vessel’s location (hazard).” 
+• “Decided not to evacuate the pumproom (the decision) despite the presence of toxic gas (hazard).” 
+Active failures described as an action taken or decision made can be found in the actions list of the timeline in the Findings of Fact in a MISLE Incident Investigation . 
+2.3.2.2 Laten t Unsafe Conditions (LUCs)  
+Latent Unsafe Conditions  (LUCs) are hazardous conditions in the system that lie 
+dormant, often for years, only becoming evident when they combine with an unsafe act or decision to become an active failure resulting in a negative outcome (event).  Often they arise from decisions made far from the accident scene and, at the time, were believed to be good or necessary.  LUCs should describe the condition of the system arising  from a fallible decision or action, rather than the decision or action 
+itself.  For instance: 
+• “Fatigued,” rather than “decided to stay up late watching movies despite early watch.”  
+• “Worn,” rather than “not properly maintained” or “not replaced on schedule.” 
+• “Inadequate design,” rather than “mistakes during design.” 
+LUCs can be found in the conditions list of the timeline in the Findings of Fact in a MISLE Incident Investigation. 
+2.3.3 Causes of Systems Accidents:  “Swiss Cheese Diagram”  
+The active failures and LUCs in the maritime transportation system all exist for a specific period of time, and they can be thought of as holes in the elements of production (“the cheese”) that appear at a given time and disappear at another time (when the LUC disappears).  Because LUCs continuously appear and disappear, they will not, in most cases, align.  For this reason, accidents do not constantly occur in complex systems despite the many active failures and LUCs that may be present.  When all the holes align at the same time, a threat may progress all the way through the elements of production and become an accident.  As the active failures and LUCs are represented as threats passing through the holes, a system accident can be visualized as in the below “Swiss Cheese Diagram”.  
+U.S. Coast Guard Marine Investigations  Page 2- 6 
+Causal Analysis Procedures  Version 2.0   
+2.3.4 Organizational Factors  
+Just as decision makers set the stage for production at the organizational level with 
+appropriate decisions, they also set the stage for an accident  through inappropriate or fallible 
+decisions.  In deciding how to use their limited resources, decision makers face difficult 
+choices, and the system does not help them.  Money spent on improving the system’s 
+productivity (i.e. making the extra run, carrying the extra cargo) has a relatively clear 
+outcome:  higher profit.  Money spent on safety or environmental protection has relatively 
+distant and long- term outcomes.  Decision makers occasionally inappropriately weigh the 
+system’s feedback and make bad decisions.  These fallible decisions create LUCs in the 
+system.   Examples of poor decisions include a lack of regulation, poorly planned 
+government deregulation, and too rapid expansion of routes or services.  These decisions 
+create LUCs that act on line managers.   The following Organizational Factors commonly 
+occur in system accidents:  
+• Human Resources  
+o Staffing/manning (number or qualifications)  
+o Training  
+o Promotion/demotion  
+o Employee benefits  
+• Monetary/Budget Resources  
+o Budgeting Process  
+o Funds  
+• Material Resources (equipment, facilities, etc.)  
+o Material suitability  
+o Lack of material  
+• Organizational Climate  
+o Organizational Structure   
+
+U.S. Coast Guard Marine Investigations  Page 2- 7 
+Causal Analysis Procedures  Version 2.0  o Chain of command  
+o Delegation of authority 
+o Communications  
+o Operational Culture  
+o Norms and rules  
+o Values and beliefs  
+o Morale  
+• Organizational Process  
+o Operations and Internal Oversight  
+o Operational tempo  
+o Time pressures  
+o Production quotas  
+o Incentives  
+o Measurements/appraisals  
+o Schedules  
+o Planning 
+o Risk management  
+o Safety management  
+o Procedures  
+o Objectives  
+o Policies  
+• External Oversight  
+o Regulations and Laws  
+o Industry Standards  
+o Direct and Third Party Oversight  
+o Enforcement  
+o Safety promotion 
+o Resources  
+2.3.5 Workplace Factors  
+The consequences of the Organizational Factors manifest themselves differently in the 
+Workplace element of production.  If a line manager is competent, motivated, adequately funded, properly staffed, and has adequate time, they can transform a bad decision from above into a less -risky or even safe activity.  However, a less competent or poorly supplied 
+line manager can make a bad decision worse, or execute a good decision in such a manner that it has bad effects.  The decisions and actions of line managers in implementing the decisions of those above them in the system can create additional LUCs.  Examples of line management creating latent unsafe (pre)conditions include inadequate procedures for doing the job, poor scheduling, insufficient training for line workers, and an inadequate maintenance regime.   The following Workplace Factors commonly occur in system 
+accidents:  
+• Human Resources  
+o Staffing/manning (number or qualifications)  
+o Training  
+• Monetary/Budget Resources  
+o Budgeting process  
+U.S. Coast Guard Marine Investigations  Page 2- 8 
+Causal Analysis Procedures  Version 2.0  o Funds  
+• Material Resources (equipment, facilities, etc.)  
+o Material suitability  
+o Lack of material  
+• Organizational Structure  
+o Chain of command  
+o Delegation of authority 
+o Communications  
+• Operational Culture  
+o Norms and rules  
+o Values and beliefs  
+o Morale  
+• Operations and Supervision 
+o Operational tempo  
+o Time pressures  
+o Production quotas  
+o Incentives  
+o Measurements/appraisals  
+o Schedules  
+o Planning 
+o Risk management  
+o Safety management  
+o Objectives  
+• Practices and Procedures  
+o Human resource  
+o Monetary/budget resource  
+o Material resource  
+o Organizational structure  
+o Operational culture  
+o Operations and supervision 
+2.3.6 Preconditions  
+Preconditions are the LUCs of the line workers and equipment itself.  Some LUCs in 
+workplace management can render workers and equipment unready.  For instance, an 
+inadequate training program could manifest itself in a variety of LUCs: excessive workload, 
+undue time pressure, and motivation problems, creating ways in which workers would not be ready to go work.  The reverse relationship is also true:  a single LUC (gear or people not ready to work) could be created by several workplace factors.  Examples of latent unsafe (pre)conditions include:  improper gear, inexperience or untrained personnel, fatigue, equipment that is worn or unsuited to its use, navigation hazards, etc.  There are many 
+factors known to degrade the performance of human beings.  Section 5 of MCI -02, Fact 
+Finding and Evidence Handling Procedures , describes these factors in detail as they pertain 
+to the use of the SHEL model and generating the timeline.  In short, LUCs related to line workers fall into one of the following general categories:  
+• Limitations of persons  
+o Physical conditions  
+U.S. Coast Guard Marine Investigations Page 2-9 
+Causal Analysis Procedures  Version 2.0 o Psychological conditions 
+o Psychosocial conditions 
+o Physiological conditions 
+• Person Mismatches  
+o With policy/procedures 
+(liveware- software)  
+o With equipment/gear (liveware- hardware)  
+o With the environment (liveware-environment) 
+o With other person(s) (liveware- liveware)  
+2.3.7 Production Factors 
+Production Factors are the active failures that occur during an operation or as a part of the operation that result from one or more of the preceding LUCs and lead to the initiating event.  Experienced marine investigators will often encounter situations in which a person’s precondition, such as fatigue, appears to have caused a casualty, yet the same person successfully accomplished the same task the day before (or the hour before) with the same precondition.  What was different about the task at the time of the accident?  The answer lies in the relationship between preconditions and active failures.  It is almost impossible to 
+predict exactly when, where, and how a given precondition will manifest itself into an active failure.  It is difficult to say when  a fatigued person will make a bad decision; all that can be 
+said with certainty is that given enough opportunities (decisions), one decision will eventually be bad because of the fatigue.  Examples of Production Factor active failures include: 
+• omission of steps in a task, 
+• use of the wrong procedures, 
+• violations of law or regulation, and 
+• bad decisions in the presence of a hazard  
+2.3.8 Defense Factors  
+Few Production Factor active failures result in actual damage or injury, even when the system is relatively undefended.  For instance, in a grounding scenario a pilot’s decision to initiate a turn too early (an active failure) does not in itself cause an unwanted outcome.  Instead, the active failure must be left undetected and uncorrected in order to progress into the grounding.  In other words, the system’s defenses against a grounding are missing or inadequate.  Examples of Defense Factor LUCs include disabled warning systems, absence of monitoring (or plotting of fixes), and un-enforced regulations.  Defense Factor LUCs commonly found in system accidents include: 
+• Defenses that were present but inadequate  
+o Supervision/oversight 
+o Policies/procedures  
+o Engineered defenses  
+o Briefings  
+U.S. Coast Guard Marine Investigations  Page 2- 10 
+Causal Analysis Procedures  Version 2.0  o Training  
+o Credentials/qualification requirements  
+o Personal protective equipment  
+o Defensive equipment  
+o Information about actual/potential hazards  
+• Defenses that were present but deliberately disabled  
+o Policies/procedures  
+o Engineered defenses deactivated  
+o Training requirements  
+o Briefing requirements  
+o Credentials/qualifications requirements  
+• Defenses that were never present or once present but now removed  
+o Supervision/oversight  
+o Policies/procedures  
+o Engineered defenses  
+o Briefings  
+o Training  
+o Credentials/qualifications requirements  
+o Personal protective equipment  
+o Information about actual/potential hazards  
+• Defenses that do not exist or are unreasonable  
+o Technology or systems do not exist  
+o Technology or systems not reasonable for use  
+ 
+U.S. Coast Guard Marine Investigations Page 3-1 
+Causal Analysis Procedures  Version 2.0 3. Analyzing Cause  
+3.1 Scope of Analysis for the Different Investigative Levels of Effort  
+The extent  to which an IO is able to  analyze the cause of any accident or casualty is dependent 
+upon the amount of information that has been obtained and the extent to which that information 
+covers the various elements of production.  The type and amount of information that has been 
+obtained, in turn, is dependent upon the investigative level of effort and amount of resources that 
+are used in the conduct of the investigation.  As a result, the scope of causal analysis for an 
+investigation conducted at the Standard level of effort cannot realistically be expected to be as 
+broad-reaching and detailed as that carried out for one conducted at the Enhanced or Formal 
+level of effort.  To that end, the Coast Guard has established the following parameters for the 
+scope of causal analysis that should be followed based on the level of effort undertaken for a 
+marine casualty investigation . 
+3.1.1 Scope of Analysis for Standard Level Investigations 
+Identify initiating  event and subsequent events.  Focus on at least one obvious, readily 
+apparent , or most probable active failure, immediate condition , or signif icant  failure in 
+defenses  that was the primary causal factor for the initiating event.   Additional, contributing 
+factors, if also obvious and readily apparent, may also be considered.  
+3.1.2 Scope of Analysis for Enhanced Level Investigations 
+Identify initiating and subsequent events.  Focus and thoroughly analyze all possible causal 
+factors at the production, precondition, and defense factor areas, including between 
+initiating and subsequent events.  Be alert for indications of and consider significant causal 
+factors at the workplace and organizational levels.  
+3.1.3 Scope of Analysis for Formal Level Investigations 
+Identifying initiating and subsequent events.  Focus and thoroughly analyze all possible 
+causal factors at all levels, including all failed/missing defenses between the initiating and 
+subsequent events.  
+ 
+3.2 Identifying the Initiating Event  
+One of the most difficult aspects of any investigation is identifying the aspects of an accident you 
+are trying to explain.  For the purposes of analyzing the causes of an accident, marine investigators must carefully identify the Initiating Event.  While a variety of actions, events, and conditions will precede an accident, a point must be chosen at which the accident is considered to start.  The marine investigator will initially focus on explaining how the accident began, and will then turn to explaining how it progressed.  For the purposes of analyzing the causes of an accident, the Initiating Event is simply the first unwanted or negative outcome in the timeline In marine casualties the Initiating Event may not be the first “reportable” event.  In many cases, the reportable event follows the Initiating Event and (when explained) sheds more light on the causes of the accident.  See the flowchart titled, “Part 1: Identify the Initiating Event, Subsequent Events, & Failed Defenses,” i n section A -1 of the Appendix. 
+U.S. Coast Guard Marine Investigations  Page 3- 2 
+Causal Analysis Procedures  Version 2.0  3.3 Identifying the Subsequent Events and Failed Defenses that Allowed them to Occur  
+After identifying the I nitiating Event.  The next step is to identify the Subsequent Events, which 
+are the unwanted events that originate from and follow the initiating event.  Next, to explain how 
+the accident progressed from the Initiating Event into all the subsequent events, the marine investigator must identify the defensive failures that connect one event into another.  These are 
+the defenses on a vessel or platform arising AFTER the Initiating Event (i.e. given the Initiating 
+Event occurred, what defenses would have prevented the next Subsequent Event; and so on).  
+See the flowchart titled, “Part 1: Identify the Initiating Event, Subsequent Events, & Failed Defenses,” in section  A-1 of the Appendix. 
+ 
+3.4 Identifying the Production Factors  
+In the simplest sense, production is the maritime operation that was being conducted at the time of the accident.  Once the marine investigator has identified the Initiating Event, he or she should ask what operation was being conducted at the time and just previous.  The next common sense question is which people (liveware) were conducting the operation in order to determine what actions were taken or decisions made.  In any accident, a person will have made one or many unsafe acts or decisions, either by mistake or sometimes willfully as det ermined by human error 
+analysis .  The marine investigator shall identify all unsafe acts and decisions that occurred during 
+production.  They must be careful not to confuse production activities (such as navigating) with defensive activities (such as plotting fixes).  As a rule of thumb, active failures in production have an immediate and recognizable effect on safety.  When it becomes difficult to make a determination as to whether an action or decision is ‘unsafe,’ the Substitution Test may be performed.  This is merely asking a professional (or several professionals) of similar grade and experience what they would do in the same situation, and to make a determination of whether the act or decision is unsafe (and why).  
+While analyzing the information discovered during fact -finding, marine investigators may 
+discover several production active failures (as well as several preconditions, LUCs in the workplace or organization).  While each is worthy of attention because they must be eliminated, not all of them necessarily connect to the accident at hand.  Marine investigators shall identify  
+
+U.S. Coast Guard Marine Investigations Page 3-3 
+Causal Analysis Procedures  Version 2.0 those active failures and LUCs with causal connection to the accident.  Other active failures 
+(particularly willful violations) and LUCs may also be noted (and should be if severe enough).  See the flowchart titled , “Part 2: Identify Production, Unsafe Acts/Decisions, Preconditions, & 
+Failed Defenses,” in section  A-2 of the Appendix. 
+3.5 Identifying the Preconditions  
+Once the marine investigator has identified the active failures in production, they must ask “In what condition did the person (Liveware), Software, Hardware, and/or Environment (SHEL) have to be for them/it to fail?”  Preconditions create the potential for a wide variety of active failures.  Marine investigators should again remember that they may encounter a large number of latent unsafe (pre)conditions.  For instance, a given mariner may have had LUCs of fatigue, drug use, and an aggressive attitude.  In this case, it may be difficult to ascertain exactly which precondition has a causal connection to the production active failure.  Marine investigators should record all preconditions internal to a person as having a causal connection.  Similarly, they may be tempted to “weigh” a given precondition over another (i.e., fatigue was more important than drug use or attitude).  Marine investigators should not give opinions as to the relative strength of various preconditions in their causal connection to a given production active failure without significant scientific basis for those opinions.  See the flowchart titled, “Part 2: Identify Production, Unsafe Acts/Decisions, Preconditions, & Failed Defenses,” in section A -2 of 
+the Appendix. 
+3.6 Identify ing the Defense Factors that would Prevent the Initiating Event from 
+Occurring  
+Once the marine investigator has completed the previous steps, they have identified the active 
+failures in production that occurred.  Such active failures occur constantly in complex systems.  However, relatively few result in accidents.  When a system’s defenses were sufficient to detect an active failure and prevent the accident, a “near miss” is said to have occurred (though “near hit” may be a more appropriate term).  In order to explain an accident, marine investigators must identify the defense factor failures that allowed the active failure to progress into an accident.  Many faults may be discovered in the system’s defenses, only some of which will be causally connected to the production active failures and the accident.  Failed defenses should eventually be identified for all elements of the Model of Production. 
+NOTE:  Upon identifying viable failed defenses throughout the Model of Production, the next 
+logical step is to conclude that they are necessary, and finally, recommend their implementation.  This displays how vital this step is throughout. 
+3.7 Identify ing the Workplace Factors and Failed Defenses  
+Once the preconditions have been identified, the marine investigator should focus on the management environment to determine how and why the preconditions were created.  Marine investigators should also be careful to consider the absence of management in addition to pro-active management.  Marine investigators are cautioned to remember that the line manager’s ability to manage is limited by their available resources.  For this reason, it is important to carefully recognize the causal connection of Organizational Factors when identifying Workplace 
+U.S. Coast Guard Marine Investigations  Page 3- 4 
+Causal Analysis Procedures  Version 2.0  Factors.  Upon determining the Workplace Factors, identify any failed defenses .  See the 
+flowchart titled, “Part 3: Identify Workplace and Organization Factors & Failed Defenses,” in 
+section A -3 of the Appendix. 
+3.8 Identify ing the Organization Factors and Failed Defenses  
+The basic idea underlying the causal analysis system (and the IMO documents upon which it is 
+based) is that system accidents have their primary origins in fallible decisions made by designers 
+and high- level decision makers.  Marine investigators, having identified workplace LUCs, should 
+identify the conditions to which the line managers were responding.  Decision makers’ fallible 
+decisions create LUCs that affect line managers.  Marine investigators should bear in mind that decision makers rarely have direct access to the consequences of their decisions, and may be almost entirely unaware of the LUCs they have created.  Upon determining the Organization Factors, identify any failed defenses.  See the flowchart titled, “Part 3: Identify Workplace and Organization Factors & Failed Defenses,” section  A-3 of the Appendix.  
+3.9 What do I do with the results of Causal Analysis  
+When properly completed, the analysis should lead to conclusions, and then, to Safety Recommendations.  If it doesn’t it will show potential gaps in the findings of fact that need to be addressed.  Causal analysis should give you the ability to state (regardless of where in the Model of Production) that there were various unsafe conditions (whether or not they were latent) and unsafe acts or decisions that directly led to the Initiating Event and Subsequent Events.  Upon identifying the unsafe conditions statements can be made about what could correct/mitigate them.  Defense Factors (whether failed or missing) is normally where correction/mitigation is focused.  Further analysis  of Production Factors  (e.g. Human Error Analysis) should be 
+conducted on the unsafe acts or decisions prior to determining the bes t corrective/mitigating 
+action.  
+ 
+U.S. Coast Guard Marine Investigations  Page 4- 1 
+Causal Analysis Procedures  Version 1.0  4. [Reserved]  
+ 
+APPENDIX 
+U.S. Coast Guard Marine Investigations  Page A-1 
+Causal Analysis Procedures  Version 2.0  A-1 Analyzing Cause –  Part 1:  Identify  the Initiating Event, Subsequent 
+Events & Failed Defenses  
+A.1.1. Flow Chart  
+ 
+A.1.2. Worksheet ( beginning on the  next page)  
+  
+APPENDIX 
+U.S. Coast Guard Marine Investigations  Page A-2 
+Causal Analysis Procedures  Version 2.0   
+  
+
+APPENDIX 
+U.S. Coast Guard Marine Investigations  Page A-3 
+Causal Analysis Procedures  Version 2.0   
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+APPENDIX 
+U.S. Coast Guard Marine Investigations  Page A-4 
+Causal Analysis Procedures  Version 2.0  A-2 Analyzing Cause –  Part 2:  Identify Production, Unsafe Ac ts/Decisions, 
+Preconditions &  Failed Defenses 
+A.2.1. Flow Chart  
+ 
+A.2.2. Worksheet (on next page)  
+  
+APPENDIX 
+U.S. Coast Guard Marine Investigations  Page A-5 
+Causal Analysis Procedures  Version 2.0    
+
+APPENDIX 
+U.S. Coast Guard Marine Investigations  Page A-6 
+Causal Analysis Procedures  Version 2.0  A-3 Analyzing Cause –  Part 3:  Identify Workplace and Organization 
+Factors & Failed Defenses  
+A.3.1. Flow Chart  
+ 
+A.3.2. Worksheet (on next page)  
+  
+APPENDIX 
+U.S. Coast Guard Marine Investigations  Page A-7 
+Causal Analysis Procedures  Version 2.0   
+ 
+ 
+ 
+   
+
+APPENDIX 
+U.S. Coast Guard Marine Investigations Page A-8 
+Causal Analysis Procedures  Version 2.0 A-4 Analyzing Cause – Examples of Completed Worksheets  
+Part 1:  Identify the Initiating Event, Subsequent Events, & Failed Defenses Initiating  Event     ICHABOD hit mooring line  Defense 
+Factors  
+ 
+-Strong  
+Material  
+ 
+-Break - 
+away  
+design  
+Subsequent Event #1     Pilot Station Destroyed  Defense 
+Factors  
+ 
+-Prior 
+notice  
+of the  
+hazard: 
+visible/ 
+audible 
+indicator  
+ 
+-Required  
+armor  
+Subsequent Event #2     Diver Decapitated  Defense 
+Factors  
+ 
+-Auto  
+“kill” 
+switch  
+when  
+the  
+wheel is  
+released  
+Subsequent Event #3     ICHABOD lost control  Defense 
+Factors  
+ 
+-Same  
+Auto “kill” 
+switch  
+previously  
+mentioned
+ 
+Subsequent Event #4     ICHABOD allided w/C/S  
+ 
+  
+APPENDIX 
+U.S. Coast Guard Marine Investigations Page A-9 
+Causal Analysis Procedures  Version 2.0 Part 1a:  Identify the Initiating Event, Subsequent Events, & Failed Defenses (cont.)  Subsequent Event #4      ICHABOD allided w/C/S  Defense 
+Factors  
+ 
+Passenger  
+Securing  
+Device 
+similar  
+to  
+seatbelts  
+Subsequent Event #5     Passenger was thrown  Defense 
+Factors  
+ 
+-Prior 
+notice  
+of the  
+hazard: 
+visible/ 
+audible 
+indicator  
+ 
+-Required  
+armor  
+Subsequent Event #     ____________________  Defense 
+Factors  
+ 
+-Auto  
+“kill” 
+switch  
+when  
+the  
+wheel is  
+released  
+Subsequent Event #     _____________________  Defense 
+Factors  
+ 
+-Same  
+Auto “kill” switch  
+previously  
+mentioned
+ 
+Subsequent Event #     _____________________ 
+ 
+ 
+   
+APPENDIX 
+U.S. Coast Guard Marine Investigations Page A-10 
+Causal Analysis Procedures  Version 2.0 Part 2: Identify Production, Unsafe Acts/Decisions, and Failed Defenses 
+Preconditions  
+ 
+- Weather  
+ 
+- Cold 
+Passenger  
+ - Bow line  
+location 
+w/catenary  
+ 
+- Visibility  
+ - Possible drug 
+influence  
+ - Deaver was a 
+new employee to the company
+ Defense 
+Factors  
+ 
+-Procedures 
+placing 
+some sort  
+of visible or audible 
+marker on low 
+handlines.  
+Especially 
+during 
+period of reduced  Production  
+Navigating 
+ 
+Unsafe 
+Acts or 
+Decisions 
+ 
+-Increased 
+speed  
+ 
+-Steer 
+between  the 
+pier and the 
+mooring pin  Defense 
+Factors  
+ 
+Policy 
+regarding 
+speed 
+during 
+adverse 
+visibility / weather 
+conditions  
+ 
+ 
+Initiating  Event    ICHABOD  hit mooring line  
+ 
+ 
+ 
+            
+APPENDIX 
+U.S. Coast Guard Marine Investigations Page A- 11 
+Causal Analysis Procedures  Version 2.0 Part 3:  Identify Workplace and Organization Factors and Failed Defenses  
+Organization  
+Factors  
+(Decision Makers)  
+ 
+CEO has old 
+fashioned attitude with written policy  
+ Defense 
+Factors  
+ 
+CG 
+regulatory 
+spot checks 
+to ensure 
+compliance 
+on UPV companies  
+ Workplace  
+Factors  
+(Line 
+Managers)  
+ 
+No written 
+procedures 
+on vessels 
+ Defense 
+Factors  
+ 
+CG regulatory 
+spot checks 
+to ensure 
+compliance 
+on UPVs
+ 
+ 
+ 
+ 
+ Completed during:  
+Part 2                                      Part 1  Preconditions  
+Defense Factors  
+Production  
+Defense Factors  
+Initiating Event  

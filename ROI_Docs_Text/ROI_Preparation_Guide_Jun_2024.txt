@@ -1,0 +1,445 @@
+Investigating Officer Course MS-603 12-1-1 Student Guide  
+Rev. Jun 2024   Commander  USCG         Training Center Yorktown  
+  United States Coast Guard   Hamilton Hall  
+  Sector Yorktown         Yorktown, VA 23690  
+  Staff Symbol:  T PII 
+  Phone:   
+  Email:  
+INVESTIGATING OFFICER REPORT  
+ PREPARATION GUIDE  
+T
+his guide was created to assist Investigating Officer Course students prepare Investigating 
+Officer (IO) Reports as part of an ROI.  The document reflects a sample layout of a complete IO 
+report and contains key requirements for each section of the report from the USCG Marine Investigations Documentation and Reporting Procedures Manual.  It also provides examples where appropriate to demonstrate/illustrate how to complete key steps or actions in various sections of the report.   
+A
+ccompanying this guide is a sample IO Report entitled “The APPLESAUCE,” which can also 
+be used as a template for students to create an IO Report.  The APPLESAUCE reflects the findings from a complete investigation of a personnel casualty aboard a fictitious passenger vessel.       
+A
+ll narrative ROIs will consist of the following sections, in order:  
+-C
+ommandant Final Action Memo
+-Endorsement Memorandums
+-Cover Page ( Created by Investigating Officer )
+-Table of contents (Optional – Created by Investigating Officer)
+-List of Acronyms (Optional – Created by Investigating Officer)
+-Executive Summary (Prepared by Investigating Officer)
+-Investigating Officer Report
+A
+ll report dates are in full name of month, DD, and YYYY format :  September 05, 2018.  Text 
+font is Times New Roman 12-pitch.  The en tire report is in past tense . 
+
+Investigating Officer Course MS-603 12-1-2 Student Guide  
+Rev. Jun 2024  Commander         1 USCG Training Center Yorktown  
+ United States Coast Guard   Hamilton Hall  
+ Sector Yorktown        Yorktown, VA 23690 
+ Staff Symbol:  TMII 
+ Phone:   
+ Email:  
+TOWING VESSEL KUNSMAN (O.N. 736928), BRIDGE ALLISION 
+WITH INJURIES ON THE MISSISSIPPI RIVER NEAR LOUISIANA, MO, 
+ ON DATE OF INCIDENT  
+EXECUTIVE SUMMARY 
+Every IO report is accompanied by an Executive Summary using a  title as depicted above.  T he 
+title c onsists of  the following:  
+-General class, name and primary VIN of the vessel(s) involved.  Vessel names shall be all
+caps followed by the VIN in parenthesis.  Do not use prefixes like M/V, UPV, UTV, etc.
+unless they are actually part of the official name of the vessel.
+-T ype/nature of the casualty. (Fire, Total Constructive Loss, Collision, Allision, Capsized
+etc.. This information is useful when doing data research)
+-Whether there were any personnel injuries and/or loss of life.
+-Location of the casualty (common name of the body of water).
+-Date of the casualty.
+T
+he Executive Summary is a “Stand Alone” document written by the Investigating Officer in 
+easily understandable language that allows the reader to understand the main points of the 
+investigation .  Endorsing officials and Commandant may edit the summary as it makes its way 
+through the review chain, and the summary shall be the same as t he “Incident Brief ” in the 
+MISLE  5.0 Incident Investigation Activity.  The summary shall include the following information: 
+-A
+ description  of the activity  or operation that subjects of the investigation  were
+conducting at the time  of the incident (i.e set  the scene).
+-A description  of the incident that  occurred,  specifically  the events and occurrences that
+required  investigation of the incident.
+-A summary  of the outcomes or consequences  of the incident (i.e.  lost or damage property,
+personnel casualties,  etc.).
+-A summary  of the cause of the incident/casualty.
+A
+ suggested way to complete the summary is break it into three paragraphs:   
+P
+aragraph One: “Set the Scene.”  Describe the maritime activity or operation taking place at 
+the time of the incident and “What happened?” Provide a general description of the incident 
+that occurred, specifically the events/occurrences that required the incident to be investigated (who, what, when, where). 
+
+Investigating Officer Course MS-603 12-1-3 Student Guide  
+Rev. Jun 2024 Paragraph T wo: “The Outcomes.”  Summarize the outcome or consequences of the incident 
+events (i.e. lost or damaged proper, personnel casualties, etc.) 
+Paragraph T hree: “The Causal Factors” Identify and provide a general description of all th e 
+events, in the sequ ence they occurred followed by all the titles of causal factors identified for 
+the initiating and all subsequent events. (para 4.6.1.2.4). 
+The Executive Summar y shall not: 
+-C
+ontain a detailed or comprehensive narrative of timelines, findings of fact, analysis,
+conclusions, or recommendations.
+-Reference R eports of Investigation, Narrative Reports, or other document s for further
+detail.
+-Include information relating to investigative (e.g. interviews, hearings, on- scene
+inspections/ examinations, etc.), or administrative actions.
+-Contain Personally Identifiable Information (PII) protected from release to the public.
+-Be “signed” by investigators.
+N
+OTE: The Executive Summary can consist of as many pages as necessary to include all 
+required information. 
+Se
+e “The APPLESAUCE” report for an example of a complete Executive Summary. 
+Investigating Officer Course MS-603 12-1-4 Student Guide  
+Rev. Jun 2024 Commander  
+United States Coast Guard 
+Sector Yorktown  1 USCG Training Center Yorktown  
+Hamilton Hall  
+Yorktown, VA 23690  
+Staff Symbol:  TPII  
+Phone:   
+Email:  
+16732  
+Date of Report  
+T
+OWING VESSEL KUNSMAN (O.N. 736928), BRIDGE ALLISION 
+WITH INJURIES ON THE MISSISSIPPI RIVER NEAR LOUISIANA, MO, 
+ ON DATE OF INCIDENT  
+I
+NVESTIGATING OFFICER’S REPORT  
+I
+nvestigating Officer reports will consist of the following sections, in order:  
+-P
+reliminary Statement (required)
+-Vessel(s) Involved in the Incident (required)
+-Record of Deceased, Missing, and Injured (as applicable)
+-Findings of Fact (required)
+-Analysis (required)
+-Conclusions (required)
+-Actions Taken Since the Incident (as applicable)
+-Recommendations (as applicable)
+1.Preliminary Statement
+1.1.
+ Required text : “This marine casualty investigation was conducted, and this report was
+submitted in accordance with Title 46, Code of Federal Regulations, Subpart 4.07, and 
+under the authority of Title 46, United States Code, Chapter 63.” 
+1.2.
+ Identify all persons or organizations designated parties- in-interest, and criteria the party 
+met to be so designated (e.g., vessel owner, vessel master,  lawyers and who they 
+represented,  etc.)  Identify individuals by role/relationship to vessels or the incident—do 
+not use names.  If none, so state. 
+1.3.
+ Identify other organizations who participated in or provided technical assistance to the 
+investigation (e.g., NTSB investigators, CGIS, foreign flag investigators, local authorities, etc.)  If none, so state. 
+1.4.
+ Other administrative and/or technical issues within the report (e.g., time zone and time formats, units of measurement for distance, length, location, bearings, etc. ).  Example : 
+“All times in this report are approximate and listed in Eastern Standard Time using a 24 -
+hour format.” This will eliminate the need to use “approximately ” in your finding of 
+facts.  
+
+Investigating Officer Course MS-603 12-1-5 Student Guide  
+Rev. Jun 2024 2.Vessels Involved in the Incident     Complete a table with ONLY the information below for
+each vessel involved in the casualty.  Use “N/A” where appropriate.  Include a picture(s) with
+caption as appropriate.
+Place a recent photo with caption of the vessel here.  Example: 
+“Figure 1.  Photo of the KUNSMAN moored at XXXXX in (Month 20XX.  Obtained from 
+Internet”  (if location, date or source of photo is not available, so state) 
+3. Record of Deceased, Missing, and Injured    Complete a table with ONLY the information 
+below for each person injured, missing, or deceased as a result of the casualty.  If more than one 
+vessel is involved, create a separate table for each vessel.  If no one is injured, missing, or dead 
+as part of the casualty, use a subparagraph to this section to make that statement. E xamp le: 
+There were no deceased,  missing, or injured perso nnel as a result o f this marine casualty.
+Relationship to Vessel  Sex Age Status  
+Use MISLE values  Use MISLE values  Official Name:  All capital —as listed in MISLE  
+Identification Number:  The primary VIN and VIN type from MISLE  
+Flag:  
+Vessel Class/Type/Sub -Type  From MISLE values  
+Build Year:  
+Gross Tonnage:  
+Length:  
+Beam/Width:  
+Draft/Depth:  
+Main/Primary Propulsion:  Configuration type, system type, ahead 
+horsepower —all from MISLE  
+Owner:  Official Name  
+City/State/Country  
+Operator:  Official Name  
+City/State/Country  
+Investigating Officer Course MS-603 12-1-6 Student Guide  
+Rev. Jun 2024 4.Findings of Fact  (FOF)  This section contains two subsections: (1) The Incident and (2)
+Additional/Supporting Information.  It only includes facts  about the incident based on or
+substantially supported by evidence and includes all facts  on which analysis and conclusions are
+based. DO NOT include inferences, analysis, conclusions, or recommendations in the Findings
+of Fact.
+F
+inding of facts are NOT, in most cases, a cut paste of the MISLE timeline however, you can cut 
+and paste “ certain ” MISLE timeline entries  here. MISLE breaks down the timeline entries into 
+actions, conditions, and events and some of these topics contain information that are standalone 
+entries.  Example: “O n scene weather”, “Background on a company or organization” “ Policy 
+and procedures” “Inspection/examination status, history and associated regulatory authority used”, “Personnel backgrounds”,” Lifesaving or firefighting equipment/condition etc.” Examples of cut and paste MISLE entries  could be :  
+“
+On July 6, 2018, at 1930 the weather conditions were winds out of the east at 5-7 knots, 
+clear sunny skies,  2 to 3 knot current. Air temperature was approximately 78 degrees, 
+and water temperature was approximately 67 degrees”. 
+“
+Steerman #1 has worked in the towing industry for 23 years and is a holder of a valid 
+credential for “Steerman of Towing Vessels Upon the Western Rivers” as required by regulation. She has worked for Tennessee Valley Towing for the past 10 years and onboard the KUNSMAN for the past 5 years as a Deckhand and a Steerman”.      
+T
+here are also times when combining an action, condition and/or event fact  into one paragraph 
+makes logical sense  to tell  the story. Below is an example of where an action, condition and/or 
+event could be combined:  
+“At 0402, the KUNSMAN was approximately 800 yards from the Louisiana Highway 
+Bridge on the far-right side of the established river channel.  Recognizing the KUNSMAN 
+was out of position to pass under the center span of the bridge, the unposted pilot attempted to steer the tug and tow hard to the left.  The maneuver caused the tow to move 
+slowly back towards the channel.” Here you have two conditions and an action 
+described .  
+4.1   
+The Incident: This subsection contains numbered paragraphs that provide a narrative 
+description or “story” of the incident (i.e., who, what, when, and where).  Paragraphs 
+should be in chronological order with sufficient reference to dates and times included to 
+ensure the timing of and relationship between the actions, conditions, and events 
+described are as clear as possible.  Generally, when two or more vessels are involved, it is best to present a description of events, actions, and conditions associated with each 
+vessel separately rather than skipping from vessel to vessel.  More specifically, this 
+subsection is to include: 
+- A
+ beginning paragraph(s) describing the maritime activity or operation the
+subjects of the investigation were conducting at the time of the incident ( i.e.,
+transit/voyage, cargo operation, maintenance job, etc.).  For example:
+Investigating Officer Course MS-603 12-1-7 Student Guide  
+Rev. Jun 2024 4.1.1.   On July 6, 2018, at 0400 the towing vessel KUNSMAN and its push- ahead tow 
+of 15 loaded hopper barges passed mile marker 284.7 near Louisiana, MO, on 
+the Mississippi River travelling downstream at approximately 6 -8 knots.  The 
+vessel’s assigned trip pilot/mate was in charge of the watch in the wheelhouse, and at the helm navigating the vessel was an “unposted” trip pilot.  The remainder of the crew, to include the vessel master, were off -duty and asleep in 
+their bunks.    
+-F
+ollow this with as many paragraphs as necessary to provide chronological and
+detailed descriptions of known actions, conditions and events involved and/orencountered immediately prior to and during the incident. Example:
+ “At 0405, barge number IO-09 struck the right center-span of the bridge.  
+Several other barges were damaged as they either struck the bridge abutment or other barges when connectors and lashings were broken.  Barge IO-09 immediately sank near where the coll ision occurred.” 
+-
+Include descriptions of pertinent response activities  and results of post-incident
+survey results, autopsy results, etc.  Ensure there is a logical ending to theincident “story” for each main participant (e.g., vessel/person recovered, persontreated for injuries, facility closed, etc.).
+-
+End this subsection with information about mandatory post-casualty drug and
+alcohol testing and a summary of the results.  Indicate whether testing was donein accordance with Federal regulations.  Do not identify individuals tested byname and avoid identifying results for any specific person.   Do not identifycollection facilities, labs, MROs, etc.
+Example of multiple negative test s:
+           
+“Two members of the KUNSMAN crew determined to be directly involved in 
+the incident were subjected to post-casualty drug and alcohol testing in accordance with 46 CFR Subpart 4.06.  Both test results were negative for drugs or alcohol.” 
+       
+Example of multiple negative/positive results:  
+           
+“Four members of the KUNSMAN crew determined to be directly involved in 
+the incident were subject to mandatory chemical testing for evidence of drug and alcohol use in accordance with 46 CFR Subpart 4.06.  One of the four was unavailable to test for alcohol within the required timeframe due to receiving emergency medical treatment.  One crewmember was found to have a blood alcohol content of 0.06%.  Another crewmember’s test result was positive for PCP.  All other results were negative. ” 
+Investigating Officer Course MS-603 12-1-8 Student Guide  
+Rev. Jun 2024 Example of only one individual tested: 
+           “ T
+he trip pilot/mate of the KUNSMAN was subject to mandatory chemical 
+testing for evidence of drugs and alcohol use in accordance with 46 CFR 
+Subpart 4.06.  Resulting tests were negative for alcohol, but positive for cocaine metabolites. ” 
+        
+Example of Non- DOT test results:  
+           “
+Post-mortem toxicology analysis accompanying coroner reports for each of the 
+two deceased crewmen revealed no indication of either alcohol or illegal drugs in their systems.”  
+       The Incident Subsection does not include: 
+- H
+istorical or background information/facts about vessels, parties, other subjects,
+the environment, or anything else involved or associated with them.  These types
+of information are included in the Additional/Supporting Information section.
+- A
+ttempts to reconcile various/contradicting versions of what happened.
+-A
+ttempts to analyze and explain why actions/decisions were made, conditions
+existed, or events occurred .
+-Atte
+mpts to identify whether action s or conditions violated a law or regulation.
+-A
+ttempts to identify and explain how any actions/decisions or conditions were
+causal factors.
+4.2.   A
+dditional/Supporting Information:   This subsection contains numbered paragraphs 
+that describe facts relating to the history or background of subjects and parties involved, as 
+well as, describing other subjects or topics associated with the incident, but not directly involved.  Base decision s to include information on whether the information is necessary to 
+support any analysis or conclusions.  Types of information to include are: 
+- V
+essel descriptions not already identified in Section 2.  This may include
+pertinent history involving past casualt ies, previous alterations or conversions,
+changes in service, etc.  It may describe vessel arrangements, such as bridge
+layout, cargo loading, towing configuration, etc.  It may also describe
+vessel/industry operations, such as cargo transfer procedures and processes,
+navigating through lock/dam systems, maintenance procedures,setting/retrieving fishing gear, etc.
+- P
+ertinent history and conditions of persons involved, such as physical condition,
+medical history, training, work experience, or social relationships.
+Investigating Officer Course MS-603 12-1-9 Student Guide  
+Rev. Jun 2024 -Description s of the physical environment at the time of the incident such as
+water/ tidal/current conditions, weather, waterway/navigation arrangements,
+complexity, or traffic.
+- D e
+scription s of laws, regulations, codes, policies, and procedures that applied to
+or affected the subjects , parties, or operations that were involved. Examples:
+4.2.1.  “On July 04, 2018, the KUNSMAN started its tow at Dubuque, IA, and was 
+heading downriver on the Upper Mississippi River to Continental Grain in St. 
+Louis, MO, pushing 15 barges loaded with grain.  Before sailing, the vessel master established a standard watch of 6 -hours on, 6-hours off for the duration of 
+the voyage with the master taking the 6-12 watches and the trip pilot/mate taking the 12-6 watches.  Another individual was aboard in the capacity of an “unposted pilot,” and assigned to assist the trip pilot during 12- 6 watches. ” 
+4.2.2.   “
+Environmental conditions at the time of the incident were described as dark 
+and overcast with light intermittent showers.  Fog limited visibility to less than 1 mile, and waters were 2 -3 feet above average depths due to recent heavy rains 
+upriver.  The river current was 4 -5 knots and stronger than usual.   Approximate 
+latitude and longitude of the Louisiana Highway Bridge is 39.4567 N by -91.0472 W.” 
+5. Analysis    Use the analysis section to explain how and why ALL unwanted or negative
+actions, conditions, or events identified in the Findings of Fact section occurred or were allowedto progress.  This may include issues or topics in the investigation for which there wereweaknesses and/or inconsistencies in the facts.  As part of the analysis, c ite applicable laws,
+rules, regulations, policies, etc. and discuss how and why they were violated.  Additionally,
+discuss how a lack of sufficient evidence or contradictory evidence may have prevented adetermination of how and why an activity occurred.
+T
+he short titles used in MISLE should also be used in the ROI. The contents of the analysis in  
+MISLE can also be used and should contain more descriptive information, when necessary, to help the reader understand how a particular piece of equipment (pressure relief valve/Pre-engineered firefighting system) works or how a process/system (ex: Safety Management System /Coast Guard Vessel inspection/examination) work s etc.    
+St
+art each paragraph with a negative phrase or connotation identifying the unwanted or 
+negative activity . It should also state the of an individual or entity involved if warranted (i.e., 
+Lack of or  Inadequate company policy for snorkeling activities., “ Failure of the master to 
+effectively oversee crew activities ” “Improper use of equipment of firefighting extinguishers by 
+Deckhand ,” “Failure of f ixed f irefighting s ystem to activate  in engine room” Ensure each 
+paragraph includes the following: 
+-A
+ description of the activity identified.
+-How was the activity identified?  (Identify evidence used)
+-Why did the activity exist and/or occur? (Identify evidence used)
+-How did the activity cause or contribute to the initiating or a subsequent event?
+-What might have been the outcome if the activity had not occurred/existed?
+Investigating Officer Course MS-603 12-1-10 Student Guide  
+Rev. Jun 2024 Try to use separate paragraphs for each distinct unwanted or negative activity however, similar 
+activities can be discussed in a single paragraph. 
+D
+o not use th is section to restate findings of fact  or identify conclusions and recommendations.  
+For example, while it would be appropriate to analyze how an investigator determined a person lacked proper training or was fatigued, and why the person lacked the training or was fatigued, actually stating lack of training or fatigue were causal factors would be identified in the Conclusions section.  Example Analysis Paragraph: 
+5.1.
+ “Failure of the Trip Pilot/Mate to Follow Company Procedures .  Article 7 of 
+Tennessee Valley Towing (TVT) required “All Vessel Masters, Mate (Pilots), and Trip Pilots to be in charge of the safety and control of the vessel and its tow, and to assist the unposted pilot in learning the navigational features of the waterways.”  Though the trip pilot/mate claimed the unposted pilot ignored his advice, there was no evidence to suppor t this.  In fact, the trip pilot/mate stated he rarely talked to the unposted pilot 
+during the entire voyage because he believed her to be arrogant and condescending.  The trip pilot/mate acknowledged he recognized the KUNSMAN was too deep in the river ben d at mile marker 284.7, to pass safely under the center span of the approaching 
+bridge, but he felt the unposted pilot could navigate out of it on her own.  Had the trip pilot/mate followed company procedures and assisted the unposted pilot with vessel navigation as required, especially when he first observed the KUNSMAN to be out of 
+position in the channel as they approached the bridge, there may have been sufficient time to prevent the KUNSMAN from alliding with the bridge. ”   
+6.Conclusions    This section  uses multiple subsections to document the findings and
+determinations from the investigation.  The contents of each subsection are described in moredetail below:
+6.1.   D
+etermination of Cause:   This is where cause of the casualty is documented in detail.  
+Do not identify casual factors by casual paragraph short titles! It involves describing 
+the initiating and subsequent events and the various causal factors identified through 
+analysis of the findings of fact.  Begin this subsection by identifying the initiating event 
+followed by a description of the causal factors (actions and conditions) that produced 
+the unwanted event.  If an initiating event could not be determined, e ven af ter analysis 
+of all evi dence, i dentify t he most likely ini tiating  event out of the  possible s cenarios .  
+Use additional subparagraphs to identify each subsequent event and causal factors.  
+Ensure casual factors include policy and procedural errors, adverse environmental 
+factors, failures and/or deficiencies in equipment or materials, human error, and cause 
+of death.  DO NOT reanalyze your conclusions or make recommendations in this 
+subsection.  F or example: 
+6.1.1.   “The initiating event for this casualty occurred when the KUNSMAN left the 
+established river channel approximately 800 yards upriver from the Louisiana Highway bridge, causing the vessel and its tow of barges to be out of position to successfully pass under the center span of the approaching bridge. Causal factors leading to this event were: 
+6.1.1.1.   R
+iver currents at the time were 3-4 knots above normal due to heavy 
+rains upriver over the past 12 hours. 
+Investigating Officer Course MS-603 12-1-11 Student Guide  
+Rev. Jun 2024 6.1.1.2.   The unposted pilot steering the KUNSMAN was unfamiliar with this 
+section of the river.   
+6.1.1.3.   T
+he trip pilot/mate on watch failed to take control of the vessel or 
+provide guidance or assistance upon recognizing a navigation hazard 
+was developing.   
+6.1.1.4.   T
+he trip pilot/mate on watch failed to check weather reports and river 
+conditions prior to navigating a difficult portion of the river.”  
+6.1.2.   
+“Despite efforts to correct the vessel’s course, several barges allided with the 
+right center span of the bridge. Factors that may have prevented this event were: 
+6.1.2.1.   
+The unposted pilot had inadequate knowledge of how and when to 
+correct the vessels course and speed to bring the vessel back into the river channel.  
+6.1.2.2.   The unposted pilot was unaware of, and failed to recognize the tow 
+and barges could have safely passed under the right-river span of the bridge directly in front of them. 
+6.1.2.3.   T
+wo of the five channel marker lights on the center span of the bridge 
+itself were inoperative, causing confusion on the unposted pilot’s part as to which span could be navigated safely.”   
+6.1.3.   
+Next subsequent event and causal factors.  
+6.2.   E
+vidence of Acts by any Coast Guard Credentialed Mariner Subject to Action Under 
+USC Chapter 77: (Identify any acts of misconduct, incompetence, negligence, 
+unskillfulness, or willful violation of law by a credential mariner that contributed to the casualty. Review definitions in 46 CFR Part  5 (5.27, 5.29, 5.31 & 5.33) for guidance.  
+If none, so state.)   The actions described in paragraph 6.1.1 above represent potential  
+allegations of negligence and misconduct by the trip pilot/mate on watch of the KUNSMAN.   
+N
+ote: If you have multiple potential enforcement violations under the below 
+topics, list them individually as subparagraphs (ex 6.3.1, 6.4.1 etc.).  
+6.3.   E
+vidence of Acts or Violations of Law by U.S. Coast Guard Personnel, or any other 
+person: (Identify any acts of misconduct, incompetence, negligence, unskillfulness, or willful violation of law by a Coast Guard or other Federal Agency member that contributed to the casualty.  If none, so state.)    
+6.4.   E
+vidence of Acts Subject to Civil Penalty : (Identify acts which would subject an 
+offender to a Civil Penalty.  If none, so state.)  The actions described in paragraph X.X.X.X. above represent a potential violation of 46 CFR 4.05-1 by the master of theKUNSMAN for failing to immediately notify the Coast Guard of this marine casualty.
+Investigating Officer Course MS-603 12-1-12 Student Guide  
+Rev. Jun 2024 6.5.   Evidence of Criminal Acts : (Identify any potential criminal acts.  If none, so state)  The 
+action of the Tennessee Valley Towing office manager as described in paragraph 
+X.X.X above represents a potential violation. Recommend this case be referred to theU.S. Attorney for the District of XXX Title 18, United States Code, Subsection 1001“False Official Statements ” in para 8.2 /Recommend this case be referred to the U.S.
+Attorney for the District of XXX for violation of 18 U.S.C.§ 1115 “ Seaman’s
+Manslaughter” in para 8.2. ( If you have a situation like a death case where CGIS was
+notified and determined no criminal act took place, so state).
+6.6.   Nee
+d for New or Amended Laws/Regulations: (Ident ify whether there is a need for new 
+laws or regulations, or amendment or repeal of existing laws or regulations to prevent recurrence of a similar casualty.  If none, so state .)  The action(s) described in 
+paragraph(s) 6.1.X represent the potential need to amend or repeal 46 CFR Section X-XX to prevent the reoccurrence of a similar casualty.  The specific changes recommended are addressed in Section 8 of this report.   
+6.7.   Unsafe Actions or Conditions that were not Causal Factors:  Use subparagraphs to 
+describe each unsafe action or condition that while ruled out as a causal factor, could 
+be of concern and addressed before they contribute to other marine casualties. Ensure 
+to clearly explain what the factor was and why you determined this factor to be a non-
+causal factor. You can also identify factors here that you are not able to rule out due to 
+lack of evidence. Example: You could have an individual test positive for drugs or 
+alcohol that you determined was not a factor or due to the lack of evidence, you cannot 
+make a determination.  If none, so stated. There were no actions or conditions that 
+were determined to be a non-causal factor.        
+7.A ctions T aken Since the I ncident    Use subsections in this optional section to discuss
+actions taken by any par ty in response to the casualty, or to address unsafe/hazardous actions or
+conditions with the intent of preventing them from contributing to future casualties (to include
+Safety Alerts, Findings of Concern, etc.). They should be identified separately by their titles and
+a short paragraph giving a general 
+description of the topic. If none, so state.
+7.1. Act
+ions taken by parties: Coast Guard Industry Day / Purchase of new equipment or   
+creation or updates of policy used by company or industry etc.).   
+7.2. Safety Alert: (Number sequence / Title /General description) Topics that you feel need 
+to be disseminated to the field immediately due to its impact on life and property (recalled equipment notes / unsafe practices like tying down lifesaving equipment etc.).  
+7.3. Findings of Concern (FOC):  (Number sequence / Title /  General description)  Topics 
+that the Coast Guard does not the authority or jurisdiction to enforce but if voluntarily 
+implemented by the industry/company could prevent future incidents.  Note: A FOC can also be used as a safety recommendation if you are going to recommend the FOC to 
+become a law or regulation.     
+Investigating Officer Course MS-603  12-1-13 Student Guide  
+Rev. Jun 2024 8.Recommendations : T his section consists of two parts:  Safety Recommendations and
+Administrative Recommendations.
+8.1.   S
+afety Recommendations:  Prepared in accordance with INV Policy Letter 2 -18, and 
+exactly matches the corresponding entry in the MISLE IIA. They should start with 
+“Recommend the Commandant of the Coast Guard or Recommend the Sector New Orleans Commander etc. They should include “Who” it is directed to . If your 
+recommendation is to another state or federal agency it should be directed to the Commandant to reach out to the state or federal agency. “ What ” you are recommending  
+(new, amend or removal of a law /regs/policies . “Why ” you are making the 
+recommendation  and “How” this recommendation could prevent other incidents like 
+this one if implemented.   
+8.2
+.   Administrative Recommendations:  Use this subsection to document administrative 
+recommendations to initiate investigations regarding appropriate enforcement actions, recognize mariners for their acts as Good Samaritans, and to close investigations.   
+8.2.1.   R
+ecommend the Officer in Charge, Marine Investigations (OCMI) initiate an 
+investigation involving potential allegations identified in paragraph 6.2 above in accordance with 46 CFR Part 5.  
+8.2.2.   R
+ecommend the OCMI initiate an investigation involving potential allegations 
+identified in paragraph 6.4 above in accordance with 33 CFR Part 1. 
+8.2.3.   R
+ecommend the District Commander initiate action involving potential 
+allegations identified in paragraph 6.5 above in accordance with 46 CFR Subpart 4.23. 
+8.2.4.   R
+ecommend this investigation be closed. 
+Iam D. I nvestigator
+IAM D. INVESTIGATORInvestigating Officer  
+U
+.S. Coast Guard 

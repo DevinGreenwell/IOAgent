@@ -12,6 +12,7 @@ from datetime import datetime
 from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor
 from src.models.project_manager import ProjectManager, TimelineBuilder
 from src.models.roi_generator import ROIGenerator, CausalAnalysisEngine
+from src.models.roi_generator_uscg import USCGROIGenerator
 from src.models.ai_assistant import AIAssistant
 
 # Create blueprint
@@ -21,6 +22,7 @@ api_bp = Blueprint('api', __name__)
 project_manager = ProjectManager()
 timeline_builder = TimelineBuilder()
 roi_generator = ROIGenerator()
+uscg_roi_generator = USCGROIGenerator()
 causal_engine = CausalAnalysisEngine()
 ai_assistant = AIAssistant()
 
@@ -550,8 +552,8 @@ def generate_roi(project_id):
         
         current_app.logger.info(f"Generating ROI document at: {output_path}")
         
-        # Generate ROI document
-        roi_generator.generate_roi(investigation_project, output_path)
+        # Generate USCG-compliant ROI document
+        uscg_roi_generator.generate_roi(investigation_project, output_path)
         
         current_app.logger.info(f"ROI document generated successfully: {output_path}")
         

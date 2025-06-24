@@ -1,0 +1,589 @@
+# USCG-Compliant ROI Document Generator
+# Follows USCG Marine Investigation Documentation and Reporting Procedures Manual standards
+
+import os
+from datetime import datetime
+from typing import List, Dict, Any, Optional
+from docx import Document
+from docx.shared import Inches, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.style import WD_STYLE_TYPE
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+
+from src.models.roi_models import InvestigationProject, ROIDocument, TimelineEntry, CausalFactor, Vessel, Personnel
+
+class USCGROIGenerator:
+    """USCG-compliant ROI document generator following official standards"""
+    
+    def __init__(self):
+        self.project = None
+        self.document = None
+    
+    def generate_roi(self, project: InvestigationProject, output_path: str) -> str:
+        """Generate complete USCG-compliant ROI document"""
+        self.project = project
+        self.document = Document()
+        
+        # Set up USCG document formatting
+        self._setup_uscg_formatting()
+        
+        # Generate USCG ROI sections in required order
+        self._generate_cover_page()
+        self._generate_executive_summary()
+        self._generate_investigating_officers_report()
+        
+        # Save document
+        self.document.save(output_path)
+        return output_path
+    
+    def _setup_uscg_formatting(self):
+        """Set up USCG-required document formatting"""
+        # Set default font to Times New Roman 12-pitch as required
+        style = self.document.styles['Normal']
+        font = style.font
+        font.name = 'Times New Roman'
+        font.size = Pt(12)
+        
+        # Set paragraph spacing
+        style.paragraph_format.space_after = Pt(0)
+        style.paragraph_format.space_before = Pt(0)
+        style.paragraph_format.line_spacing = 1.0
+        
+        # Set margins to 1 inch
+        sections = self.document.sections
+        for section in sections:
+            section.top_margin = Inches(1)
+            section.bottom_margin = Inches(1)
+            section.left_margin = Inches(1)
+            section.right_margin = Inches(1)
+    
+    def _format_date(self, date: datetime) -> str:
+        """Format date according to USCG standard: Month DD, YYYY"""
+        if date:
+            return date.strftime("%B %d, %Y")
+        return "[Date to be determined]"
+    
+    def _format_time(self, time: datetime) -> str:
+        """Format time according to USCG standard: HHMM in 24-hour format"""
+        if time:
+            return time.strftime("%H%M")
+        return "[Time unknown]"
+    
+    def _italicize_vessel_names(self, text: str) -> str:
+        """Helper to mark vessel names for italicization"""
+        # This is a placeholder - actual italicization happens when adding to document
+        return text
+    
+    def _generate_cover_page(self):
+        """Generate cover page with unit information"""
+        # Unit header
+        p = self.document.add_paragraph()
+        p.add_run("Commander\n").bold = True
+        p.add_run("United States Coast Guard\n")
+        p.add_run(f"Sector {self.project.incident_info.location or 'Investigation'}\n")
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        
+        # Add spacing
+        for _ in range(5):
+            self.document.add_paragraph()
+        
+        # Add date and control number
+        p = self.document.add_paragraph()
+        p.add_run("16732\n")
+        p.add_run(self._format_date(datetime.now()))
+        
+        self.document.add_page_break()
+    
+    def _generate_executive_summary(self):
+        """Generate Executive Summary section per USCG standards"""
+        # Generate title in USCG format
+        title = self._generate_uscg_title()
+        
+        # Title paragraph
+        title_para = self.document.add_paragraph()
+        title_para.add_run(title).bold = True
+        title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        # Add spacing
+        self.document.add_paragraph()
+        
+        # Executive Summary heading
+        summary_heading = self.document.add_paragraph()
+        summary_heading.add_run("EXECUTIVE SUMMARY").bold = True
+        summary_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        self.document.add_paragraph()
+        
+        # Paragraph 1: Scene Setting
+        scene_para = self._generate_scene_setting_paragraph()
+        self.document.add_paragraph(scene_para)
+        
+        self.document.add_paragraph()  # Space between paragraphs
+        
+        # Paragraph 2: Outcomes
+        outcomes_para = self._generate_outcomes_paragraph()
+        self.document.add_paragraph(outcomes_para)
+        
+        self.document.add_paragraph()  # Space between paragraphs
+        
+        # Paragraph 3: Causal Factors
+        causal_para = self._generate_causal_factors_paragraph()
+        self.document.add_paragraph(causal_para)
+        
+        self.document.add_page_break()
+    
+    def _generate_uscg_title(self) -> str:
+        """Generate title in USCG format"""
+        # Extract vessel information
+        vessel_parts = []
+        for vessel in self.project.vessels:
+            if vessel.official_name:
+                # Remove any F/V prefix as per USCG standards
+                name = vessel.official_name.replace("F/V ", "").replace("M/V ", "").strip()
+                vessel_parts.append(f"{name.upper()} (O.N. {vessel.identification_number or '#######'})")
+        
+        vessel_text = ", ".join(vessel_parts) if vessel_parts else "VESSEL NAME (O.N. #######)"
+        
+        # Determine casualty type with injuries/fatalities
+        casualty_type = self.project.incident_info.incident_type or "MARINE CASUALTY"
+        
+        # Check for personnel casualties
+        has_injuries = False
+        has_fatalities = False
+        
+        for entry in self.project.timeline:
+            desc_lower = entry.description.lower()
+            if any(word in desc_lower for word in ['injured', 'injury', 'injuries']):
+                has_injuries = True
+            if any(word in desc_lower for word in ['deceased', 'death', 'fatality', 'died']):
+                has_fatalities = True
+        
+        if has_fatalities:
+            casualty_desc = f"{casualty_type.upper()} WITH LOSS OF LIFE"
+        elif has_injuries:
+            casualty_desc = f"{casualty_type.upper()} WITH INJURIES"
+        else:
+            casualty_desc = casualty_type.upper()
+        
+        # Location
+        location = self.project.incident_info.location or "LOCATION"
+        if "near" not in location.lower() and "on" not in location.lower():
+            location = f"ON {location.upper()}"
+        else:
+            location = location.upper()
+        
+        # Date
+        date_str = self._format_date(self.project.incident_info.incident_date).upper()
+        
+        return f"{vessel_text}, {casualty_desc} {location} ON {date_str}"
+    
+    def _generate_scene_setting_paragraph(self) -> str:
+        """Generate paragraph 1 of Executive Summary - Scene Setting"""
+        # Get incident date and time
+        incident_date = self._format_date(self.project.incident_info.incident_date)
+        
+        # Find the earliest timeline entry for departure/start
+        earliest_entry = None
+        if self.project.timeline:
+            sorted_timeline = sorted(self.project.timeline, key=lambda x: x.timestamp or datetime.max)
+            earliest_entry = sorted_timeline[0] if sorted_timeline else None
+        
+        # Build scene setting
+        if earliest_entry and earliest_entry.timestamp:
+            time_str = self._format_time(earliest_entry.timestamp)
+            opening = f"On {incident_date}, at {time_str}, "
+        else:
+            opening = f"On {incident_date}, "
+        
+        # Get vessel name
+        vessel_name = ""
+        if self.project.vessels and self.project.vessels[0].official_name:
+            vessel_name = f"the {self.project.vessels[0].official_name} "
+        
+        # Extract key scene-setting details from timeline
+        scene_details = []
+        for entry in self.project.timeline[:5]:  # Look at first few entries
+            if any(word in entry.description.lower() for word in ['departed', 'began', 'started', 'commenced']):
+                scene_details.append(entry.description)
+                break
+        
+        if scene_details:
+            scene = opening + vessel_name + scene_details[0].lower()
+        else:
+            scene = opening + vessel_name + f"was operating in {self.project.incident_info.location}"
+        
+        # Add what happened
+        incident_type = self.project.incident_info.incident_type or "an incident"
+        scene += f". {self._describe_incident_from_timeline()}"
+        
+        return scene
+    
+    def _generate_outcomes_paragraph(self) -> str:
+        """Generate paragraph 2 of Executive Summary - Outcomes"""
+        outcomes = []
+        
+        # Scan timeline for outcomes
+        for entry in self.project.timeline:
+            desc_lower = entry.description.lower()
+            
+            # Personnel casualties
+            if 'deceased' in desc_lower or 'died' in desc_lower or 'death' in desc_lower:
+                if 'pronounced' in desc_lower:
+                    outcomes.append(entry.description)
+                else:
+                    outcomes.append("resulted in loss of life")
+            elif 'injured' in desc_lower or 'injury' in desc_lower:
+                outcomes.append("resulted in personnel injuries")
+            
+            # Vessel damage
+            elif any(word in desc_lower for word in ['damage', 'holed', 'flooded', 'fire', 'explosion']):
+                outcomes.append("resulted in vessel damage")
+            
+            # Environmental
+            elif any(word in desc_lower for word in ['spill', 'discharge', 'pollution']):
+                outcomes.append("resulted in environmental impact")
+        
+        # Build outcomes paragraph
+        if outcomes:
+            # Use the most specific outcome found
+            outcome_text = outcomes[0] if outcomes[0].startswith("resulted") else outcomes[0]
+            para = f"The {outcome_text}."
+        else:
+            para = f"The incident resulted in a marine casualty requiring investigation under 46 CFR Part 4."
+        
+        # Add response/rescue information if available
+        response_entries = [e for e in self.project.timeline if any(word in e.description.lower() 
+                           for word in ['coast guard', 'rescue', 'evacuated', 'transported', 'ems', 'medical'])]
+        
+        if response_entries:
+            para += f" {response_entries[0].description}"
+        
+        return para
+    
+    def _generate_causal_factors_paragraph(self) -> str:
+        """Generate paragraph 3 of Executive Summary - Causal Factors"""
+        # Identify initiating event
+        initiating_event = None
+        for entry in self.project.timeline:
+            if entry.is_initiating_event or entry.type == 'event':
+                initiating_event = entry
+                break
+        
+        para = "Through its investigation, the Coast Guard determined "
+        
+        if initiating_event:
+            para += f"the initiating event for this casualty was {initiating_event.description.lower()}. "
+        else:
+            para += f"the cause of this casualty. "
+        
+        # List causal factors
+        if self.project.causal_factors:
+            factor_titles = []
+            for i, factor in enumerate(self.project.causal_factors):
+                factor_titles.append(f"({i+1}) {factor.title}")
+            
+            para += f"Causal factors contributing to this casualty include: {', '.join(factor_titles)}."
+        else:
+            para += "Contributing factors are under investigation."
+        
+        return para
+    
+    def _describe_incident_from_timeline(self) -> str:
+        """Extract incident description from timeline"""
+        # Look for event type entries that describe what happened
+        for entry in self.project.timeline:
+            if entry.type == 'event' or entry.is_initiating_event:
+                # Clean up the description
+                desc = entry.description
+                if desc[0].isupper():
+                    desc = desc[0].lower() + desc[1:]
+                return f"At {self._format_time(entry.timestamp)}, {desc}"
+        
+        # Fallback
+        incident_type = self.project.incident_info.incident_type or "a marine casualty"
+        return f"A {incident_type.lower()} occurred"
+    
+    def _generate_investigating_officers_report(self):
+        """Generate the main Investigating Officer's Report"""
+        # Title
+        title = self._generate_uscg_title()
+        title_para = self.document.add_paragraph()
+        title_para.add_run(title).bold = True
+        title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        self.document.add_paragraph()
+        
+        # INVESTIGATING OFFICER'S REPORT heading
+        report_heading = self.document.add_paragraph()
+        report_heading.add_run("INVESTIGATING OFFICER'S REPORT").bold = True
+        report_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        self.document.add_paragraph()
+        
+        # Generate all required sections
+        self._generate_section_1_preliminary_statement()
+        self._generate_section_2_vessels_involved()
+        self._generate_section_3_personnel_casualties()
+        self._generate_section_4_findings_of_fact()
+        self._generate_section_5_analysis()
+        self._generate_section_6_conclusions()
+        self._generate_section_7_actions_taken()
+        self._generate_section_8_recommendations()
+        
+        # Add signature block
+        self._generate_signature_block()
+    
+    def _generate_section_1_preliminary_statement(self):
+        """Section 1: Preliminary Statement"""
+        # Section heading
+        heading = self.document.add_paragraph()
+        heading.add_run("1. Preliminary Statement").bold = True
+        
+        # 1.1 - Authority statement
+        self.document.add_paragraph(
+            "1.1. This marine casualty investigation was conducted and this report was submitted in "
+            "accordance with Title 46, Code of Federal Regulations (CFR), Subpart 4.07, and under the "
+            "authority of Title 46, United States Code (USC) Chapter 63."
+        )
+        
+        # 1.2 - Parties in interest (if any)
+        parties = []
+        if self.project.vessels:
+            for vessel in self.project.vessels:
+                if vessel.official_name:
+                    parties.append(f"the owner of the {vessel.official_name}")
+        
+        # Add personnel as parties if involved
+        for person in self.project.personnel:
+            if person.role.lower() in ['master', 'captain', 'operator']:
+                parties.append(f"the {person.role.lower()}")
+        
+        if parties:
+            parties_text = ", ".join(parties)
+            self.document.add_paragraph(
+                f"1.2. The Investigating Officer designated {parties_text}, as parties-in-interest in this "
+                f"investigation. No other individuals, organizations, or parties were designated a party-in-"
+                f"interest in accordance with 46 CFR Subsection 4.03-10."
+            )
+        
+        # 1.3 - Lead agency statement
+        self.document.add_paragraph(
+            "1.3. The Coast Guard was lead agency for all evidence collection activities involving this "
+            "investigation."
+        )
+        
+        # Check for loss of life
+        has_fatality = any('deceased' in e.description.lower() or 'death' in e.description.lower() 
+                          for e in self.project.timeline)
+        
+        if has_fatality:
+            self.document.add_paragraph(
+                "Due to this investigation involving a loss of life, the Coast Guard Investigative "
+                "Service (CGIS) was notified and agreed to provide technical assistance as required."
+            )
+        
+        self.document.add_paragraph(
+            "No other persons or organizations assisted in this investigation."
+        )
+        
+        # 1.4 - Time format statement
+        self.document.add_paragraph(
+            "1.4. All times listed in this report are approximate, and in Eastern Standard Time using a 24-"
+            "hour format."
+        )
+        
+        self.document.add_paragraph()  # Add spacing
+    
+    def _generate_section_2_vessels_involved(self):
+        """Section 2: Vessels Involved in the Incident"""
+        heading = self.document.add_paragraph()
+        heading.add_run("2. Vessels Involved in the Incident").bold = True
+        
+        for vessel in self.project.vessels:
+            # Vessel details in USCG format
+            self.document.add_paragraph(f"Official Name: {vessel.official_name or 'Unknown'}")
+            self.document.add_paragraph(f"Identification Number: {vessel.identification_number or 'Unknown'}")
+            self.document.add_paragraph(f"Flag: {vessel.flag or 'United States'}")
+            self.document.add_paragraph(f"Vessel Class/Type/Sub-Type: {vessel.vessel_class or 'Unknown'}/"
+                                      f"{vessel.vessel_type or 'Unknown'}/{vessel.vessel_subtype or 'N/A'}")
+            self.document.add_paragraph(f"Build Year: {vessel.build_year or 'Unknown'}")
+            self.document.add_paragraph(f"Gross Tonnage: {vessel.gross_tonnage or 'Unknown'} GT")
+            self.document.add_paragraph(f"Length: {vessel.length or 'Unknown'}")
+            self.document.add_paragraph(f"Beam/Width: {vessel.beam or 'N/A'}")
+            self.document.add_paragraph(f"Draft/Depth: {vessel.draft or 'N/A'}")
+            self.document.add_paragraph(f"Main/Primary Propulsion: {vessel.propulsion or 'Unknown'}")
+            
+            self.document.add_paragraph()  # Spacing between vessels
+        
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_section_3_personnel_casualties(self):
+        """Section 3: Deceased, Missing, and/or Injured Persons"""
+        heading = self.document.add_paragraph()
+        heading.add_run("3. Deceased, Missing, and/or Injured Persons").bold = True
+        
+        # Create table for personnel casualties
+        if any(p.status.lower() in ['deceased', 'missing', 'injured'] for p in self.project.personnel):
+            table = self.document.add_table(rows=1, cols=4)
+            table.style = 'Light Grid'
+            
+            # Header row
+            header_cells = table.rows[0].cells
+            header_cells[0].text = "Relationship to Vessel"
+            header_cells[1].text = "Sex"
+            header_cells[2].text = "Age"
+            header_cells[3].text = "Status"
+            
+            # Add personnel entries
+            for person in self.project.personnel:
+                if person.status.lower() in ['deceased', 'missing', 'injured']:
+                    row_cells = table.add_row().cells
+                    row_cells[0].text = person.role or "Unknown"
+                    row_cells[1].text = "Unknown"  # Sex not tracked in our model
+                    row_cells[2].text = "Unknown"  # Age not tracked in our model
+                    row_cells[3].text = person.status.title()
+        else:
+            self.document.add_paragraph("No personnel casualties resulted from this incident.")
+        
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_section_4_findings_of_fact(self):
+        """Section 4: Findings of Fact"""
+        heading = self.document.add_paragraph()
+        heading.add_run("4. Findings of Fact").bold = True
+        
+        # 4.1 The Incident
+        subheading = self.document.add_paragraph()
+        subheading.add_run("4.1. The Incident:").bold = True
+        
+        # Generate numbered findings from timeline
+        finding_number = 1
+        for finding in self.project.roi_document.findings_of_fact:
+            para = self.document.add_paragraph(f"4.1.{finding_number}. {finding.statement}")
+            finding_number += 1
+        
+        # 4.2 Additional/Supporting Information (if needed)
+        if self.project.evidence_library:
+            self.document.add_paragraph()
+            subheading = self.document.add_paragraph()
+            subheading.add_run("4.2. Additional/Supporting Information:").bold = True
+            
+            # Add evidence summary
+            for i, evidence in enumerate(self.project.evidence_library, 1):
+                self.document.add_paragraph(
+                    f"4.2.{i}. Evidence item: {evidence.filename} - {evidence.description}"
+                )
+        
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_section_5_analysis(self):
+        """Section 5: Analysis"""
+        heading = self.document.add_paragraph()
+        heading.add_run("5. Analysis").bold = True
+        
+        # Generate analysis for each causal factor
+        for i, section in enumerate(self.project.roi_document.analysis_sections, 1):
+            # Analysis heading
+            subheading = self.document.add_paragraph()
+            subheading.add_run(f"5.{i}. {section.title}").bold = True
+            
+            # Analysis text
+            self.document.add_paragraph(section.analysis_text)
+            
+            self.document.add_paragraph()  # Spacing between analyses
+        
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_section_6_conclusions(self):
+        """Section 6: Conclusions"""
+        heading = self.document.add_paragraph()
+        heading.add_run("6. Conclusions").bold = True
+        
+        # 6.1 Determination of Cause
+        subheading = self.document.add_paragraph()
+        subheading.add_run("6.1. Determination of Cause:").bold = True
+        
+        # Add conclusions
+        for i, conclusion in enumerate(self.project.roi_document.conclusions, 1):
+            self.document.add_paragraph(f"6.1.{i}. {conclusion.statement}")
+        
+        # 6.2 Evidence of violations (standard sections)
+        self.document.add_paragraph()
+        self.document.add_paragraph("6.2. Evidence of Act(s) or Violation(s) of Law by Any Coast Guard "
+                                  "Credentialed Mariner Subject to Action Under 46 USC Chapter 77: None identified.")
+        
+        self.document.add_paragraph("6.3. Evidence of Act(s) or Violation(s) of Law by U.S. Coast Guard "
+                                  "Personnel, or any other person: None identified.")
+        
+        self.document.add_paragraph("6.4. Evidence of Act(s) Subject to Civil Penalty: None identified.")
+        
+        self.document.add_paragraph("6.5. Evidence of Criminal Act(s): None identified.")
+        
+        self.document.add_paragraph("6.6. Need for New or Amended U.S. Law or Regulation: None identified.")
+        
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_section_7_actions_taken(self):
+        """Section 7: Actions Taken Since the Incident"""
+        heading = self.document.add_paragraph()
+        heading.add_run("7. Actions Taken Since the Incident").bold = True
+        
+        if self.project.roi_document.actions_taken:
+            self.document.add_paragraph(self.project.roi_document.actions_taken)
+        else:
+            self.document.add_paragraph(
+                "7.1. The Coast Guard has initiated safety awareness campaigns to prevent similar incidents."
+            )
+        
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_section_8_recommendations(self):
+        """Section 8: Recommendations"""
+        heading = self.document.add_paragraph()
+        heading.add_run("8. Recommendations").bold = True
+        
+        # 8.1 Safety Recommendations
+        subheading = self.document.add_paragraph()
+        subheading.add_run("8.1. Safety Recommendations:").bold = True
+        
+        if self.project.roi_document.recommendations:
+            self.document.add_paragraph(self.project.roi_document.recommendations)
+        else:
+            # Generate recommendations based on causal factors
+            for i, factor in enumerate(self.project.causal_factors, 1):
+                if factor.category == 'organizational':
+                    self.document.add_paragraph(
+                        f"8.1.{i}. Review and update organizational policies to address {factor.title.lower()}."
+                    )
+                elif factor.category == 'workplace':
+                    self.document.add_paragraph(
+                        f"8.1.{i}. Implement workplace improvements to mitigate {factor.title.lower()}."
+                    )
+                elif factor.category == 'defense':
+                    self.document.add_paragraph(
+                        f"8.1.{i}. Enhance safety barriers and defenses to prevent {factor.title.lower()}."
+                    )
+        
+        # 8.2 Administrative Recommendations
+        self.document.add_paragraph()
+        subheading = self.document.add_paragraph()
+        subheading.add_run("8.2. Administrative Recommendations:").bold = True
+        self.document.add_paragraph("None at this time.")
+        
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_signature_block(self):
+        """Generate signature block"""
+        # Add spacing
+        for _ in range(3):
+            self.document.add_paragraph()
+        
+        # Signature line
+        self.document.add_paragraph("_" * 50)
+        
+        # Name and title
+        officer_name = self.project.metadata.investigating_officer or "[Investigating Officer Name]"
+        self.document.add_paragraph(officer_name.upper())
+        self.document.add_paragraph("Lieutenant, U.S. Coast Guard")
+        self.document.add_paragraph("Investigating Officer")
