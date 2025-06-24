@@ -539,40 +539,57 @@ def add_timeline_entries_bulk(project_id):
         
         created_entries = []
         
-        for entry_data in entries_data:
-            # Validate required fields
-            if not entry_data.get('timestamp') or not entry_data.get('type') or not entry_data.get('description'):
-                continue  # Skip invalid entries
-            
-            # Validate timestamp format
-            try:
-                timestamp = datetime.fromisoformat(entry_data['timestamp'])
-            except (ValueError, TypeError):
-                continue  # Skip entries with invalid timestamps
-            
-            # Create timeline entry
-            entry = TimelineEntry(
-                id=str(uuid.uuid4()),
-                timestamp=timestamp,
-                entry_type=str(entry_data['type'])[:50],
-                description=str(entry_data['description'])[:1000],
-                confidence_level=entry_data.get('confidence_level', 'medium'),
-                is_initiating_event=bool(entry_data.get('is_initiating_event', False)),
-                project_id=project_id
-            )
-            
-            # Set assumptions if provided
-            if entry_data.get('assumptions'):
-                entry.assumptions_list = entry_data['assumptions']
-            
-            # Set personnel if provided
-            if entry_data.get('personnel_involved'):
-                entry.personnel_involved_list = entry_data['personnel_involved']
-            
-            db.session.add(entry)
-            created_entries.append(entry)
+        current_app.logger.info(f"Processing {len(entries_data)} timeline entries for project {project_id}")
         
+        for i, entry_data in enumerate(entries_data):
+            try:
+                current_app.logger.info(f"Processing entry {i+1}: {entry_data}")
+                
+                # Validate required fields
+                if not entry_data.get('timestamp') or not entry_data.get('type') or not entry_data.get('description'):
+                    current_app.logger.warning(f"Skipping entry {i+1}: missing required fields")
+                    continue  # Skip invalid entries
+                
+                # Validate timestamp format
+                try:
+                    timestamp = datetime.fromisoformat(entry_data['timestamp'])
+                except (ValueError, TypeError) as e:
+                    current_app.logger.warning(f"Skipping entry {i+1}: invalid timestamp format: {e}")
+                    continue  # Skip entries with invalid timestamps
+                
+                # Create timeline entry
+                entry_id = str(uuid.uuid4())
+                current_app.logger.info(f"Creating timeline entry {entry_id}")
+                
+                entry = TimelineEntry(
+                    id=entry_id,
+                    timestamp=timestamp,
+                    entry_type=str(entry_data['type'])[:50],
+                    description=str(entry_data['description'])[:1000],
+                    confidence_level=entry_data.get('confidence_level', 'medium'),
+                    is_initiating_event=bool(entry_data.get('is_initiating_event', False)),
+                    project_id=project_id
+                )
+                
+                # Set assumptions if provided
+                if entry_data.get('assumptions'):
+                    entry.assumptions_list = entry_data['assumptions']
+                
+                # Set personnel if provided
+                if entry_data.get('personnel_involved'):
+                    entry.personnel_involved_list = entry_data['personnel_involved']
+                
+                db.session.add(entry)
+                created_entries.append(entry)
+                current_app.logger.info(f"Successfully added entry {entry_id} to session")
+                
+            except Exception as e:
+                current_app.logger.error(f"Error processing entry {i+1}: {e}")
+                continue
+        
+        current_app.logger.info(f"Committing {len(created_entries)} timeline entries")
         db.session.commit()
+        current_app.logger.info("Timeline entries committed successfully")
         
         return jsonify({
             'success': True,
@@ -582,7 +599,9 @@ def add_timeline_entries_bulk(project_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error adding bulk timeline entries to project {project_id}: {str(e)}")
-        return jsonify({'success': False, 'error': 'Failed to add timeline entries'}), 500
+        import traceback
+        current_app.logger.error(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': f'Failed to add timeline entries: {str(e)}'}), 500
 
 @api_bp.route('/projects/<project_id>/consistency-check', methods=['POST'])
 @jwt_required()

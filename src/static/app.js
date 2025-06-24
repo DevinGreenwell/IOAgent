@@ -1046,6 +1046,12 @@ class IOAgent {
             if (error.message !== 'Authentication required') {
                 this.showAlert('Error adding timeline entries: ' + error.message, 'danger');
             }
+            
+            // Hide the modal even if there was an error
+            const modal = bootstrap.Modal.getInstance(document.getElementById('timelineSuggestionsModal'));
+            if (modal) {
+                modal.hide();
+            }
         } finally {
             this.hideLoading();
         }
