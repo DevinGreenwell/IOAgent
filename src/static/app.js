@@ -1343,6 +1343,50 @@ class IOAgent {
         `).join('');
     }
 
+    async downloadROI(projectId) {
+        try {
+            this.showLoading('Downloading ROI document...');
+            
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${projectId}/download-roi`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+            
+            // Get filename from Content-Disposition header or use default
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'ROI_Document.docx';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+            
+            // Convert response to blob and trigger download
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            this.showAlert('ROI document downloaded successfully', 'success');
+            
+        } catch (error) {
+            console.error('Error downloading ROI:', error);
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error downloading ROI: ' + error.message, 'danger');
+            }
+        } finally {
+            this.hideLoading();
+        }
+    }
+
     async generateROI() {
         if (!this.currentProject) {
             this.showAlert('Please select a project first', 'warning');
@@ -1361,7 +1405,7 @@ class IOAgent {
             if (response.ok && data.success) {
                 this.showAlert('ROI document generated successfully', 'success');
                 
-                // Add download link
+                // Add download link with proper authentication
                 const generatedDocs = document.getElementById('generatedDocs');
                 if (generatedDocs) {
                     generatedDocs.innerHTML = `
@@ -1370,9 +1414,9 @@ class IOAgent {
                                 <h6>ROI Document</h6>
                                 <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
                             </div>
-                            <a href="${data.download_url}" class="btn btn-outline-primary btn-sm">
+                            <button class="btn btn-outline-primary btn-sm" onclick="app.downloadROI('${this.currentProject.id}')">
                                 <i class="fas fa-download me-2"></i>Download
-                            </a>
+                            </button>
                         </div>
                     `;
                 }
