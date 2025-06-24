@@ -1356,13 +1356,9 @@ class IOAgent {
                 method: 'POST'
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
             const data = await response.json();
 
-            if (data.success) {
+            if (response.ok && data.success) {
                 this.showAlert('ROI document generated successfully', 'success');
                 
                 // Add download link
@@ -1381,7 +1377,13 @@ class IOAgent {
                     `;
                 }
             } else {
-                throw new Error(data.error || 'Failed to generate ROI');
+                // Handle 501 Not Implemented as informational rather than error
+                if (response.status === 501) {
+                    this.showAlert(data.error || 'ROI generation is currently under development', 'info');
+                    return;
+                } else {
+                    throw new Error(data.error || 'Failed to generate ROI');
+                }
             }
         } catch (error) {
             console.error('Error generating ROI:', error);
