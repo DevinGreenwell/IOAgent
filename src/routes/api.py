@@ -527,24 +527,55 @@ def generate_roi(project_id):
                 'error': 'Project must have timeline entries before generating ROI document'
             }), 400
         
-        # TODO: Full ROI generation requires converting database models to InvestigationProject format
-        # This is a complex transformation that needs to be implemented
-        current_app.logger.info(f"ROI generation requested for project {project_id}")
+        current_app.logger.info(f"Starting ROI generation for project {project_id}")
+        
+        # Convert database models to InvestigationProject format
+        from src.models.roi_converter import DatabaseToROIConverter
+        converter = DatabaseToROIConverter()
+        investigation_project = converter.convert_project(project)
+        
+        current_app.logger.info(f"Converted project data: {len(investigation_project.timeline)} timeline entries, {len(investigation_project.causal_factors)} causal factors")
+        
+        # Create exports directory
+        uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        exports_dir = os.path.join(uploads_dir, f'project_{project_id}', 'exports')
+        os.makedirs(exports_dir, exist_ok=True)
+        
+        # Generate output filename
+        safe_title = "".join(c for c in project.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_title = safe_title.replace(' ', '_')[:50]  # Limit length
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        output_filename = f"ROI_{safe_title}_{timestamp}.docx"
+        output_path = os.path.join(exports_dir, output_filename)
+        
+        current_app.logger.info(f"Generating ROI document at: {output_path}")
+        
+        # Generate ROI document
+        roi_generator.generate_roi(investigation_project, output_path)
+        
+        current_app.logger.info(f"ROI document generated successfully: {output_path}")
+        
+        # Generate download URL
+        download_url = f'/api/projects/{project_id}/download/{output_filename}'
         
         return jsonify({
-            'success': False,
-            'error': 'ROI document generation is currently under development. This feature will be available in a future update.',
-            'details': {
-                'project_title': project.title,
+            'success': True,
+            'message': 'ROI document generated successfully',
+            'file_path': output_path,
+            'filename': output_filename,
+            'download_url': download_url,
+            'project_details': {
                 'timeline_entries': len(project.timeline_entries),
                 'evidence_items': len(project.evidence_items),
                 'causal_factors': len(project.causal_factors)
             }
-        }), 501  # 501 Not Implemented
+        })
         
     except Exception as e:
-        current_app.logger.error(f"Error in ROI generation endpoint for project {project_id}: {str(e)}")
-        return jsonify({'success': False, 'error': f'ROI generation error: {str(e)}'}), 500
+        current_app.logger.error(f"Error generating ROI for project {project_id}: {str(e)}")
+        import traceback
+        current_app.logger.error(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': f'Failed to generate ROI document: {str(e)}'}), 500
 
 @api_bp.route('/projects/<project_id>/download-roi', methods=['GET'])
 @jwt_required()
@@ -559,14 +590,46 @@ def download_roi(project_id):
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
         
-        # ROI download not available since generation is not implemented
-        return jsonify({
-            'success': False,
-            'error': 'ROI document download is not available. ROI generation feature is under development.'
-        }), 501  # 501 Not Implemented
+        # Look for the most recent ROI document in exports directory
+        uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        exports_dir = os.path.join(uploads_dir, f'project_{project_id}', 'exports')
+        
+        if not os.path.exists(exports_dir):
+            return jsonify({
+                'success': False,
+                'error': 'No ROI documents have been generated for this project'
+            }), 404
+        
+        # Find the most recent ROI file
+        roi_files = [f for f in os.listdir(exports_dir) if f.startswith('ROI_') and f.endswith('.docx')]
+        
+        if not roi_files:
+            return jsonify({
+                'success': False,
+                'error': 'No ROI documents found. Please generate an ROI document first.'
+            }), 404
+        
+        # Get the most recent file (by filename timestamp)
+        roi_files.sort(reverse=True)  # Most recent first
+        latest_file = roi_files[0]
+        file_path = os.path.join(exports_dir, latest_file)
+        
+        if not os.path.exists(file_path):
+            return jsonify({
+                'success': False,
+                'error': 'ROI document file not found'
+            }), 404
+        
+        current_app.logger.info(f"Serving ROI document: {file_path}")
+        
+        # Create a user-friendly download name
+        safe_title = "".join(c for c in project.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        download_name = f"ROI_{safe_title.replace(' ', '_')}.docx"
+        
+        return send_file(file_path, as_attachment=True, download_name=download_name)
         
     except Exception as e:
-        current_app.logger.error(f"Error in ROI download endpoint for project {project_id}: {str(e)}")
+        current_app.logger.error(f"Error downloading ROI for project {project_id}: {str(e)}")
         return jsonify({'success': False, 'error': f'ROI download error: {str(e)}'}), 500
 
 @api_bp.route('/projects/<project_id>/ai-suggestions', methods=['POST'])
