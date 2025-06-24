@@ -512,52 +512,62 @@ def run_causal_analysis(project_id):
 def generate_roi(project_id):
     """Generate ROI document"""
     try:
-        project = project_manager.load_project(project_id)
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
         
-        # Generate executive summary with AI if available
-        if ai_assistant.client:
-            summary_data = ai_assistant.generate_executive_summary(project)
-            project.roi_document.executive_summary.scene_setting = summary_data.get('scene_setting', '')
-            project.roi_document.executive_summary.outcomes = summary_data.get('outcomes', '')
-            project.roi_document.executive_summary.causal_factors = summary_data.get('causal_factors', '')
+        # Check if project has sufficient data for ROI generation
+        if not project.timeline_entries:
+            return jsonify({
+                'success': False, 
+                'error': 'Project must have timeline entries before generating ROI document'
+            }), 400
         
-        # Generate ROI document
-        exports_dir = os.path.join(project_manager._get_project_dir(project_id), "exports")
-        os.makedirs(exports_dir, exist_ok=True)
-        
-        output_path = os.path.join(exports_dir, f"ROI_{project.metadata.title.replace(' ', '_')}.docx")
-        roi_generator.generate_roi(project, output_path)
-        
-        project_manager.save_project(project)
+        # TODO: Full ROI generation requires converting database models to InvestigationProject format
+        # This is a complex transformation that needs to be implemented
+        current_app.logger.info(f"ROI generation requested for project {project_id}")
         
         return jsonify({
-            'success': True,
-            'file_path': output_path,
-            'download_url': f'/api/projects/{project_id}/download-roi'
-        })
+            'success': False,
+            'error': 'ROI document generation is currently under development. This feature will be available in a future update.',
+            'details': {
+                'project_title': project.title,
+                'timeline_entries': len(project.timeline_entries),
+                'evidence_items': len(project.evidence_items),
+                'causal_factors': len(project.causal_factors)
+            }
+        }), 501  # 501 Not Implemented
+        
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.error(f"Error in ROI generation endpoint for project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'ROI generation error: {str(e)}'}), 500
 
 @api_bp.route('/projects/<project_id>/download-roi', methods=['GET'])
 @jwt_required()
 def download_roi(project_id):
     """Download generated ROI document"""
     try:
-        project = project_manager.load_project(project_id)
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
         
-        exports_dir = os.path.join(project_manager._get_project_dir(project_id), "exports")
-        roi_file = os.path.join(exports_dir, f"ROI_{project.metadata.title.replace(' ', '_')}.docx")
+        # ROI download not available since generation is not implemented
+        return jsonify({
+            'success': False,
+            'error': 'ROI document download is not available. ROI generation feature is under development.'
+        }), 501  # 501 Not Implemented
         
-        if not os.path.exists(roi_file):
-            return jsonify({'success': False, 'error': 'ROI document not found'}), 404
-        
-        return send_file(roi_file, as_attachment=True, download_name=f"ROI_{project.metadata.title}.docx")
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        current_app.logger.error(f"Error in ROI download endpoint for project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'ROI download error: {str(e)}'}), 500
 
 @api_bp.route('/projects/<project_id>/ai-suggestions', methods=['POST'])
 @jwt_required()
