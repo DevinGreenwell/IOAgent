@@ -776,17 +776,8 @@ def generate_response():
         data = request.get_json()
         prompt = data.get("prompt", "")
 
-        # OPTION A: Use your AIAssistant class
+        # Use AIAssistant class with test model
         ai_response = ai_assistant.chat(prompt)
-
-        # OPTION B (if AIAssistant doesn't exist or lacks chat method):
-        # import openai
-        # openai.api_key = os.getenv("OPENAI_API_KEY")
-        # response = openai.ChatCompletion.create(
-        #     model="gpt-4o",
-        #     messages=[{"role": "user", "content": prompt}]
-        # )
-        # ai_response = response.choices[0].message["content"]
 
         return jsonify({ "content": ai_response })
     except Exception as e:
