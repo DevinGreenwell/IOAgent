@@ -423,13 +423,36 @@ def run_causal_analysis(project_id):
         if not timeline_entries:
             return jsonify({'success': False, 'error': 'No timeline entries found for analysis'}), 400
         
-        # Convert timeline entries to format expected by analysis engine
-        timeline_data = [entry.to_dict() for entry in timeline_entries]
+        # Create wrapper objects that match expected format for analysis engines
+        class TimelineEntryWrapper:
+            def __init__(self, entry_dict):
+                self.timestamp = datetime.fromisoformat(entry_dict['timestamp']) if entry_dict.get('timestamp') else datetime.utcnow()
+                self.type = entry_dict.get('type', 'event')  # entry.to_dict() uses 'type', not 'entry_type'
+                self.description = entry_dict.get('description', '')
+                self.id = entry_dict.get('id', '')
+                self.evidence_ids = entry_dict.get('evidence_ids', [])
+                self.personnel_involved = entry_dict.get('personnel_involved', [])
+                self.assumptions = entry_dict.get('assumptions', [])
+                self.confidence_level = entry_dict.get('confidence_level', 'medium')
+                self.is_initiating_event = entry_dict.get('is_initiating_event', False)
+        
+        class EvidenceWrapper:
+            def __init__(self, evidence_dict):
+                self.type = evidence_dict.get('type', 'document')
+                self.description = evidence_dict.get('description', '')
+                self.filename = evidence_dict.get('filename', '')
+                self.source = evidence_dict.get('source', 'user_upload')
+                self.reliability = evidence_dict.get('reliability', 'medium')
+        
+        # Convert to wrapper objects
+        timeline_objects = [TimelineEntryWrapper(entry.to_dict()) for entry in timeline_entries]
+        evidence_objects = [EvidenceWrapper(item.to_dict()) for item in project.evidence_items]
         
         # Run basic causal analysis using the engine
         causal_factors = []
         try:
-            causal_factors = causal_engine.analyze_timeline(timeline_data)
+            causal_factors = causal_engine.analyze_timeline(timeline_objects)
+            current_app.logger.info(f"Causal engine identified {len(causal_factors)} factors")
         except Exception as engine_error:
             current_app.logger.warning(f"Causal engine analysis failed: {engine_error}")
         
@@ -437,8 +460,7 @@ def run_causal_analysis(project_id):
         ai_factors = []
         if ai_assistant.client:
             try:
-                evidence_data = [item.to_dict() for item in project.evidence_items]
-                ai_factors = ai_assistant.identify_causal_factors(timeline_data, evidence_data)
+                ai_factors = ai_assistant.identify_causal_factors(timeline_objects, evidence_objects)
                 current_app.logger.info(f"AI assistant identified {len(ai_factors)} factors")
             except Exception as ai_error:
                 current_app.logger.warning(f"AI analysis failed: {ai_error}")
