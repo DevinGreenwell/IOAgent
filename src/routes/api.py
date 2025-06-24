@@ -410,35 +410,80 @@ def delete_timeline_entry(project_id, entry_id):
 def run_causal_analysis(project_id):
     """Run causal analysis on timeline"""
     try:
-        project = project_manager.load_project(project_id)
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
         if not project:
             return jsonify({'success': False, 'error': 'Project not found'}), 404
         
-        # Run causal analysis
-        causal_factors = causal_engine.analyze_timeline(project.timeline)
+        # Get timeline entries
+        timeline_entries = project.timeline_entries
+        if not timeline_entries:
+            return jsonify({'success': False, 'error': 'No timeline entries found for analysis'}), 400
+        
+        # Convert timeline entries to format expected by analysis engine
+        timeline_data = [entry.to_dict() for entry in timeline_entries]
+        
+        # Run basic causal analysis using the engine
+        causal_factors = []
+        try:
+            causal_factors = causal_engine.analyze_timeline(timeline_data)
+        except Exception as engine_error:
+            current_app.logger.warning(f"Causal engine analysis failed: {engine_error}")
         
         # Use AI to enhance analysis if available
+        ai_factors = []
         if ai_assistant.client:
-            ai_factors = ai_assistant.identify_causal_factors(project.timeline, project.evidence_library)
-            # Merge AI suggestions with engine results
-            for ai_factor in ai_factors:
-                from src.models.roi_models import CausalFactor
-                factor = CausalFactor()
-                factor.category = ai_factor.get('category', 'production')
-                factor.title = ai_factor.get('title', '')
-                factor.description = ai_factor.get('description', '')
-                factor.analysis_text = ai_factor.get('analysis', '')
-                causal_factors.append(factor)
+            try:
+                evidence_data = [item.to_dict() for item in project.evidence_items]
+                ai_factors = ai_assistant.identify_causal_factors(timeline_data, evidence_data)
+                current_app.logger.info(f"AI assistant identified {len(ai_factors)} factors")
+            except Exception as ai_error:
+                current_app.logger.warning(f"AI analysis failed: {ai_error}")
         
-        project.causal_factors = causal_factors
-        project_manager.save_project(project)
+        # Create CausalFactor database records
+        created_factors = []
+        for factor_data in (causal_factors + ai_factors):
+            try:
+                factor = CausalFactor(
+                    id=str(uuid.uuid4()),
+                    title=str(factor_data.get('title', 'Unknown Factor'))[:200],
+                    description=str(factor_data.get('description', ''))[:1000],
+                    category=factor_data.get('category', 'organizational'),
+                    severity=factor_data.get('severity', 'medium'),
+                    likelihood=factor_data.get('likelihood', 'medium'),
+                    analysis_text=str(factor_data.get('analysis_text', factor_data.get('analysis', '')))[:2000],
+                    project_id=project_id
+                )
+                
+                # Set recommendations if provided
+                if factor_data.get('recommendations'):
+                    factor.recommendations_list = factor_data['recommendations']
+                
+                # Set evidence support if provided
+                if factor_data.get('evidence_support'):
+                    factor.evidence_support_list = factor_data['evidence_support']
+                
+                db.session.add(factor)
+                created_factors.append(factor)
+            except Exception as factor_error:
+                current_app.logger.error(f"Error creating causal factor: {factor_error}")
+                continue
+        
+        db.session.commit()
+        current_app.logger.info(f"Created {len(created_factors)} causal factors for project {project_id}")
         
         return jsonify({
             'success': True,
-            'causal_factors': [factor.to_dict() for factor in causal_factors]
+            'causal_factors': [factor.to_dict() for factor in created_factors],
+            'message': f'Analysis complete. Identified {len(created_factors)} causal factors.'
         })
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error running causal analysis for project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to run causal analysis: {str(e)}'}), 500
 
 @api_bp.route('/projects/<project_id>/generate-roi', methods=['POST'])
 @jwt_required()
