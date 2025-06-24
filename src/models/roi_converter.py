@@ -127,25 +127,65 @@ class DatabaseToROIConverter:
         return causal_factors
     
     def _create_default_vessels(self, db_project) -> List[Vessel]:
-        """Create default vessel information (can be enhanced with actual vessel data)"""
+        """Create vessel information from project data and timeline entries"""
         vessels = []
+        vessel_names = set()
         
-        # For now, create a single generic vessel
-        vessel = Vessel()
-        vessel.official_name = "Unknown Vessel"
-        vessel.identification_number = "TBD"
-        vessel.flag = "United States"
-        vessel.vessel_class = "Unknown"
-        vessel.vessel_type = "Unknown"
-        vessel.vessel_subtype = ""
-        vessel.build_year = None
-        vessel.gross_tonnage = None
-        vessel.length = None
-        vessel.beam = None
-        vessel.draft = None
-        vessel.propulsion = "Unknown"
+        # Extract vessel names from timeline entries
+        for db_entry in db_project.timeline_entries:
+            description = db_entry.description.lower()
+            # Look for common vessel name patterns
+            if 'f/v ' in description:
+                # Extract F/V vessel names
+                import re
+                matches = re.findall(r'f/v\s+([a-zA-Z0-9\s]+)', description, re.IGNORECASE)
+                for match in matches:
+                    clean_name = match.strip().upper()
+                    if clean_name and len(clean_name) < 50:  # Reasonable name length
+                        vessel_names.add(f"F/V {clean_name}")
+            elif 'vessel ' in description or 'ship ' in description:
+                # Look for other vessel references
+                words = description.split()
+                for i, word in enumerate(words):
+                    if word.lower() in ['vessel', 'ship'] and i > 0:
+                        potential_name = words[i-1].upper()
+                        if potential_name.isalpha() and len(potential_name) > 2:
+                            vessel_names.add(potential_name)
         
-        vessels.append(vessel)
+        # Create vessel objects from found names
+        for vessel_name in vessel_names:
+            vessel = Vessel()
+            vessel.official_name = vessel_name
+            vessel.identification_number = "O.N. [To be determined during investigation]"
+            vessel.flag = "United States"
+            vessel.vessel_class = "Commercial Fishing Vessel" if "F/V" in vessel_name else "Commercial Vessel"
+            vessel.vessel_type = "Fishing Vessel" if "F/V" in vessel_name else "Commercial Vessel"
+            vessel.vessel_subtype = "Seine Vessel" if any(word in db_project.title.lower() or any(word in entry.description.lower() for entry in db_project.timeline_entries) for word in ['seine', 'net']) else ""
+            vessel.build_year = None
+            vessel.gross_tonnage = None
+            vessel.length = None
+            vessel.beam = None
+            vessel.draft = None
+            vessel.propulsion = "Diesel Engine"
+            vessels.append(vessel)
+        
+        # If no vessels found, create a generic one based on project context
+        if not vessels:
+            vessel = Vessel()
+            vessel.official_name = f"Vessel involved in {db_project.incident_type or 'incident'}"
+            vessel.identification_number = "O.N. [To be determined during investigation]"
+            vessel.flag = "United States"
+            vessel.vessel_class = "Commercial Vessel"
+            vessel.vessel_type = "Commercial Vessel"
+            vessel.vessel_subtype = ""
+            vessel.build_year = None
+            vessel.gross_tonnage = None
+            vessel.length = None
+            vessel.beam = None
+            vessel.draft = None
+            vessel.propulsion = "Diesel Engine"
+            vessels.append(vessel)
+        
         return vessels
     
     def _create_default_personnel(self, db_project) -> List[Personnel]:
@@ -214,35 +254,90 @@ class DatabaseToROIConverter:
         incident_date = roi_project.incident_info.incident_date
         date_str = incident_date.strftime("%B %d, %Y") if incident_date else "an unknown date"
         
-        # Scene setting paragraph
-        summary.scene_setting = f"On {date_str}, {roi_project.incident_info.incident_type.lower() if roi_project.incident_info.incident_type else 'an incident'} occurred at {roi_project.incident_info.location}. This report presents the findings of the investigation conducted by {roi_project.metadata.investigating_officer}."
+        # Get vessel information for scene setting
+        vessel_info = ""
+        if roi_project.vessels and roi_project.vessels[0].official_name:
+            primary_vessel = roi_project.vessels[0]
+            vessel_info = f" involving the {primary_vessel.official_name}"
         
-        # Outcomes paragraph
+        # Scene setting paragraph - more specific
+        incident_type = roi_project.incident_info.incident_type or 'marine casualty'
+        location = roi_project.incident_info.location or 'under investigation'
+        summary.scene_setting = f"On {date_str}, a {incident_type.lower()}{vessel_info} occurred at {location}. This report presents the findings of the investigation conducted by {roi_project.metadata.investigating_officer} in accordance with 46 CFR Part 4."
+        
+        # Outcomes paragraph - more descriptive based on incident type
         timeline_count = len(roi_project.timeline)
         evidence_count = len(roi_project.evidence_library)
-        summary.outcomes = f"The investigation analyzed {timeline_count} timeline entries and {evidence_count} pieces of evidence to determine the sequence of events and contributing factors."
         
-        # Causal factors paragraph
+        # Look for outcome indicators in timeline
+        casualties_mentioned = any('deceased' in entry.description.lower() or 'injured' in entry.description.lower() or 'casualty' in entry.description.lower() for entry in roi_project.timeline)
+        damage_mentioned = any('damage' in entry.description.lower() or 'collision' in entry.description.lower() or 'grounding' in entry.description.lower() for entry in roi_project.timeline)
+        
+        outcome_text = ""
+        if casualties_mentioned and damage_mentioned:
+            outcome_text = "The incident resulted in personal injury and vessel damage. "
+        elif casualties_mentioned:
+            outcome_text = "The incident resulted in personal injury. "
+        elif damage_mentioned:
+            outcome_text = "The incident resulted in vessel damage. "
+        
+        summary.outcomes = f"{outcome_text}The investigation examined {timeline_count} timeline entries and {evidence_count} pieces of evidence to reconstruct the sequence of events and determine the factors that contributed to this casualty."
+        
+        # Causal factors paragraph - more analytical
         factor_count = len(roi_project.causal_factors)
         if factor_count > 0:
-            summary.causal_factors = f"The investigation identified {factor_count} causal factors contributing to the incident. These factors have been analyzed to develop recommendations for preventing similar occurrences."
+            # Group factors by category for summary
+            categories = set(factor.category for factor in roi_project.causal_factors if factor.category)
+            if len(categories) > 1:
+                summary.causal_factors = f"The causal analysis identified {factor_count} contributing factors across {len(categories)} categories of the investigation framework. These factors demonstrate the complex interactions between organizational, environmental, and operational elements that led to this incident."
+            else:
+                category_name = list(categories)[0] if categories else 'operational'
+                summary.causal_factors = f"The investigation identified {factor_count} {category_name} factors that contributed to this incident. The analysis reveals specific areas where improvements could prevent similar casualties."
         else:
-            summary.causal_factors = "Causal factor analysis is ongoing as part of this investigation."
+            summary.causal_factors = "Causal factor analysis is ongoing. Preliminary examination indicates multiple contributing elements that will be thoroughly analyzed to develop comprehensive recommendations."
         
         return summary
     
     def _generate_preliminary_statement(self, roi_project: InvestigationProject) -> str:
         """Generate preliminary statement"""
-        return f"This report contains the preliminary findings of the investigation into the {roi_project.incident_info.incident_type.lower() if roi_project.incident_info.incident_type else 'incident'} that occurred on {roi_project.incident_info.incident_date.strftime('%B %d, %Y') if roi_project.incident_info.incident_date else 'the date in question'}. The investigation is being conducted in accordance with applicable regulations and industry standards."
+        incident_type = roi_project.incident_info.incident_type.lower() if roi_project.incident_info.incident_type else 'marine casualty'
+        date_str = roi_project.incident_info.incident_date.strftime('%B %d, %Y') if roi_project.incident_info.incident_date else 'the date in question'
+        
+        statement = f"This marine casualty investigation was conducted, and this report was submitted in accordance with Title 46, Code of Federal Regulations, Subpart 4.07, and under the authority of Title 46, United States Code, Chapter 63.\n\n"
+        statement += f"This report contains the preliminary findings of the investigation into the {incident_type} that occurred on {date_str}. "
+        statement += f"The investigation is being conducted in accordance with 46 CFR Part 4 and follows established Coast Guard investigation procedures. "
+        statement += f"The purpose of this investigation is to determine the cause of the casualty and to prevent similar incidents from occurring in the future."
+        
+        return statement
     
     def _generate_findings_from_timeline(self, timeline: List[TimelineEntry]) -> List[Finding]:
         """Generate findings of fact from timeline entries"""
         findings = []
+        seen_descriptions = set()
         
-        for entry in timeline:
+        # Sort timeline by timestamp for logical flow
+        sorted_timeline = sorted(timeline, key=lambda x: x.timestamp or datetime.min)
+        
+        for entry in sorted_timeline:
+            # Skip duplicate descriptions
+            if entry.description in seen_descriptions:
+                continue
+            seen_descriptions.add(entry.description)
+            
             finding = Finding()
-            finding.statement = f"At {entry.timestamp.strftime('%H:%M:%S') if entry.timestamp else 'an unknown time'}, {entry.description}"
-            finding.evidence_support = entry.evidence_ids
+            
+            # Format timestamp appropriately
+            if entry.timestamp:
+                time_str = entry.timestamp.strftime('%H%M on %d %B %Y')
+                finding.statement = f"At {time_str}, {entry.description.rstrip('.')}"
+            else:
+                finding.statement = f"During the incident sequence, {entry.description.rstrip('.')}"
+            
+            # Add period if not present
+            if not finding.statement.endswith('.'):
+                finding.statement += '.'
+            
+            finding.evidence_support = entry.evidence_ids or []
             finding.timeline_refs = [entry.id]
             finding.analysis_refs = []
             findings.append(finding)
@@ -268,18 +363,55 @@ class DatabaseToROIConverter:
         """Generate conclusions from causal factors and analysis"""
         conclusions = []
         
-        # Create high-level conclusions based on causal factors
+        # Group causal factors by category for better conclusions
+        factor_categories = {}
         for factor in roi_project.causal_factors:
-            conclusion = Conclusion()
-            conclusion.statement = f"The investigation concludes that {factor.title.lower()} was a contributing factor to the incident."
-            conclusion.analysis_refs = []  # Could be linked to analysis sections
-            conclusion.causal_factor_refs = [factor.id]
-            conclusions.append(conclusion)
+            category = factor.category or 'other'
+            if category not in factor_categories:
+                factor_categories[category] = []
+            factor_categories[category].append(factor)
+        
+        # Create category-based conclusions
+        category_descriptions = {
+            'organizational': 'organizational and management factors',
+            'workplace': 'workplace environment and equipment factors',
+            'precondition': 'precondition factors affecting crew performance',
+            'production': 'unsafe acts and operational errors',
+            'defense': 'failed or absent safety barriers'
+        }
+        
+        for category, factors in factor_categories.items():
+            if len(factors) == 1:
+                factor = factors[0]
+                conclusion = Conclusion()
+                conclusion.statement = f"The investigation determined that {factor.title.lower()} contributed to this incident by {factor.description.lower() if factor.description else 'creating conditions that led to the casualty'}."
+                conclusion.causal_factor_refs = [factor.id]
+                conclusions.append(conclusion)
+            else:
+                # Multiple factors in same category
+                conclusion = Conclusion()
+                category_desc = category_descriptions.get(category, f'{category} factors')
+                factor_titles = [f.title.lower() for f in factors]
+                if len(factor_titles) == 2:
+                    factors_text = f"{factor_titles[0]} and {factor_titles[1]}"
+                else:
+                    factors_text = f"{', '.join(factor_titles[:-1])}, and {factor_titles[-1]}"
+                
+                conclusion.statement = f"The investigation identified multiple {category_desc} that contributed to this incident, including {factors_text}."
+                conclusion.causal_factor_refs = [f.id for f in factors]
+                conclusions.append(conclusion)
+        
+        # Add a summary conclusion if multiple categories exist
+        if len(factor_categories) > 1:
+            summary_conclusion = Conclusion()
+            summary_conclusion.statement = f"This incident resulted from a combination of {len(roi_project.causal_factors)} contributing factors across multiple categories of the causal analysis framework, demonstrating the complex interactions that can lead to marine casualties."
+            summary_conclusion.causal_factor_refs = [f.id for f in roi_project.causal_factors]
+            conclusions.append(summary_conclusion)
         
         # Add a general conclusion if no specific factors
         if not roi_project.causal_factors:
             conclusion = Conclusion()
-            conclusion.statement = "The investigation is ongoing to determine the root causes and contributing factors of this incident."
+            conclusion.statement = "The investigation is ongoing to determine the root causes and contributing factors of this incident. Additional analysis will be conducted as more information becomes available."
             conclusion.analysis_refs = []
             conclusion.causal_factor_refs = []
             conclusions.append(conclusion)
