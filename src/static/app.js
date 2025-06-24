@@ -672,10 +672,12 @@ class IOAgent {
         }
     }
 
-    async openProject(projectId) {
+    async openProject(projectId, showLoadingOverlay = true) {
         try {
             console.log('Opening project:', projectId);
-            this.showLoading('Loading project...');
+            if (showLoadingOverlay) {
+                this.showLoading('Loading project...');
+            }
             
             const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${projectId}`);
             
@@ -688,6 +690,7 @@ class IOAgent {
             if (data.success) {
                 this.currentProject = data.project;
                 this.updateCurrentProjectDisplay();
+                this.loadTimeline();
                 this.showSection('project-info');
                 this.showAlert('Project loaded successfully', 'success');
             } else {
@@ -699,7 +702,9 @@ class IOAgent {
                 this.showAlert('Error loading project: ' + error.message, 'danger');
             }
         } finally {
-            this.hideLoading();
+            if (showLoadingOverlay) {
+                this.hideLoading();
+            }
         }
     }
 
@@ -1035,9 +1040,8 @@ class IOAgent {
                 bootstrap.Modal.getInstance(document.getElementById('timelineSuggestionsModal')).hide();
                 this.showAlert(`Successfully added ${data.created} timeline entries`, 'success');
                 
-                // Reload project data to get updated timeline
-                await this.openProject(this.currentProject.id);
-                this.loadTimeline();
+                // Reload project data to get updated timeline (without showing loading overlay)
+                await this.openProject(this.currentProject.id, false);
             } else {
                 throw new Error(data.error || 'Failed to add timeline entries');
             }
@@ -1126,10 +1130,22 @@ class IOAgent {
     }
 
     loadTimeline() {
-        if (!this.currentProject || !this.currentProject.timeline) return;
+        console.log('Loading timeline for project:', this.currentProject?.id);
+        console.log('Timeline data:', this.currentProject?.timeline);
+        
+        if (!this.currentProject || !this.currentProject.timeline) {
+            console.log('No project or timeline data available');
+            return;
+        }
 
         const timelineList = document.getElementById('timelineList');
+        if (!timelineList) {
+            console.log('Timeline list element not found');
+            return;
+        }
+        
         const timeline = this.currentProject.timeline;
+        console.log(`Found ${timeline.length} timeline entries`);
 
         if (timeline.length === 0) {
             timelineList.innerHTML = `
