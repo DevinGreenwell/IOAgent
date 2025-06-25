@@ -1384,11 +1384,14 @@ class IOAgent {
             </div>
         `).join('');
         
-        // Add event listeners for edit buttons
+        // Add event listeners for edit buttons using proper binding
+        const self = this;
         document.querySelectorAll('.edit-causal-factor-btn').forEach(button => {
-            button.addEventListener('click', (e) => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
                 const factorId = parseInt(e.currentTarget.getAttribute('data-factor-id'));
-                this.editCausalFactor(factorId);
+                console.log('Edit button clicked, factor ID:', factorId);
+                self.editCausalFactor(factorId);
             });
         });
     }
