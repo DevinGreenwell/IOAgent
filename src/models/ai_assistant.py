@@ -43,8 +43,7 @@ class AIAssistant:
                 messages=[
                     {"role": "system", "content": "You are an expert USCG marine casualty investigator."},
                     {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
+                ]
             )
             
             # Parse response and return suggestions
@@ -68,8 +67,7 @@ class AIAssistant:
                 messages=[
                     {"role": "system", "content": "You are an expert in USCG causal analysis methodology using the Swiss Cheese model."},
                     {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
+                ]
             )
             
             factors = self._parse_causal_factors(response.choices[0].message.content)
@@ -99,8 +97,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7
+                messages=[{"role": "user", "content": prompt}]
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
@@ -119,8 +116,7 @@ class AIAssistant:
                 messages=[
                     {"role": "system", "content": "You are an expert technical writer specializing in USCG investigation reports."},
                     {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
+                ]
             )
             
             return response.choices[0].message.content.strip()
@@ -142,8 +138,7 @@ class AIAssistant:
                 messages=[
                     {"role": "system", "content": "You are an expert USCG investigator writing executive summaries."},
                     {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
+                ]
             )
             
             summary = self._parse_executive_summary(response.choices[0].message.content)
@@ -166,8 +161,7 @@ class AIAssistant:
                 messages=[
                     {"role": "system", "content": "You are a quality assurance expert for USCG investigation reports."},
                     {"role": "user", "content": prompt}
-                ],
-                temperature=0.3
+                ]
             )
             
             issues = self._parse_consistency_issues(response.choices[0].message.content)
