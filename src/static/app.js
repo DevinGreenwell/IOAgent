@@ -1364,18 +1364,18 @@ class IOAgent {
         causalFactorsList.innerHTML = factors.map(factor => `
             <div class="causal-factor ${factor.category}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-0">${factor.title || 'Untitled Factor'}</h6>
+                    <h6 class="mb-0">${this.escapeHtml(factor.title || 'Untitled Factor')}</h6>
                     <div>
                         <span class="badge bg-primary me-2">${factor.category.toUpperCase()}</span>
-                        <button class="btn btn-sm btn-outline-primary" onclick="app.editCausalFactor(${factor.id})">
+                        <button class="btn btn-sm btn-outline-primary edit-causal-factor-btn" data-factor-id="${factor.id}">
                             <i class="fas fa-edit"></i> Edit
                         </button>
                     </div>
                 </div>
-                <p class="mb-2">${factor.description}</p>
+                <p class="mb-2">${this.escapeHtml(factor.description)}</p>
                 ${factor.analysis_text ? `
                     <div class="small mb-2">
-                        <strong>Analysis:</strong> ${factor.analysis_text}
+                        <strong>Analysis:</strong> ${this.escapeHtml(factor.analysis_text)}
                     </div>
                 ` : ''}
                 <div class="small text-muted">
@@ -1383,6 +1383,14 @@ class IOAgent {
                 </div>
             </div>
         `).join('');
+        
+        // Add event listeners for edit buttons
+        document.querySelectorAll('.edit-causal-factor-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const factorId = parseInt(e.currentTarget.getAttribute('data-factor-id'));
+                this.editCausalFactor(factorId);
+            });
+        });
     }
 
     editCausalFactor(factorId) {
