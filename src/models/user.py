@@ -303,6 +303,7 @@ class AnalysisSection(db.Model):
     
     id = db.Column(db.String(100), primary_key=True)  # UUID string
     title = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50), default='organization')  # organization, workplace, precondition, production, defense
     analysis_text = db.Column(db.Text, nullable=False)
     causal_factor_id = db.Column(db.String(100), db.ForeignKey('causal_factors.id'), nullable=True)
     finding_refs = db.Column(db.Text)  # JSON array of finding IDs
@@ -350,6 +351,7 @@ class AnalysisSection(db.Model):
         data = {
             'id': self.id,
             'title': self.title,
+            'category': self.category,
             'analysis_text': self.analysis_text,
             'causal_factor_id': self.causal_factor_id,
             'finding_refs': self.finding_refs_list,

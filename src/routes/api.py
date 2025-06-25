@@ -1015,6 +1015,7 @@ def create_analysis_section(project_id):
         analysis_section = AnalysisSection(
             id=str(uuid.uuid4()),
             title=title[:200],
+            category=data.get('category', 'organization'),
             analysis_text=analysis_text,
             causal_factor_id=data.get('causal_factor_id'),
             project_id=project_id
@@ -1061,6 +1062,9 @@ def update_analysis_section(project_id, section_id):
             if not title:
                 return jsonify({'success': False, 'error': 'Title cannot be empty'}), 400
             analysis_section.title = title[:200]
+        
+        if 'category' in data:
+            analysis_section.category = data['category']
         
         if 'analysis_text' in data:
             analysis_text = data['analysis_text'].strip()

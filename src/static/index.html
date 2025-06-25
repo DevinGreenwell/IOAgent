@@ -896,6 +896,17 @@
                             <input type="text" class="form-control" id="editSectionTitle" placeholder="Analysis section title">
                         </div>
                         <div class="mb-3">
+                            <label for="editSectionCategory" class="form-label">Causal Factor Category</label>
+                            <select class="form-select" id="editSectionCategory">
+                                <option value="organization">Organization</option>
+                                <option value="workplace">Workplace</option>
+                                <option value="precondition">Precondition</option>
+                                <option value="production">Production</option>
+                                <option value="defense">Defense</option>
+                            </select>
+                            <div class="form-text">Select the appropriate causal factor category for this analysis section.</div>
+                        </div>
+                        <div class="mb-3">
                             <label for="editSectionAnalysisText" class="form-label">Analysis Text</label>
                             <textarea class="form-control" id="editSectionAnalysisText" rows="8" placeholder="Detailed analysis text that will appear in the ROI document"></textarea>
                             <div class="form-text">This text will appear in Section 5 (Analysis) of the final ROI document. Ensure it references supporting findings of fact.</div>

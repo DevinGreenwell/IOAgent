@@ -1706,6 +1706,9 @@ class IOAgent {
     displayAnalysisSections(sections) {
         const analysisSectionsList = document.getElementById('analysisSectionsList');
         
+        // Store sections data for editing
+        this.currentAnalysisSections = sections;
+        
         if (sections.length === 0) {
             analysisSectionsList.innerHTML = `
                 <div class="text-center text-muted py-4">
@@ -1730,6 +1733,7 @@ class IOAgent {
                     </div>
                 </div>
                 <p class="text-muted small mb-2">
+                    <span class="badge bg-secondary me-2">${(section.category || 'organization').toUpperCase()}</span>
                     ${section.causal_factor_id ? `Linked to causal factor` : 'Standalone section'}
                 </p>
                 <div class="analysis-text">
@@ -1768,17 +1772,25 @@ class IOAgent {
         this.populateCausalFactorDropdown();
 
         if (sectionId) {
-            // Editing existing section
-            const sections = this.currentProject.analysis_sections || [];
-            const section = sections.find(s => s.id === sectionId);
+            // Editing existing section - get from displayed sections data
+            const sectionElements = document.querySelectorAll('.analysis-section');
+            let section = null;
+            
+            // Find section data by searching through the stored analysis sections
+            if (this.currentAnalysisSections) {
+                section = this.currentAnalysisSections.find(s => s.id === sectionId);
+            }
             
             if (!section) {
                 this.showAlert('Analysis section not found', 'error');
+                console.log('Available analysis sections:', this.currentAnalysisSections);
+                console.log('Looking for section ID:', sectionId);
                 return;
             }
 
             // Populate modal with existing data
             document.getElementById('editSectionTitle').value = section.title || '';
+            document.getElementById('editSectionCategory').value = section.category || 'organization';
             document.getElementById('editSectionAnalysisText').value = section.analysis_text || '';
             document.getElementById('editSectionCausalFactor').value = section.causal_factor_id || '';
 
@@ -1787,6 +1799,7 @@ class IOAgent {
         } else {
             // Creating new section
             document.getElementById('editSectionTitle').value = '';
+            document.getElementById('editSectionCategory').value = 'organization';
             document.getElementById('editSectionAnalysisText').value = '';
             document.getElementById('editSectionCausalFactor').value = '';
             this.editingAnalysisSectionId = null;
@@ -1814,6 +1827,7 @@ class IOAgent {
     async saveAnalysisSection() {
         const sectionData = {
             title: document.getElementById('editSectionTitle').value,
+            category: document.getElementById('editSectionCategory').value,
             analysis_text: document.getElementById('editSectionAnalysisText').value,
             causal_factor_id: document.getElementById('editSectionCausalFactor').value || null
         };
