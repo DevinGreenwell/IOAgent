@@ -39,7 +39,7 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o3-2025-04-16",
+                model="o3-mini-2025-01-31",
                 messages=[
                     {"role": "system", "content": "You are an expert USCG marine casualty investigator."},
                     {"role": "user", "content": prompt}
