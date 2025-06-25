@@ -29,7 +29,6 @@ class USCGROIGenerator:
         self._setup_uscg_formatting()
         
         # Generate USCG ROI sections in required order
-        self._generate_cover_page()
         self._generate_executive_summary()
         self._generate_investigating_officers_report()
         
