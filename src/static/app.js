@@ -1390,21 +1390,38 @@ class IOAgent {
         document.querySelectorAll('.edit-causal-factor-btn').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                const factorId = parseInt(e.currentTarget.getAttribute('data-factor-id'));
-                console.log('Edit button clicked, factor ID:', factorId);
+                const factorIdStr = e.currentTarget.getAttribute('data-factor-id');
+                console.log('Edit button clicked, raw factor ID:', factorIdStr);
+                // Don't parse as integer in case IDs are strings (UUIDs)
+                const factorId = factorIdStr;
+                console.log('Edit button clicked, processed factor ID:', factorId);
                 self.editCausalFactor(factorId);
             });
         });
     }
 
     editCausalFactor(factorId) {
-        if (!this.currentProject || !this.currentProject.causal_factors) return;
+        console.log('editCausalFactor called with ID:', factorId);
+        console.log('Current project:', this.currentProject);
+        console.log('Causal factors available:', this.currentProject?.causal_factors);
         
-        const factor = this.currentProject.causal_factors.find(f => f.id === factorId);
+        if (!this.currentProject || !this.currentProject.causal_factors) {
+            console.log('No project or causal factors available');
+            return;
+        }
+        
+        const factor = this.currentProject.causal_factors.find(f => {
+            console.log('Comparing factor ID:', f.id, 'with target:', factorId, 'types:', typeof f.id, typeof factorId);
+            return f.id == factorId; // Use == instead of === to handle type differences
+        });
+        
         if (!factor) {
+            console.log('Factor not found. Available factors:', this.currentProject.causal_factors.map(f => ({ id: f.id, title: f.title })));
             this.showAlert('Causal factor not found', 'error');
             return;
         }
+        
+        console.log('Found factor:', factor);
 
         // Populate modal with existing data
         document.getElementById('editFactorTitle').value = factor.title || '';
