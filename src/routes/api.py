@@ -509,6 +509,73 @@ def run_causal_analysis(project_id):
         current_app.logger.error(f"Error running causal analysis for project {project_id}: {str(e)}")
         return jsonify({'success': False, 'error': f'Failed to run causal analysis: {str(e)}'}), 500
 
+@api_bp.route('/projects/<project_id>/causal-factors/<factor_id>', methods=['PUT'])
+@jwt_required()
+def update_causal_factor(project_id, factor_id):
+    """Update a causal factor"""
+    try:
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        
+        # Find the causal factor
+        causal_factor = CausalFactor.query.filter_by(id=factor_id, project_id=project_id).first()
+        if not causal_factor:
+            return jsonify({'success': False, 'error': 'Causal factor not found'}), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        # Validate required fields
+        required_fields = ['title', 'description', 'analysis_text']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'success': False, 'error': f'Missing required field: {field}'}), 400
+        
+        # Validate negative phrasing for title
+        title = data.get('title', '').lower()
+        negative_starters = ['failure of', 'inadequate', 'lack of', 'absence of', 'insufficient', 'failure to']
+        has_negative_phrasing = any(title.startswith(starter) for starter in negative_starters)
+        
+        if not has_negative_phrasing:
+            return jsonify({
+                'success': False, 
+                'error': 'Causal factor title must use negative phrasing (e.g., "Failure of...", "Inadequate...", "Lack of...")'
+            }), 400
+        
+        # Update the causal factor
+        causal_factor.title = data.get('title')
+        causal_factor.category = data.get('category', causal_factor.category)
+        causal_factor.description = data.get('description')
+        causal_factor.analysis_text = data.get('analysis_text')
+        causal_factor.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Updated causal factor {factor_id} for project {project_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Causal factor updated successfully',
+            'causal_factor': {
+                'id': causal_factor.id,
+                'title': causal_factor.title,
+                'category': causal_factor.category,
+                'description': causal_factor.description,
+                'analysis_text': causal_factor.analysis_text
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error updating causal factor: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Failed to update causal factor: {str(e)}'}), 500
+
 @api_bp.route('/projects/<project_id>/generate-roi', methods=['POST'])
 @jwt_required()
 def generate_roi(project_id):

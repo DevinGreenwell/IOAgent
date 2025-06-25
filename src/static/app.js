@@ -1355,19 +1355,111 @@ class IOAgent {
             <div class="causal-factor ${factor.category}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <h6 class="mb-0">${factor.title || 'Untitled Factor'}</h6>
-                    <span class="badge bg-primary">${factor.category.toUpperCase()}</span>
+                    <div>
+                        <span class="badge bg-primary me-2">${factor.category.toUpperCase()}</span>
+                        <button class="btn btn-sm btn-outline-primary" onclick="app.editCausalFactor(${factor.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
                 </div>
                 <p class="mb-2">${factor.description}</p>
                 ${factor.analysis_text ? `
-                    <div class="small">
+                    <div class="small mb-2">
                         <strong>Analysis:</strong> ${factor.analysis_text}
                     </div>
                 ` : ''}
-                <div class="small text-muted mt-2">
+                <div class="small text-muted">
                     Evidence support: ${factor.evidence_support ? factor.evidence_support.length : 0} items
                 </div>
             </div>
         `).join('');
+    }
+
+    editCausalFactor(factorId) {
+        if (!this.currentProject || !this.currentProject.causal_factors) return;
+        
+        const factor = this.currentProject.causal_factors.find(f => f.id === factorId);
+        if (!factor) {
+            this.showAlert('Causal factor not found', 'error');
+            return;
+        }
+
+        // Populate modal with existing data
+        document.getElementById('editFactorTitle').value = factor.title || '';
+        document.getElementById('editFactorCategory').value = factor.category || 'organization';
+        document.getElementById('editFactorDescription').value = factor.description || '';
+        document.getElementById('editFactorAnalysis').value = factor.analysis_text || '';
+
+        // Store the factor ID for update
+        this.editingCausalFactorId = factorId;
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editCausalFactorModal'));
+        modal.show();
+    }
+
+    async saveCausalFactor() {
+        if (!this.editingCausalFactorId) return;
+
+        const factorData = {
+            title: document.getElementById('editFactorTitle').value,
+            category: document.getElementById('editFactorCategory').value,
+            description: document.getElementById('editFactorDescription').value,
+            analysis_text: document.getElementById('editFactorAnalysis').value
+        };
+
+        if (!factorData.title || !factorData.description || !factorData.analysis_text) {
+            this.showAlert('Please fill in all required fields', 'warning');
+            return;
+        }
+
+        // Validate negative phrasing for title
+        const negativeStarters = ['failure of', 'inadequate', 'lack of', 'absence of', 'insufficient', 'failure to'];
+        const titleLower = factorData.title.toLowerCase();
+        const hasNegativePhrasing = negativeStarters.some(starter => titleLower.startsWith(starter));
+        
+        if (!hasNegativePhrasing) {
+            this.showAlert('Causal factor title must use negative phrasing (e.g., "Failure of...", "Inadequate...", "Lack of...")', 'warning');
+            return;
+        }
+
+        try {
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/causal-factors/${this.editingCausalFactorId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(factorData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showAlert('Causal factor updated successfully', 'success');
+                
+                // Hide modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editCausalFactorModal'));
+                modal.hide();
+                
+                // Clear editing state
+                this.editingCausalFactorId = null;
+                
+                // Reload project data to show updated factor
+                await this.openProject(this.currentProject.id, true, false);
+                this.loadAnalysis();
+            } else {
+                this.showAlert(`Failed to update causal factor: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error updating causal factor:', error);
+            if (error.message !== 'Authentication required') {
+                this.showAlert(`Error updating causal factor: ${error.message}`, 'danger');
+            }
+        }
     }
 
     async downloadROI(projectId) {

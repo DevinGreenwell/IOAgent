@@ -787,6 +787,50 @@
         </div>
     </div>
 
+    <!-- Edit Causal Factor Modal -->
+    <div class="modal fade" id="editCausalFactorModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Causal Factor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editCausalFactorForm">
+                        <div class="mb-3">
+                            <label for="editFactorTitle" class="form-label">Title (must be negative phrasing)</label>
+                            <input type="text" class="form-control" id="editFactorTitle" placeholder="Failure of..., Inadequate..., Lack of...">
+                            <div class="form-text">Examples: "Failure of crew to follow procedures", "Inadequate oversight by management", "Lack of proper safety equipment"</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFactorCategory" class="form-label">Category</label>
+                            <select class="form-select" id="editFactorCategory">
+                                <option value="organization">Organization</option>
+                                <option value="workplace">Workplace</option>
+                                <option value="precondition">Precondition</option>
+                                <option value="production">Production</option>
+                                <option value="defense">Defense</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFactorDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editFactorDescription" rows="3" placeholder="Detailed description of the causal factor"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFactorAnalysis" class="form-label">Analysis Text (Section 5 - Most Critical)</label>
+                            <textarea class="form-control" id="editFactorAnalysis" rows="6" placeholder="Detailed analysis explaining how this factor contributed to the incident. Must reference supporting findings of fact."></textarea>
+                            <div class="form-text">This is the most important section of the ROI. Explain how this factor contributed to the incident and reference specific findings of fact.</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="app.saveCausalFactor()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom Loading Overlay -->
     <div id="loadingOverlay" style="
         display: none;
