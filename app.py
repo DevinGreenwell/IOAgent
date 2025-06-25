@@ -70,15 +70,9 @@ ALLOWED_EXTENSIONS = {
     'pdf': 'application/pdf',
     'doc': 'application/msword',
     'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'png': 'image/png',
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'gif': 'image/gif',
-    'mp4': 'video/mp4',
-    'avi': 'video/x-msvideo',
-    'mp3': 'audio/mpeg',
-    'wav': 'audio/wav',
-    'txt': 'text/plain'
+    'txt': 'text/plain',
+    'csv': 'text/csv',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 }
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

@@ -592,14 +592,9 @@ class IOAgent {
     getFileIcon(fileType) {
         if (!fileType) return 'fas fa-file';
         const type = fileType.toLowerCase();
-        if (type.startsWith('image/')) return 'fas fa-file-image';
-        if (type.startsWith('audio/')) return 'fas fa-file-audio';
-        if (type.startsWith('video/')) return 'fas fa-file-video';
         if (type.includes('pdf')) return 'fas fa-file-pdf';
         if (type.includes('word')) return 'fas fa-file-word';
         if (type.includes('excel') || type.includes('spreadsheet')) return 'fas fa-file-excel';
-        if (type.includes('presentation') || type.includes('powerpoint')) return 'fas fa-file-powerpoint';
-        if (type.includes('zip') || type.includes('archive')) return 'fas fa-file-archive';
         if (type.startsWith('text/')) return 'fas fa-file-alt';
         return 'fas fa-file';
     }

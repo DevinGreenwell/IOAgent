@@ -172,16 +172,12 @@ class ProjectManager:
             else:
                 return 'document'  # Default to document
         except:
-            # Fallback to extension-based detection
+            # Fallback to extension-based detection for documents only
             ext = os.path.splitext(file_path)[1].lower()
-            if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']:
-                return 'photo'
-            elif ext in ['.mp4', '.avi', '.mov', '.wmv']:
-                return 'video'
-            elif ext in ['.mp3', '.wav', '.m4a', '.flac']:
-                return 'audio'
-            else:
+            if ext in ['.pdf', '.doc', '.docx', '.txt', '.csv', '.xlsx']:
                 return 'document'
+            else:
+                return 'document'  # Default to document for any other file type
     
     def _extract_file_content(self, file_path: str) -> Optional[str]:
         """Extract text content from file"""

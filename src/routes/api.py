@@ -199,7 +199,7 @@ def upload_file(project_id):
             return jsonify({'success': False, 'error': 'File size exceeds 50MB limit'}), 400
         
         # Validate file extension
-        allowed_extensions = {'.pdf', '.txt', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.gif', '.zip', '.csv', '.xlsx'}
+        allowed_extensions = {'.pdf', '.txt', '.doc', '.docx', '.csv', '.xlsx'}
         filename = secure_filename(file.filename)
         file_ext = os.path.splitext(filename)[1].lower()
         
