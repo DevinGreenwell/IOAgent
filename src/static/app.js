@@ -1001,11 +1001,10 @@ class IOAgent {
                                                     </div>
                                                     <p class="mb-1">${this.escapeHtml(suggestion.description)}</p>
                                                     <small class="text-muted">
-                                                        Confidence: ${suggestion.confidence || 'medium'}
                                                         ${suggestion.assumptions && suggestion.assumptions.length > 0 ? 
-                                                            `<br>Assumptions: ${suggestion.assumptions.map(a => this.escapeHtml(a)).join(', ')}` : ''}
+                                                            `Assumptions: ${suggestion.assumptions.map(a => this.escapeHtml(a)).join(', ')}` : ''}
                                                         ${suggestion.personnel_involved && suggestion.personnel_involved.length > 0 ? 
-                                                            `<br>Personnel: ${suggestion.personnel_involved.map(p => this.escapeHtml(p)).join(', ')}` : ''}
+                                                            `${suggestion.assumptions && suggestion.assumptions.length > 0 ? '<br>' : ''}Personnel: ${suggestion.personnel_involved.map(p => this.escapeHtml(p)).join(', ')}` : ''}
                                                     </small>
                                                 </label>
                                             </div>
@@ -1107,7 +1106,7 @@ class IOAgent {
             timestamp: document.getElementById('entryTimestamp').value,
             type: document.getElementById('entryType').value,
             description: document.getElementById('entryDescription').value,
-            confidence_level: document.getElementById('entryConfidence').value,
+            confidence_level: 'medium',  // Default to medium, no user input needed
             is_initiating_event: document.getElementById('isInitiatingEvent').checked,
             assumptions: document.getElementById('entryAssumptions').value.split('\n').filter(a => a.trim())
         };
@@ -1214,7 +1213,7 @@ class IOAgent {
                     </div>
                 ` : ''}
                 <div class="small text-muted">
-                    Confidence: ${entry.confidence_level} | Evidence items: ${entry.evidence_ids ? entry.evidence_ids.length : 0}
+                    Evidence items: ${entry.evidence_ids ? entry.evidence_ids.length : 0}
                 </div>
             </div>
         `).join('');
@@ -1245,7 +1244,6 @@ class IOAgent {
         document.getElementById('entryTimestamp').value = entry.timestamp.slice(0, 16); // Format for datetime-local
         document.getElementById('entryType').value = entry.type;
         document.getElementById('entryDescription').value = entry.description;
-        document.getElementById('entryConfidence').value = entry.confidence_level || 'medium';
         document.getElementById('isInitiatingEvent').checked = entry.is_initiating_event || false;
         document.getElementById('entryAssumptions').value = (entry.assumptions || []).join('\n');
 
