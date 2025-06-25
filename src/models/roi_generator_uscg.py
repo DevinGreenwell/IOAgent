@@ -75,31 +75,6 @@ class USCGROIGenerator:
         # This is a placeholder - actual italicization happens when adding to document
         return text
     
-    def _generate_cover_page(self):
-        """Generate cover page with unit information"""
-        # Unit header - Commandant (not Commander)
-        p = self.document.add_paragraph()
-        p.add_run("Commandant\n")
-        p.add_run("United States Coast Guard\n")
-        p.add_run(f"Sector {self.project.incident_info.location or 'Investigation'}\n")
-        p.add_run("\n")
-        p.add_run("Unit Address\n")
-        p.add_run("Unit Address\n")
-        p.add_run("Staff Symbol: \n")
-        p.add_run("Phone: \n")
-        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        
-        # Add spacing
-        for _ in range(3):
-            self.document.add_paragraph()
-        
-        # Add date and control number
-        p = self.document.add_paragraph()
-        p.add_run("16732\n")
-        p.add_run(self._format_date(datetime.now()))
-        
-        self.document.add_page_break()
-    
     def _generate_executive_summary(self):
         """Generate Executive Summary section per USCG standards"""
         # Generate title in USCG format
@@ -562,11 +537,7 @@ class USCGROIGenerator:
             # Add spacing between analyses for clarity
             self.document.add_paragraph()
             self.document.add_paragraph()
-        
-        # Add concluding statement about causal analysis
-        conclusion_para = self.document.add_paragraph()
-        conclusion_para.add_run("The above causal factors demonstrate the complex interactions between multiple elements that resulted in this marine casualty. Each factor represents a breakdown in the safety system that, when combined, created the conditions necessary for the incident to occur.").italic = True
-        
+    
         self.document.add_paragraph()  # Section spacing
     
     def _generate_section_6_conclusions(self):

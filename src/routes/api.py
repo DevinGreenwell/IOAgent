@@ -469,7 +469,34 @@ def run_causal_analysis(project_id):
         
         # Create CausalFactor database records
         created_factors = []
-        for factor_data in (causal_factors + ai_factors):
+        
+        # Process factors from basic engine (CausalFactor objects)
+        for factor_obj in causal_factors:
+            try:
+                # Convert roi_models.CausalFactor to database CausalFactor
+                factor = CausalFactor(
+                    id=str(uuid.uuid4()),
+                    title=str(factor_obj.title or 'Unknown Factor')[:200],
+                    description=str(factor_obj.description or '')[:1000],
+                    category=factor_obj.category or 'organizational',
+                    severity='medium',  # Default since roi_models doesn't have severity
+                    likelihood='medium',  # Default since roi_models doesn't have likelihood
+                    analysis_text=str(factor_obj.analysis_text or '')[:2000],
+                    project_id=project_id
+                )
+                
+                # Set evidence support if provided
+                if hasattr(factor_obj, 'evidence_support') and factor_obj.evidence_support:
+                    factor.evidence_support_list = factor_obj.evidence_support
+                
+                db.session.add(factor)
+                created_factors.append(factor)
+            except Exception as factor_error:
+                current_app.logger.error(f"Error creating causal factor from engine: {factor_error}")
+                continue
+        
+        # Process factors from AI (dictionaries)
+        for factor_data in ai_factors:
             try:
                 factor = CausalFactor(
                     id=str(uuid.uuid4()),
