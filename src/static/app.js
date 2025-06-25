@@ -870,9 +870,19 @@ class IOAgent {
             if (data.success) {
                 this.showAlert(data.message || `File ${file.name} uploaded successfully`, 'success');
                 
+                // Debug logging for timeline suggestions
+                console.log('Upload response data:', data);
+                console.log('Timeline suggestions:', data.timeline_suggestions);
+                
                 // If timeline suggestions were found, show them
                 if (data.timeline_suggestions && data.timeline_suggestions.length > 0) {
+                    console.log(`Showing ${data.timeline_suggestions.length} timeline suggestions`);
                     this.showTimelineSuggestions(data.timeline_suggestions);
+                } else {
+                    console.log('No timeline suggestions found in upload response');
+                    if (data.timeline_suggestions === undefined) {
+                        console.log('timeline_suggestions field is undefined - may indicate AI extraction failed');
+                    }
                 }
                 
                 // Reload project data to show new evidence
@@ -1459,6 +1469,51 @@ class IOAgent {
             if (error.message !== 'Authentication required') {
                 this.showAlert(`Error updating causal factor: ${error.message}`, 'danger');
             }
+        }
+    }
+
+    async extractTimelineFromEvidence() {
+        if (!this.currentProject) {
+            this.showAlert('Please select a project first', 'warning');
+            return;
+        }
+
+        if (!this.currentProject.evidence_library || this.currentProject.evidence_library.length === 0) {
+            this.showAlert('No evidence files found. Please upload evidence files first.', 'warning');
+            return;
+        }
+
+        try {
+            this.showLoading('Analyzing evidence files to extract timeline entries...');
+            
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/extract-timeline`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.timeline_suggestions && data.timeline_suggestions.length > 0) {
+                this.showAlert(`Found ${data.timeline_suggestions.length} potential timeline entries`, 'success');
+                this.showTimelineSuggestions(data.timeline_suggestions);
+            } else if (data.success && (!data.timeline_suggestions || data.timeline_suggestions.length === 0)) {
+                this.showAlert('No timeline entries could be extracted from the current evidence files. Try uploading more detailed documents.', 'info');
+            } else {
+                this.showAlert(`Failed to extract timeline: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error extracting timeline from evidence:', error);
+            if (error.message !== 'Authentication required') {
+                this.showAlert(`Error extracting timeline: ${error.message}`, 'danger');
+            }
+        } finally {
+            this.hideLoading();
         }
     }
 

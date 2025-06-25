@@ -576,6 +576,86 @@ def update_causal_factor(project_id, factor_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': f'Failed to update causal factor: {str(e)}'}), 500
 
+@api_bp.route('/projects/<project_id>/extract-timeline', methods=['POST'])
+@jwt_required()
+def extract_timeline_from_evidence(project_id):
+    """Extract timeline entries from all evidence files in a project"""
+    try:
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        
+        # Check if project has evidence files
+        if not project.evidence_items:
+            return jsonify({
+                'success': False, 
+                'error': 'No evidence files found. Please upload evidence files first.'
+            }), 400
+        
+        current_app.logger.info(f"Extracting timeline from {len(project.evidence_items)} evidence files for project {project_id}")
+        
+        from src.models.project_manager import ProjectManager
+        from src.models.ai_assistant import AIAssistant
+        
+        pm = ProjectManager()
+        ai = AIAssistant()
+        
+        all_timeline_suggestions = []
+        existing_timeline = [entry.to_dict() for entry in project.timeline_entries]
+        
+        # Process each evidence file
+        for evidence in project.evidence_items:
+            try:
+                # Extract content from file
+                file_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), evidence.file_path)
+                if os.path.exists(file_path):
+                    content = pm._extract_file_content(file_path)
+                    if content and content.strip():
+                        # Get AI suggestions for this file
+                        suggestions = ai.suggest_timeline_entries(content, existing_timeline)
+                        if suggestions:
+                            # Add source information to each suggestion
+                            for suggestion in suggestions:
+                                suggestion['source_file'] = evidence.original_filename
+                                suggestion['evidence_id'] = evidence.id
+                            all_timeline_suggestions.extend(suggestions)
+                        
+                        current_app.logger.info(f"Extracted {len(suggestions) if suggestions else 0} suggestions from {evidence.original_filename}")
+                    else:
+                        current_app.logger.warning(f"No content extracted from {evidence.original_filename}")
+                else:
+                    current_app.logger.warning(f"File not found: {file_path}")
+                    
+            except Exception as file_error:
+                current_app.logger.error(f"Error processing evidence file {evidence.original_filename}: {str(file_error)}")
+                continue
+        
+        # Remove duplicates based on description similarity
+        unique_suggestions = []
+        seen_descriptions = set()
+        
+        for suggestion in all_timeline_suggestions:
+            description_lower = suggestion.get('description', '').lower().strip()
+            if description_lower and description_lower not in seen_descriptions:
+                seen_descriptions.add(description_lower)
+                unique_suggestions.append(suggestion)
+        
+        current_app.logger.info(f"Found {len(unique_suggestions)} unique timeline suggestions from {len(project.evidence_items)} evidence files")
+        
+        return jsonify({
+            'success': True,
+            'timeline_suggestions': unique_suggestions,
+            'message': f'Analyzed {len(project.evidence_items)} evidence files and found {len(unique_suggestions)} potential timeline entries.'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error extracting timeline from evidence for project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to extract timeline: {str(e)}'}), 500
+
 @api_bp.route('/projects/<project_id>/generate-roi', methods=['POST'])
 @jwt_required()
 def generate_roi(project_id):
