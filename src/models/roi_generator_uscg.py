@@ -531,20 +531,41 @@ class USCGROIGenerator:
         self.document.add_paragraph()  # Section spacing
     
     def _generate_section_5_analysis(self):
-        """Section 5: Analysis"""
+        """Section 5: Analysis - THE MOST CRITICAL SECTION OF THE ROI"""
+        # Add emphasis that this is the most important section
         heading = self.document.add_paragraph()
         heading.add_run("5. Analysis").bold = True
         
-        # Generate analysis for each causal factor
+        # Add introductory note about the analysis section
+        intro_para = self.document.add_paragraph()
+        intro_para.add_run("The following analysis examines the causal factors that contributed to this marine casualty. Each factor is supported by findings of fact documented in Section 4 above.")
+        self.document.add_paragraph()  # Extra spacing
+        
+        # Generate analysis for each causal factor with enhanced formatting
         for i, section in enumerate(self.project.roi_document.analysis_sections, 1):
-            # Analysis heading
+            # Analysis heading with negative phrasing emphasis
             subheading = self.document.add_paragraph()
-            subheading.add_run(f"5.{i}. {section.title}").bold = True
+            subheading_run = subheading.add_run(f"5.{i}. {section.title}")
+            subheading_run.bold = True
+            subheading_run.font.size = Pt(12)  # Slightly larger for emphasis
             
-            # Analysis text
-            self.document.add_paragraph(section.analysis_text)
+            # Enhanced analysis text with findings references
+            analysis_para = self.document.add_paragraph()
+            analysis_text = section.analysis_text
             
-            self.document.add_paragraph()  # Spacing between analyses
+            # Ensure analysis explains HOW the factor contributed
+            if "contributed to" not in analysis_text.lower() and "led to" not in analysis_text.lower():
+                analysis_text += f" This factor directly contributed to the marine casualty by creating conditions that allowed the incident sequence to proceed."
+            
+            analysis_para.add_run(analysis_text)
+            
+            # Add spacing between analyses for clarity
+            self.document.add_paragraph()
+            self.document.add_paragraph()
+        
+        # Add concluding statement about causal analysis
+        conclusion_para = self.document.add_paragraph()
+        conclusion_para.add_run("The above causal factors demonstrate the complex interactions between multiple elements that resulted in this marine casualty. Each factor represents a breakdown in the safety system that, when combined, created the conditions necessary for the incident to occur.").italic = True
         
         self.document.add_paragraph()  # Section spacing
     

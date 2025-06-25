@@ -116,7 +116,9 @@ class DatabaseToROIConverter:
             roi_factor.event_id = ""  # Could be linked to timeline entries
             roi_factor.category = db_factor.category or "organizational"
             roi_factor.subcategory = ""  # Not stored in database currently
-            roi_factor.title = db_factor.title
+            
+            # CRITICAL: Ensure causal factor titles are in negative form
+            roi_factor.title = self._ensure_negative_title(db_factor.title)
             roi_factor.description = db_factor.description
             roi_factor.evidence_support = db_factor.evidence_support_list or []
             roi_factor.analysis_text = db_factor.analysis_text or ""
@@ -125,6 +127,26 @@ class DatabaseToROIConverter:
             causal_factors.append(roi_factor)
         
         return causal_factors
+    
+    def _ensure_negative_title(self, title: str) -> str:
+        """Ensure causal factor title is in negative form (USCG requirement)"""
+        if not title:
+            return "Failure to be determined"
+            
+        # Check if already in negative form
+        negative_starters = ['failure of', 'inadequate', 'lack of', 'absence of', 'insufficient', 'failure to']
+        title_lower = title.lower()
+        
+        for starter in negative_starters:
+            if title_lower.startswith(starter):
+                return title  # Already negative
+        
+        # Convert to negative form
+        if title_lower.startswith('the '):
+            title = title[4:]  # Remove "the " prefix
+        
+        # Default to "Failure of" if no specific pattern matches
+        return f"Failure of {title.lower()}"
     
     def _create_default_vessels(self, db_project) -> List[Vessel]:
         """Create vessel information from project data and timeline entries"""
@@ -232,11 +254,11 @@ class DatabaseToROIConverter:
         # Generate preliminary statement
         roi_doc.preliminary_statement = self._generate_preliminary_statement(roi_project)
         
-        # Generate findings of fact from timeline
-        roi_doc.findings_of_fact = self._generate_findings_from_timeline(roi_project.timeline)
+        # Generate findings of fact from evidence (USCG compliance requirement)
+        roi_doc.findings_of_fact = self._generate_findings_from_evidence(roi_project.evidence_library, roi_project.timeline)
         
-        # Generate analysis sections from causal factors
-        roi_doc.analysis_sections = self._generate_analysis_sections(roi_project.causal_factors)
+        # Generate analysis sections from causal factors - must be supported by findings
+        roi_doc.analysis_sections = self._generate_analysis_sections(roi_project.causal_factors, roi_doc.findings_of_fact)
         
         # Generate conclusions
         roi_doc.conclusions = self._generate_conclusions(roi_project)
@@ -310,50 +332,78 @@ class DatabaseToROIConverter:
         
         return statement
     
-    def _generate_findings_from_timeline(self, timeline: List[TimelineEntry]) -> List[Finding]:
-        """Generate findings of fact from timeline entries"""
+    def _generate_findings_from_evidence(self, evidence_library: List[Evidence], timeline: List[TimelineEntry]) -> List[Finding]:
+        """Generate findings of fact ONLY from evidence (uploaded files) - USCG compliance requirement"""
         findings = []
-        seen_descriptions = set()
         
-        # Sort timeline by timestamp for logical flow
+        # Sort timeline by timestamp for cross-referencing
         sorted_timeline = sorted(timeline, key=lambda x: x.timestamp or datetime.min)
         
-        for entry in sorted_timeline:
-            # Skip duplicate descriptions
-            if entry.description in seen_descriptions:
-                continue
-            seen_descriptions.add(entry.description)
+        # Generate findings from evidence, not timeline
+        for evidence in evidence_library:
+            # Each piece of evidence can support multiple findings
+            # Look for timeline entries that reference this evidence
+            related_timeline_entries = [entry for entry in sorted_timeline if evidence.id in (entry.evidence_ids or [])]
             
-            finding = Finding()
-            
-            # Format timestamp appropriately
-            if entry.timestamp:
-                time_str = entry.timestamp.strftime('%H%M on %d %B %Y')
-                finding.statement = f"At {time_str}, {entry.description.rstrip('.')}"
+            if related_timeline_entries:
+                # Create findings based on what this evidence shows/proves
+                for entry in related_timeline_entries:
+                    finding = Finding()
+                    
+                    # Format as factual statement based on evidence
+                    if entry.timestamp:
+                        time_str = entry.timestamp.strftime('%H%M on %d %B %Y')
+                        finding.statement = f"At {time_str}, {entry.description.rstrip('.')}"
+                    else:
+                        finding.statement = f"Evidence shows that {entry.description.rstrip('.')}"
+                    
+                    # Add period if not present
+                    if not finding.statement.endswith('.'):
+                        finding.statement += '.'
+                    
+                    # CRITICAL: Link to supporting evidence
+                    finding.evidence_support = [evidence.id]
+                    finding.timeline_refs = [entry.id]
+                    finding.analysis_refs = []
+                    findings.append(finding)
             else:
-                finding.statement = f"During the incident sequence, {entry.description.rstrip('.')}"
-            
-            # Add period if not present
-            if not finding.statement.endswith('.'):
-                finding.statement += '.'
-            
-            finding.evidence_support = entry.evidence_ids or []
-            finding.timeline_refs = [entry.id]
-            finding.analysis_refs = []
-            findings.append(finding)
+                # Evidence without timeline entry - create general finding
+                finding = Finding()
+                finding.statement = f"Evidence item {evidence.filename} was examined as part of this investigation."
+                finding.evidence_support = [evidence.id]
+                finding.timeline_refs = []
+                finding.analysis_refs = []
+                findings.append(finding)
         
         return findings
     
-    def _generate_analysis_sections(self, causal_factors: List[CausalFactor]) -> List[AnalysisSection]:
-        """Generate analysis sections from causal factors"""
+    def _generate_analysis_sections(self, causal_factors: List[CausalFactor], findings_of_fact: List[Finding]) -> List[AnalysisSection]:
+        """Generate analysis sections from causal factors - MUST be supported by findings of fact"""
         analysis_sections = []
         
         for factor in causal_factors:
             section = AnalysisSection()
             section.title = factor.title
-            section.finding_refs = []  # Could be linked to relevant findings
             section.causal_factor_id = factor.id
-            section.analysis_text = factor.analysis_text or factor.description
+            
+            # CRITICAL: Link analysis to supporting findings of fact
+            # Find findings that support this causal factor
+            supporting_findings = []
+            for finding in findings_of_fact:
+                # Check if this finding supports the causal factor through evidence
+                if any(evidence_id in factor.evidence_support for evidence_id in finding.evidence_support):
+                    supporting_findings.append(finding)
+            
+            section.finding_refs = [f.timeline_refs[0] if f.timeline_refs else f"evidence-{f.evidence_support[0]}" for f in supporting_findings]
+            
+            # Enhanced analysis text that references findings
+            base_analysis = factor.analysis_text or factor.description
+            if supporting_findings:
+                finding_references = ", ".join([f"paragraph 4.1.{i+1}" for i in range(len(supporting_findings))])
+                section.analysis_text = f"{base_analysis} As mentioned in {finding_references} above, the evidence supports this conclusion."
+            else:
+                section.analysis_text = f"{base_analysis} This analysis requires additional evidence documentation to fully support the conclusion."
+            
             section.conclusion_refs = []
             analysis_sections.append(section)
         

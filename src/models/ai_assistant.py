@@ -234,6 +234,13 @@ Please suggest new timeline entries in JSON format. Include specific timestamps 
         return f"""
 Using USCG causal analysis methodology and the Swiss Cheese model, identify causal factors from this timeline and evidence.
 
+CRITICAL REQUIREMENT: Causal factor titles MUST be written in the negative form using phrases like:
+- "Failure of..." (e.g., "Failure of crew to follow safety procedures")
+- "Inadequate..." (e.g., "Inadequate oversight by management")
+- "Lack of..." (e.g., "Lack of proper safety equipment")
+- "Absence of..." (e.g., "Absence of effective communication")
+- "Insufficient..." (e.g., "Insufficient training provided")
+
 Causal factors should be categorized as:
 - Organization: Management decisions, policies, culture
 - Workplace: Physical environment, equipment, procedures
@@ -247,11 +254,11 @@ Timeline:
 Evidence:
 {evidence_text}
 
-Please identify causal factors in JSON format:
+Please identify causal factors in JSON format with NEGATIVE titles:
 [
   {{
     "category": "organization|workplace|precondition|production|defense",
-    "title": "Brief descriptive title",
+    "title": "Failure of... / Inadequate... / Lack of... / Absence of... / Insufficient...",
     "description": "Detailed description of the causal factor",
     "evidence_support": ["references to supporting evidence"],
     "analysis": "How this factor contributed to the incident"
