@@ -508,6 +508,7 @@ class IOAgent {
                 break;
             case 'analysis':
                 this.loadAnalysis();
+                this.loadAnalysisSections();
                 break;
             case 'roi-generator':
                 this.checkReadiness();
@@ -1472,6 +1473,7 @@ class IOAgent {
                 // Reload project data to show updated factor
                 await this.openProject(this.currentProject.id, true, false);
                 this.loadAnalysis();
+                this.loadAnalysisSections();
             } else {
                 this.showAlert(`Failed to update causal factor: ${data.error}`, 'danger');
             }
@@ -1689,6 +1691,229 @@ class IOAgent {
             }
         }, 5000);
     }
+
+    async loadAnalysisSections() {
+        if (!this.currentProject) return;
+
+        try {
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/analysis-sections`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.displayAnalysisSections(data.analysis_sections || []);
+        } catch (error) {
+            console.error('Error loading analysis sections:', error);
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error loading analysis sections: ' + error.message, 'danger');
+            }
+        }
+    }
+
+    displayAnalysisSections(sections) {
+        const analysisSectionsList = document.getElementById('analysisSectionsList');
+        
+        if (sections.length === 0) {
+            analysisSectionsList.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-file-alt fa-2x mb-3"></i>
+                    <p>No analysis sections created yet. Create sections that will appear in your ROI document.</p>
+                </div>
+            `;
+            return;
+        }
+
+        analysisSectionsList.innerHTML = sections.map(section => `
+            <div class="analysis-section border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="mb-0">${this.escapeHtml(section.title)}</h6>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary edit-analysis-section-btn" data-section-id="${section.id}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger ms-1 delete-analysis-section-btn" data-section-id="${section.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-muted small mb-2">
+                    ${section.causal_factor_id ? `Linked to causal factor` : 'Standalone section'}
+                </p>
+                <div class="analysis-text">
+                    ${this.escapeHtml(section.analysis_text || '').substring(0, 300)}${section.analysis_text && section.analysis_text.length > 300 ? '...' : ''}
+                </div>
+                <div class="small text-muted mt-2">
+                    Created: ${new Date(section.created_at).toLocaleDateString()}
+                    ${section.updated_at !== section.created_at ? `| Updated: ${new Date(section.updated_at).toLocaleDateString()}` : ''}
+                </div>
+            </div>
+        `).join('');
+
+        // Add event listeners for edit and delete buttons
+        const self = this;
+        document.querySelectorAll('.edit-analysis-section-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sectionId = e.currentTarget.getAttribute('data-section-id');
+                self.editAnalysisSection(sectionId);
+            });
+        });
+
+        document.querySelectorAll('.delete-analysis-section-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sectionId = e.currentTarget.getAttribute('data-section-id');
+                if (confirm('Are you sure you want to delete this analysis section?')) {
+                    self.deleteAnalysisSection(sectionId);
+                }
+            });
+        });
+    }
+
+    editAnalysisSection(sectionId = null) {
+        // Populate causal factor dropdown
+        this.populateCausalFactorDropdown();
+
+        if (sectionId) {
+            // Editing existing section
+            const sections = this.currentProject.analysis_sections || [];
+            const section = sections.find(s => s.id === sectionId);
+            
+            if (!section) {
+                this.showAlert('Analysis section not found', 'error');
+                return;
+            }
+
+            // Populate modal with existing data
+            document.getElementById('editSectionTitle').value = section.title || '';
+            document.getElementById('editSectionAnalysisText').value = section.analysis_text || '';
+            document.getElementById('editSectionCausalFactor').value = section.causal_factor_id || '';
+
+            // Store the section ID for update
+            this.editingAnalysisSectionId = sectionId;
+        } else {
+            // Creating new section
+            document.getElementById('editSectionTitle').value = '';
+            document.getElementById('editSectionAnalysisText').value = '';
+            document.getElementById('editSectionCausalFactor').value = '';
+            this.editingAnalysisSectionId = null;
+        }
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editAnalysisSectionModal'));
+        modal.show();
+    }
+
+    populateCausalFactorDropdown() {
+        const dropdown = document.getElementById('editSectionCausalFactor');
+        dropdown.innerHTML = '<option value="">Select a causal factor...</option>';
+        
+        if (this.currentProject && this.currentProject.causal_factors) {
+            this.currentProject.causal_factors.forEach(factor => {
+                const option = document.createElement('option');
+                option.value = factor.id;
+                option.textContent = factor.title || 'Untitled Factor';
+                dropdown.appendChild(option);
+            });
+        }
+    }
+
+    async saveAnalysisSection() {
+        const sectionData = {
+            title: document.getElementById('editSectionTitle').value,
+            analysis_text: document.getElementById('editSectionAnalysisText').value,
+            causal_factor_id: document.getElementById('editSectionCausalFactor').value || null
+        };
+
+        if (!sectionData.title || !sectionData.analysis_text) {
+            this.showAlert('Please fill in title and analysis text', 'warning');
+            return;
+        }
+
+        try {
+            let response;
+            if (this.editingAnalysisSectionId) {
+                // Update existing section
+                response = await this.makeAuthenticatedRequest(
+                    `${this.apiBase}/projects/${this.currentProject.id}/analysis-sections/${this.editingAnalysisSectionId}`,
+                    {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(sectionData)
+                    }
+                );
+            } else {
+                // Create new section
+                response = await this.makeAuthenticatedRequest(
+                    `${this.apiBase}/projects/${this.currentProject.id}/analysis-sections`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(sectionData)
+                    }
+                );
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showAlert(
+                    this.editingAnalysisSectionId ? 'Analysis section updated successfully' : 'Analysis section created successfully',
+                    'success'
+                );
+                
+                // Hide modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editAnalysisSectionModal'));
+                modal.hide();
+                
+                // Clear editing state
+                this.editingAnalysisSectionId = null;
+                
+                // Reload analysis sections
+                this.loadAnalysisSections();
+            } else {
+                this.showAlert(`Failed to save analysis section: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error saving analysis section:', error);
+            if (error.message !== 'Authentication required') {
+                this.showAlert(`Error saving analysis section: ${error.message}`, 'danger');
+            }
+        }
+    }
+
+    async deleteAnalysisSection(sectionId) {
+        try {
+            const response = await this.makeAuthenticatedRequest(
+                `${this.apiBase}/projects/${this.currentProject.id}/analysis-sections/${sectionId}`,
+                { method: 'DELETE' }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showAlert('Analysis section deleted successfully', 'success');
+                this.loadAnalysisSections();
+            } else {
+                this.showAlert(`Failed to delete analysis section: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error deleting analysis section:', error);
+            if (error.message !== 'Authentication required') {
+                this.showAlert(`Error deleting analysis section: ${error.message}`, 'danger');
+            }
+        }
+    }
 }
 
 // Global functions for onclick handlers
@@ -1746,6 +1971,14 @@ function runCausalAnalysis() {
 function generateROI() {
     if (window.app) {
         app.generateROI();
+    } else {
+        console.error('App not initialized yet');
+    }
+}
+
+function addAnalysisSection() {
+    if (window.app) {
+        app.editAnalysisSection();
     } else {
         console.error('App not initialized yet');
     }

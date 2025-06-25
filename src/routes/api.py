@@ -9,7 +9,7 @@ import uuid
 import secrets
 from datetime import datetime
 
-from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor
+from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor, AnalysisSection
 from src.models.project_manager import ProjectManager, TimelineBuilder
 from src.models.roi_generator import ROIGenerator, CausalAnalysisEngine
 from src.models.roi_generator_uscg import USCGROIGenerator
@@ -958,5 +958,148 @@ def generate_response():
         return jsonify({ "content": ai_response })
     except Exception as e:
         return jsonify({ "error": str(e) }), 500
+
+@api_bp.route('/projects/<project_id>/analysis-sections', methods=['GET'])
+@jwt_required()
+def get_analysis_sections(project_id):
+    """Get all analysis sections for a project"""
+    try:
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        
+        analysis_sections = AnalysisSection.query.filter_by(project_id=project_id).all()
+        sections_data = [section.to_dict() for section in analysis_sections]
+        
+        return jsonify({
+            'success': True,
+            'analysis_sections': sections_data
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error getting analysis sections: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to retrieve analysis sections'}), 500
+
+@api_bp.route('/projects/<project_id>/analysis-sections', methods=['POST'])
+@jwt_required()
+def create_analysis_section(project_id):
+    """Create a new analysis section"""
+    try:
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        title = data.get('title', '').strip()
+        analysis_text = data.get('analysis_text', '').strip()
+        
+        if not title or not analysis_text:
+            return jsonify({'success': False, 'error': 'Title and analysis text are required'}), 400
+        
+        analysis_section = AnalysisSection(
+            id=str(uuid.uuid4()),
+            title=title[:200],
+            analysis_text=analysis_text,
+            causal_factor_id=data.get('causal_factor_id'),
+            project_id=project_id
+        )
+        
+        # Handle finding and conclusion references
+        if data.get('finding_refs'):
+            analysis_section.finding_refs_list = data['finding_refs']
+        
+        if data.get('conclusion_refs'):
+            analysis_section.conclusion_refs_list = data['conclusion_refs']
+        
+        db.session.add(analysis_section)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'analysis_section': analysis_section.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error creating analysis section: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to create analysis section'}), 500
+
+@api_bp.route('/projects/<project_id>/analysis-sections/<section_id>', methods=['PUT'])
+@jwt_required()
+def update_analysis_section(project_id, section_id):
+    """Update an analysis section"""
+    try:
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        analysis_section = AnalysisSection.query.filter_by(id=section_id, project_id=project_id).first()
+        if not analysis_section:
+            return jsonify({'success': False, 'error': 'Analysis section not found'}), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        # Update fields
+        if 'title' in data:
+            title = data['title'].strip()
+            if not title:
+                return jsonify({'success': False, 'error': 'Title cannot be empty'}), 400
+            analysis_section.title = title[:200]
+        
+        if 'analysis_text' in data:
+            analysis_text = data['analysis_text'].strip()
+            if not analysis_text:
+                return jsonify({'success': False, 'error': 'Analysis text cannot be empty'}), 400
+            analysis_section.analysis_text = analysis_text
+        
+        if 'causal_factor_id' in data:
+            analysis_section.causal_factor_id = data['causal_factor_id']
+        
+        if 'finding_refs' in data:
+            analysis_section.finding_refs_list = data['finding_refs']
+        
+        if 'conclusion_refs' in data:
+            analysis_section.conclusion_refs_list = data['conclusion_refs']
+        
+        analysis_section.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'analysis_section': analysis_section.to_dict()
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating analysis section: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to update analysis section'}), 500
+
+@api_bp.route('/projects/<project_id>/analysis-sections/<section_id>', methods=['DELETE'])
+@jwt_required()
+def delete_analysis_section(project_id, section_id):
+    """Delete an analysis section"""
+    try:
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        analysis_section = AnalysisSection.query.filter_by(id=section_id, project_id=project_id).first()
+        if not analysis_section:
+            return jsonify({'success': False, 'error': 'Analysis section not found'}), 404
+        
+        db.session.delete(analysis_section)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Analysis section deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting analysis section: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to delete analysis section'}), 500
 
 

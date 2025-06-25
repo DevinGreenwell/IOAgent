@@ -298,6 +298,71 @@ class CausalFactor(db.Model):
             
         return data
 
+class AnalysisSection(db.Model):
+    __tablename__ = 'analysis_sections'
+    
+    id = db.Column(db.String(100), primary_key=True)  # UUID string
+    title = db.Column(db.String(200), nullable=False)
+    analysis_text = db.Column(db.Text, nullable=False)
+    causal_factor_id = db.Column(db.String(100), db.ForeignKey('causal_factors.id'), nullable=True)
+    finding_refs = db.Column(db.Text)  # JSON array of finding IDs
+    conclusion_refs = db.Column(db.Text)  # JSON array of conclusion IDs
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Foreign key
+    project_id = db.Column(db.String(100), db.ForeignKey('projects.id'), nullable=False)
+    
+    def __repr__(self):
+        return f'<AnalysisSection {self.title}>'
+    
+    @property
+    def finding_refs_list(self):
+        """Get finding references as a list"""
+        if self.finding_refs:
+            try:
+                return json.loads(self.finding_refs)
+            except:
+                return []
+        return []
+    
+    @finding_refs_list.setter
+    def finding_refs_list(self, value):
+        """Set finding references from a list"""
+        self.finding_refs = json.dumps(value) if value else None
+    
+    @property
+    def conclusion_refs_list(self):
+        """Get conclusion references as a list"""
+        if self.conclusion_refs:
+            try:
+                return json.loads(self.conclusion_refs)
+            except:
+                return []
+        return []
+    
+    @conclusion_refs_list.setter
+    def conclusion_refs_list(self, value):
+        """Set conclusion references from a list"""
+        self.conclusion_refs = json.dumps(value) if value else None
+    
+    def to_dict(self, include_project=True):
+        data = {
+            'id': self.id,
+            'title': self.title,
+            'analysis_text': self.analysis_text,
+            'causal_factor_id': self.causal_factor_id,
+            'finding_refs': self.finding_refs_list,
+            'conclusion_refs': self.conclusion_refs_list,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+        
+        if include_project:
+            data['project_id'] = self.project_id
+            
+        return data
+
 # Association table for many-to-many relationship between timeline entries and evidence
 timeline_evidence = db.Table('timeline_evidence',
     db.Column('timeline_id', db.String(100), db.ForeignKey('timeline_entries.id'), primary_key=True),
