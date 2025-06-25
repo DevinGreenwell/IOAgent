@@ -633,6 +633,11 @@
                         <div class="tab-content" id="analysisTabContent">
                             <!-- Causal Factors Tab -->
                             <div class="tab-pane fade show active" id="causal-factors-pane" role="tabpanel">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>USCG Requirement:</strong> You must identify the <strong>Initiating Event</strong> (first adverse outcome) in your timeline before running causal analysis. Check the "Initiating Event" box for the appropriate timeline entry.
+                                </div>
+
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
                                     <strong>Causal Factor Categories (Swiss Cheese Model):</strong>
@@ -643,6 +648,9 @@
                                         <li><span class="badge bg-success me-2">Production</span>Unsafe acts, errors, violations</li>
                                         <li><span class="badge bg-primary me-2">Defense</span>Barriers that failed or were absent</li>
                                     </ul>
+                                    <small class="text-muted mt-2 d-block">
+                                        <strong>Analysis Logic:</strong> Initiating event gets ALL categories; subsequent events get ONLY defense factors (per MCI-O3B)
+                                    </small>
                                 </div>
 
                                 <div id="causalFactorsList">

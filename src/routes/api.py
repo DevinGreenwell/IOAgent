@@ -425,6 +425,14 @@ def run_causal_analysis(project_id):
         if not timeline_entries:
             return jsonify({'success': False, 'error': 'No timeline entries found for analysis'}), 400
         
+        # CRITICAL: Check for initiating event (USCG requirement per MCI-O3B Section 3.2)
+        initiating_events = [entry for entry in timeline_entries if entry.is_initiating_event]
+        if not initiating_events:
+            return jsonify({
+                'success': False, 
+                'error': 'You must identify the Initiating Event (first adverse outcome) in the timeline before running causal analysis. Check the "Initiating Event" box for the appropriate timeline entry.'
+            }), 400
+        
         # Create wrapper objects that match expected format for analysis engines
         class TimelineEntryWrapper:
             def __init__(self, entry_dict):

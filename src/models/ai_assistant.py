@@ -215,9 +215,23 @@ Please suggest new timeline entries in JSON format. Include specific timestamps 
     
     def _create_causal_analysis_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
         """Create prompt for causal factor identification"""
+        # Separate initiating event from subsequent events
+        initiating_events = [entry for entry in timeline if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event]
+        subsequent_events = [entry for entry in timeline if entry.type == 'event' and not (hasattr(entry, 'is_initiating_event') and entry.is_initiating_event)]
+        
         timeline_text = "\n".join([
             f"- {entry.timestamp}: {entry.type.title()} - {entry.description}"
             for entry in timeline if entry.timestamp
+        ])
+        
+        initiating_event_text = "None identified" if not initiating_events else "\n".join([
+            f"- {entry.timestamp}: {entry.description}"
+            for entry in initiating_events
+        ])
+        
+        subsequent_events_text = "None" if not subsequent_events else "\n".join([
+            f"- {entry.timestamp}: {entry.description}"
+            for entry in subsequent_events
         ])
         
         evidence_text = "\n".join([
@@ -226,38 +240,52 @@ Please suggest new timeline entries in JSON format. Include specific timestamps 
         ])
         
         return f"""
-Using USCG causal analysis methodology and the Swiss Cheese model, identify causal factors from this timeline and evidence.
+Using USCG causal analysis methodology per MCI-O3B procedures, identify causal factors from this timeline and evidence.
 
-CRITICAL REQUIREMENT: Causal factor titles MUST be written in the negative form using phrases like:
+CRITICAL USCG REQUIREMENTS:
+1. For the INITIATING EVENT (first adverse outcome): Identify causal factors across ALL categories (organization, workplace, precondition, production, defense)
+2. For SUBSEQUENT EVENTS: Focus ONLY on DEFENSE factors that failed to prevent progression from the initiating event
+
+INITIATING EVENT (First adverse outcome):
+{initiating_event_text}
+
+SUBSEQUENT EVENTS (Events that followed the initiating event):
+{subsequent_events_text}
+
+FULL TIMELINE:
+{timeline_text}
+
+EVIDENCE:
+{evidence_text}
+
+Causal factor titles MUST be written in the negative form:
 - "Failure of..." (e.g., "Failure of crew to follow safety procedures")
 - "Inadequate..." (e.g., "Inadequate oversight by management")
 - "Lack of..." (e.g., "Lack of proper safety equipment")
 - "Absence of..." (e.g., "Absence of effective communication")
 - "Insufficient..." (e.g., "Insufficient training provided")
 
-Causal factors should be categorized as:
+Categories:
 - Organization: Management decisions, policies, culture
 - Workplace: Physical environment, equipment, procedures
 - Precondition: Individual factors, team factors, environmental factors
 - Production: Unsafe acts, errors, violations
 - Defense: Barriers that failed or were absent
 
-Timeline:
-{timeline_text}
-
-Evidence:
-{evidence_text}
-
-Please identify causal factors in JSON format with NEGATIVE titles:
+Please identify causal factors in JSON format following USCG methodology:
 [
   {{
     "category": "organization|workplace|precondition|production|defense",
     "title": "Failure of... / Inadequate... / Lack of... / Absence of... / Insufficient...",
     "description": "Detailed description of the causal factor",
     "evidence_support": ["references to supporting evidence"],
-    "analysis": "How this factor contributed to the incident"
+    "analysis": "How this factor contributed to the incident",
+    "event_type": "initiating|subsequent",
+    "related_event": "description of the specific event this factor relates to"
   }}
 ]
+
+REMEMBER: Initiating event gets ALL category types, subsequent events get ONLY defense factors.
 """
     
     def _create_analysis_improvement_prompt(self, analysis_text: str, supporting_findings: List[Finding]) -> str:
