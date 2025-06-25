@@ -921,17 +921,11 @@ class IOAgent {
             <div class="evidence-item">
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="flex-grow-1">
-                        <h6><i class="${this.getFileIcon(item.type)} me-2"></i>${this.escapeHtml(item.filename)}</h6>
+                        <h6><i class="${this.getFileIcon(item.type)} me-2"></i>${this.escapeHtml(item.original_filename || item.filename)}</h6>
                         <p class="mb-1">${this.escapeHtml(item.description)}</p>
-                        <small class="text-muted">
-                            Type: ${this.escapeHtml(item.type)} | 
-                            Source: ${this.escapeHtml(item.source)} | 
-                            Uploaded: ${new Date(item.uploaded_at || Date.now()).toLocaleString()}
-                        </small>
                     </div>
                     <div class="ms-3">
-                        <span class="badge bg-primary">${this.escapeHtml(item.reliability || 'Unrated')}</span>
-                        <button class="btn btn-sm btn-outline-danger ms-2 btn-delete-evidence" data-evidence-id="${item.id}">
+                        <button class="btn btn-sm btn-outline-danger btn-delete-evidence" data-evidence-id="${item.id}">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1390,38 +1384,23 @@ class IOAgent {
         document.querySelectorAll('.edit-causal-factor-btn').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                const factorIdStr = e.currentTarget.getAttribute('data-factor-id');
-                console.log('Edit button clicked, raw factor ID:', factorIdStr);
-                // Don't parse as integer in case IDs are strings (UUIDs)
-                const factorId = factorIdStr;
-                console.log('Edit button clicked, processed factor ID:', factorId);
+                const factorId = e.currentTarget.getAttribute('data-factor-id');
                 self.editCausalFactor(factorId);
             });
         });
     }
 
     editCausalFactor(factorId) {
-        console.log('editCausalFactor called with ID:', factorId);
-        console.log('Current project:', this.currentProject);
-        console.log('Causal factors available:', this.currentProject?.causal_factors);
-        
         if (!this.currentProject || !this.currentProject.causal_factors) {
-            console.log('No project or causal factors available');
             return;
         }
         
-        const factor = this.currentProject.causal_factors.find(f => {
-            console.log('Comparing factor ID:', f.id, 'with target:', factorId, 'types:', typeof f.id, typeof factorId);
-            return f.id == factorId; // Use == instead of === to handle type differences
-        });
+        const factor = this.currentProject.causal_factors.find(f => f.id == factorId); // Use == to handle type differences
         
         if (!factor) {
-            console.log('Factor not found. Available factors:', this.currentProject.causal_factors.map(f => ({ id: f.id, title: f.title })));
             this.showAlert('Causal factor not found', 'error');
             return;
         }
-        
-        console.log('Found factor:', factor);
 
         // Populate modal with existing data
         document.getElementById('editFactorTitle').value = factor.title || '';
