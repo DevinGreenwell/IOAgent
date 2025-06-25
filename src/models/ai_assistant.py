@@ -39,7 +39,7 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o4-mini-2025-04-16",
+                model="o3-mini-2025-01-31",
                 messages=[
                     {"role": "system", "content": "You are an expert USCG marine casualty investigator."},
                     {"role": "user", "content": prompt}
@@ -64,7 +64,7 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o4-mini-2025-04-16",
+                model="o3-mini-2025-01-31",
                 messages=[
                     {"role": "system", "content": "You are an expert in USCG causal analysis methodology using the Swiss Cheese model."},
                     {"role": "user", "content": prompt}
@@ -79,12 +79,12 @@ class AIAssistant:
             print(f"Error identifying causal factors: {e}")
             return []
     
-    def chat(self, prompt: str, model: str = "o4-mini-2025-04-16") -> str:
+    def chat(self, prompt: str, model: str = "o3-mini-2025-01-31") -> str:
         """Generate a simple chat completion using the specified OpenAI chat model.
 
         Args:
             prompt (str): The user prompt to send to the model.
-            model (str, optional): The OpenAI model to use. Defaults to "o4-mini-2025-04-16".
+            model (str, optional): The OpenAI model to use. Defaults to "o3-mini-2025-01-31".
 
         Returns:
             str: The model's response content.
@@ -115,7 +115,7 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o4-mini-2025-04-16",
+                model="o3-mini-2025-01-31",
                 messages=[
                     {"role": "system", "content": "You are an expert technical writer specializing in USCG investigation reports."},
                     {"role": "user", "content": prompt}
@@ -138,7 +138,7 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o4-mini-2025-04-16",
+                model="o3-mini-2025-01-31",
                 messages=[
                     {"role": "system", "content": "You are an expert USCG investigator writing executive summaries."},
                     {"role": "user", "content": prompt}
@@ -162,7 +162,7 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o4-mini-2025-04-16",
+                model="o3-mini-2025-01-31",
                 messages=[
                     {"role": "system", "content": "You are a quality assurance expert for USCG investigation reports."},
                     {"role": "user", "content": prompt}
