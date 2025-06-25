@@ -3,6 +3,7 @@ class IOAgent {
         this.currentProject = null;
         this.currentUser = null;
         this.accessToken = null;
+        this.uploadingFiles = new Set(); // Track files being uploaded
         
         // Configure API base URL based on environment
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -672,7 +673,7 @@ class IOAgent {
         }
     }
 
-    async openProject(projectId, showLoadingOverlay = true) {
+    async openProject(projectId, showLoadingOverlay = true, navigateToProjectInfo = true) {
         try {
             console.log('Opening project:', projectId);
             if (showLoadingOverlay) {
@@ -691,7 +692,12 @@ class IOAgent {
                 this.currentProject = data.project;
                 this.updateCurrentProjectDisplay();
                 this.loadTimeline();
-                this.showSection('project-info');
+                
+                // Only navigate to project info if explicitly requested
+                if (navigateToProjectInfo) {
+                    this.showSection('project-info');
+                }
+                
                 this.showAlert('Project loaded successfully', 'success');
             } else {
                 throw new Error(data.error || 'Failed to load project');
@@ -813,7 +819,30 @@ class IOAgent {
         const fileList = files instanceof FileList ? files : [files];
         
         for (let file of fileList) {
-            await this.uploadFile(file);
+            // Create a unique identifier for the file
+            const fileId = `${file.name}-${file.size}-${file.lastModified}`;
+            
+            // Check if this file is already being uploaded
+            if (this.uploadingFiles.has(fileId)) {
+                this.showAlert(`File ${file.name} is already being uploaded`, 'warning');
+                continue;
+            }
+            
+            // Add to uploading set
+            this.uploadingFiles.add(fileId);
+            
+            try {
+                await this.uploadFile(file);
+            } finally {
+                // Remove from uploading set when done
+                this.uploadingFiles.delete(fileId);
+            }
+        }
+        
+        // Clear the file input to prevent re-uploading
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.value = '';
         }
         
         this.loadEvidence();
@@ -847,7 +876,7 @@ class IOAgent {
                 }
                 
                 // Reload project data to show new evidence
-                await this.openProject(this.currentProject.id);
+                await this.openProject(this.currentProject.id, true, false);
             } else {
                 this.showAlert(`Failed to upload ${file.name}: ${data.error}`, 'danger');
             }
@@ -933,7 +962,7 @@ class IOAgent {
             if (data.success) {
                 this.showAlert('Evidence deleted successfully', 'success');
                 // Reload project data to reflect the deletion
-                await this.openProject(this.currentProject.id);
+                await this.openProject(this.currentProject.id, true, false);
             } else {
                 throw new Error(data.error || 'Failed to delete evidence');
             }
@@ -1041,7 +1070,7 @@ class IOAgent {
                 this.showAlert(`Successfully added ${data.created} timeline entries`, 'success');
                 
                 // Reload project data to get updated timeline (without showing loading overlay)
-                await this.openProject(this.currentProject.id, false);
+                await this.openProject(this.currentProject.id, false, false);
             } else {
                 throw new Error(data.error || 'Failed to add timeline entries');
             }
@@ -1114,7 +1143,7 @@ class IOAgent {
                 this.showAlert(`Timeline entry ${isEditing ? 'updated' : 'added'} successfully`, 'success');
                 
                 // Reload project data to get updated timeline
-                await this.openProject(this.currentProject.id);
+                await this.openProject(this.currentProject.id, true, false);
                 this.loadTimeline();
             } else {
                 throw new Error(data.error || `Failed to ${isEditing ? 'update' : 'add'} timeline entry`);
@@ -1250,7 +1279,7 @@ class IOAgent {
                 this.showAlert('Timeline entry deleted successfully', 'success');
                 
                 // Reload project data to get updated timeline
-                await this.openProject(this.currentProject.id);
+                await this.openProject(this.currentProject.id, true, false);
                 this.loadTimeline();
             } else {
                 throw new Error(data.error || 'Failed to delete timeline entry');
@@ -1293,7 +1322,7 @@ class IOAgent {
                 this.showAlert('Causal analysis completed successfully', 'success');
                 
                 // Reload project data to get updated causal factors
-                await this.openProject(this.currentProject.id);
+                await this.openProject(this.currentProject.id, true, false);
                 this.loadAnalysis();
             } else {
                 throw new Error(data.error || 'Failed to run causal analysis');

@@ -77,15 +77,20 @@ class USCGROIGenerator:
     
     def _generate_cover_page(self):
         """Generate cover page with unit information"""
-        # Unit header
+        # Unit header - Commandant (not Commander)
         p = self.document.add_paragraph()
-        p.add_run("Commander\n").bold = True
+        p.add_run("Commandant\n")
         p.add_run("United States Coast Guard\n")
         p.add_run(f"Sector {self.project.incident_info.location or 'Investigation'}\n")
+        p.add_run("\n")
+        p.add_run("Unit Address\n")
+        p.add_run("Unit Address\n")
+        p.add_run("Staff Symbol: \n")
+        p.add_run("Phone: \n")
         p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         
         # Add spacing
-        for _ in range(5):
+        for _ in range(3):
             self.document.add_paragraph()
         
         # Add date and control number
@@ -306,6 +311,30 @@ class USCGROIGenerator:
     
     def _generate_investigating_officers_report(self):
         """Generate the main Investigating Officer's Report"""
+        # Header for IO Report
+        p = self.document.add_paragraph()
+        p.add_run("Commandant\n")
+        p.add_run("United States Coast Guard\n")
+        p.add_run(f"Sector {self.project.incident_info.location or 'Investigation'}\n")
+        p.add_run("Unit Address\n")
+        p.add_run("Unit Address\n")
+        p.add_run("Staff Symbol: \n")
+        p.add_run("Phone: \n")
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        
+        # Add spacing
+        self.document.add_paragraph()
+        self.document.add_paragraph()
+        
+        # Add date and control number
+        p = self.document.add_paragraph()
+        p.add_run("16732\n")
+        p.add_run(self._format_date(datetime.now()))
+        
+        # Add spacing
+        self.document.add_paragraph()
+        self.document.add_paragraph()
+        
         # Title
         title = self._generate_uscg_title()
         title_para = self.document.add_paragraph()
@@ -401,18 +430,42 @@ class USCGROIGenerator:
         heading.add_run("2. Vessels Involved in the Incident").bold = True
         
         for vessel in self.project.vessels:
-            # Vessel details in USCG format
-            self.document.add_paragraph(f"Official Name: {vessel.official_name or 'Unknown'}")
-            self.document.add_paragraph(f"Identification Number: {vessel.identification_number or 'Unknown'}")
-            self.document.add_paragraph(f"Flag: {vessel.flag or 'United States'}")
-            self.document.add_paragraph(f"Vessel Class/Type/Sub-Type: {vessel.vessel_class or 'Unknown'}/"
-                                      f"{vessel.vessel_type or 'Unknown'}/{vessel.vessel_subtype or 'N/A'}")
-            self.document.add_paragraph(f"Build Year: {vessel.build_year or 'Unknown'}")
-            self.document.add_paragraph(f"Gross Tonnage: {vessel.gross_tonnage or 'Unknown'} GT")
-            self.document.add_paragraph(f"Length: {vessel.length or 'Unknown'}")
-            self.document.add_paragraph(f"Beam/Width: {vessel.beam or 'N/A'}")
-            self.document.add_paragraph(f"Draft/Depth: {vessel.draft or 'N/A'}")
-            self.document.add_paragraph(f"Main/Primary Propulsion: {vessel.propulsion or 'Unknown'}")
+            # Add photo placeholder
+            self.document.add_paragraph()
+            photo_para = self.document.add_paragraph()
+            photo_para.add_run("Figure 1. Undated Photograph of Vessel").italic = True
+            self.document.add_paragraph()
+            
+            # Create vessel information table
+            table = self.document.add_table(rows=13, cols=2)
+            table.style = 'Table Grid'
+            
+            # Populate vessel information in table format
+            vessel_info = [
+                ("Official Name:", vessel.official_name or 'Unknown'),
+                ("", f"({vessel.official_name.upper() if vessel.official_name else 'VESSEL NAME'})"),
+                ("Identification Number:", f"{vessel.identification_number or '0000000'} - Official Number (US)"),
+                ("Flag:", vessel.flag or 'United States'),
+                ("Vessel Class/Type/Sub-Type", f"{vessel.vessel_class or 'Unknown'}/{vessel.vessel_type or 'Unknown'}/{vessel.vessel_subtype or 'N/A'}"),
+                ("Build Year:", vessel.build_year or 'YYYY'),
+                ("Gross Tonnage:", f"{vessel.gross_tonnage or '##'} GT"),
+                ("Length:", f"{vessel.length or '##'} feet"),
+                ("Beam/Width:", f"{vessel.beam or '##'} feet"),
+                ("Draft/Depth:", f"{vessel.draft or '##'} feet"),
+                ("Main/Primary Propulsion:", vessel.propulsion or 'Configuration/System Type, Ahead Horse Power'),
+                ("Owner:", f"{vessel.owner or 'Line 1 = Official Name'}\n{vessel.owner_location or 'Line 2 = City, State/Country'}"),
+                ("Operator:", f"{vessel.operator or 'Line 1 = Official Name'}\n{vessel.operator_location or 'Line 2 = City, State/Country'}")
+            ]
+            
+            # Fill table with vessel information
+            for i, (label, value) in enumerate(vessel_info):
+                row = table.rows[i]
+                row.cells[0].text = label
+                row.cells[1].text = value
+                # Make vessel name italic in second row
+                if i == 1:
+                    for run in row.cells[1].paragraphs[0].runs:
+                        run.italic = True
             
             self.document.add_paragraph()  # Spacing between vessels
         

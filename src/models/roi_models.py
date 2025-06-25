@@ -92,6 +92,10 @@ class Vessel(BaseModel):
         self.beam = None
         self.draft = None
         self.propulsion = ""
+        self.owner = ""
+        self.owner_location = ""
+        self.operator = ""
+        self.operator_location = ""
 
 class Personnel(BaseModel):
     """Personnel involved in incident"""
