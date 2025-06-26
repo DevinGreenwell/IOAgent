@@ -489,7 +489,7 @@ def run_causal_analysis(project_id):
                     category=factor_obj.category or 'organizational',
                     severity='medium',  # Default since roi_models doesn't have severity
                     likelihood='medium',  # Default since roi_models doesn't have likelihood
-                    analysis_text=str(factor_obj.analysis_text or '')[:2000],
+                    analysis_text=str(factor_obj.analysis_text or ''),
                     project_id=project_id
                 )
                 
@@ -513,7 +513,7 @@ def run_causal_analysis(project_id):
                     category=factor_data.get('category', 'organizational'),
                     severity=factor_data.get('severity', 'medium'),
                     likelihood=factor_data.get('likelihood', 'medium'),
-                    analysis_text=str(factor_data.get('analysis_text', factor_data.get('analysis', '')))[:2000],
+                    analysis_text=str(factor_data.get('analysis_text', factor_data.get('analysis', ''))),
                     project_id=project_id
                 )
                 

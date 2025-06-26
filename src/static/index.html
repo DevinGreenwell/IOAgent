@@ -848,7 +848,7 @@
                 <div class="modal-body">
                     <form id="editCausalFactorForm">
                         <div class="mb-3">
-                            <label for="editFactorTitle" class="form-label">Title (must be negative phrasing)</label>
+                            <label for="editFactorTitle" class="form-label">Short Title (must be negative phrasing)</label>
                             <input type="text" class="form-control" id="editFactorTitle" placeholder="Failure of..., Inadequate..., Lack of...">
                             <div class="form-text">Examples: "Failure of crew to follow procedures", "Inadequate oversight by management", "Lack of proper safety equipment"</div>
                         </div>
@@ -868,7 +868,12 @@
                         </div>
                         <div class="mb-3">
                             <label for="editFactorAnalysis" class="form-label">Analysis Text (Section 5 - Most Critical)</label>
-                            <textarea class="form-control" id="editFactorAnalysis" rows="6" placeholder="Detailed analysis explaining how this factor contributed to the incident. Must reference supporting findings of fact."></textarea>
+                            <textarea class="form-control" id="editFactorAnalysis" rows="8" placeholder="Provide an in-depth analysis (3-5 paragraphs) that includes:
+1. The specific conditions that led to this causal factor
+2. How this factor directly contributed to the incident
+3. The chain of events it caused or enabled
+4. Why existing safeguards failed to prevent it
+5. References to specific findings of fact that support this analysis"></textarea>
                             <div class="form-text">This is the most important section of the ROI. Explain how this factor contributed to the incident and reference specific findings of fact.</div>
                         </div>
                     </form>

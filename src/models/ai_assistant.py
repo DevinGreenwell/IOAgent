@@ -277,15 +277,19 @@ Please identify causal factors in JSON format following USCG methodology:
   {{
     "category": "organization|workplace|precondition|production|defense",
     "title": "Failure of... / Inadequate... / Lack of... / Absence of... / Insufficient...",
-    "description": "Detailed description of the causal factor",
+    "description": "Detailed description of the causal factor (1-2 sentences describing what went wrong)",
     "evidence_support": ["references to supporting evidence"],
-    "analysis": "How this factor contributed to the incident",
+    "analysis": "In-depth analysis (3-5 paragraphs) explaining: 1) The specific conditions that led to this factor, 2) How this factor directly contributed to the incident, 3) The chain of events it caused or enabled, 4) Why existing safeguards failed to prevent it, 5) Reference specific findings of fact that support this analysis",
     "event_type": "initiating|subsequent",
     "related_event": "description of the specific event this factor relates to"
   }}
 ]
 
-REMEMBER: Initiating event gets ALL category types, subsequent events get ONLY defense factors.
+CRITICAL REQUIREMENTS:
+1. Title MUST be a short phrase (5-10 words max) in negative form
+2. Analysis MUST be comprehensive and reference specific evidence
+3. Each factor must clearly link cause to effect
+4. Initiating event gets ALL category types, subsequent events get ONLY defense factors.
 """
     
     def _create_analysis_improvement_prompt(self, analysis_text: str, supporting_findings: List[Finding]) -> str:
