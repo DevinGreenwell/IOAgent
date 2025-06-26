@@ -1360,6 +1360,9 @@ class IOAgent {
                         <button class="btn btn-sm btn-outline-primary edit-causal-factor-btn" data-factor-id="${factor.id}">
                             <i class="fas fa-edit"></i> Edit
                         </button>
+                        <button class="btn btn-sm btn-outline-danger ms-1 delete-causal-factor-btn" data-factor-id="${factor.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
                 <p class="mb-2">${this.escapeHtml(factor.description)}</p>
@@ -1381,6 +1384,15 @@ class IOAgent {
                 e.preventDefault();
                 const factorId = e.currentTarget.getAttribute('data-factor-id');
                 self.editCausalFactor(factorId);
+            });
+        });
+        
+        // Add event listeners for delete buttons
+        document.querySelectorAll('.delete-causal-factor-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const factorId = e.currentTarget.getAttribute('data-factor-id');
+                self.deleteCausalFactor(factorId);
             });
         });
     }
@@ -1472,6 +1484,41 @@ class IOAgent {
             console.error('Error updating causal factor:', error);
             if (error.message !== 'Authentication required') {
                 this.showAlert(`Error updating causal factor: ${error.message}`, 'danger');
+            }
+        }
+    }
+
+    async deleteCausalFactor(factorId) {
+        if (!confirm('Are you sure you want to delete this causal factor? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await this.makeAuthenticatedRequest(
+                `${this.apiBase}/projects/${this.currentProject.id}/causal-factors/${factorId}`,
+                { method: 'DELETE' }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                this.showAlert('Causal factor deleted successfully', 'success');
+                
+                // Reload project data to reflect deletion
+                await this.openProject(this.currentProject.id, true, false);
+                this.loadAnalysis();
+                this.loadAnalysisSections();
+            } else {
+                this.showAlert(`Failed to delete causal factor: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            console.error('Error deleting causal factor:', error);
+            if (error.message !== 'Authentication required') {
+                this.showAlert(`Error deleting causal factor: ${error.message}`, 'danger');
             }
         }
     }

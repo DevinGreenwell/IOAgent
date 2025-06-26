@@ -611,6 +611,34 @@ def update_causal_factor(project_id, factor_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': f'Failed to update causal factor: {str(e)}'}), 500
 
+@api_bp.route('/projects/<project_id>/causal-factors/<factor_id>', methods=['DELETE'])
+@jwt_required()
+def delete_causal_factor(project_id, factor_id):
+    """Delete a causal factor"""
+    try:
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        causal_factor = CausalFactor.query.filter_by(id=factor_id, project_id=project_id).first()
+        if not causal_factor:
+            return jsonify({'success': False, 'error': 'Causal factor not found'}), 404
+        
+        db.session.delete(causal_factor)
+        db.session.commit()
+        
+        current_app.logger.info(f"Deleted causal factor {factor_id} from project {project_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Causal factor deleted successfully'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error deleting causal factor: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Failed to delete causal factor: {str(e)}'}), 500
+
 @api_bp.route('/projects/<project_id>/extract-timeline', methods=['POST'])
 @jwt_required()
 def extract_timeline_from_evidence(project_id):

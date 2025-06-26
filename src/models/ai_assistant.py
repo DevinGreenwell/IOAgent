@@ -65,7 +65,7 @@ class AIAssistant:
             response = self.client.chat.completions.create(
                 model="o3-2025-04-16",
                 messages=[
-                    {"role": "system", "content": "You are an expert in USCG causal analysis methodology using the Swiss Cheese model."},
+                    {"role": "system", "content": "You are an expert in USCG causal analysis methodology using the Swiss Cheese model. You have extensive experience in maritime operations, vessel safety systems, and human factors in marine casualties. When analyzing incidents, you make reasonable and probable assumptions based on standard maritime practices, typical crew behaviors, and common vessel configurations. You clearly state these assumptions in your analysis while maintaining professional objectivity."},
                     {"role": "user", "content": prompt}
                 ]
             )
@@ -279,7 +279,7 @@ Please identify causal factors in JSON format following USCG methodology:
     "title": "Failure of... / Inadequate... / Lack of... / Absence of... / Insufficient...",
     "description": "Detailed description of the causal factor (1-2 sentences describing what went wrong)",
     "evidence_support": ["references to supporting evidence"],
-    "analysis": "In-depth analysis (3-5 paragraphs) explaining: 1) The specific conditions that led to this factor, 2) How this factor directly contributed to the incident, 3) The chain of events it caused or enabled, 4) Why existing safeguards failed to prevent it, 5) Reference specific findings of fact that support this analysis",
+    "analysis": "In-depth analysis (3-5 paragraphs) that includes: 1) The specific conditions that led to this factor, 2) How this factor directly contributed to the incident, 3) The chain of events it caused or enabled, 4) Why existing safeguards failed to prevent it, 5) References to specific findings of fact. IMPORTANT: Make reasonable assumptions about maritime operations, crew behavior, and vessel conditions that are highly probable based on the evidence. State assumptions clearly (e.g., 'It is likely that...', 'Based on standard practice...', 'This suggests that...')",
     "event_type": "initiating|subsequent",
     "related_event": "description of the specific event this factor relates to"
   }}
@@ -287,9 +287,22 @@ Please identify causal factors in JSON format following USCG methodology:
 
 CRITICAL REQUIREMENTS:
 1. Title MUST be a short phrase (5-10 words max) in negative form
-2. Analysis MUST be comprehensive and reference specific evidence
+2. Analysis MUST be comprehensive (3-5 paragraphs minimum) and reference specific evidence
 3. Each factor must clearly link cause to effect
-4. Initiating event gets ALL category types, subsequent events get ONLY defense factors.
+4. Initiating event gets ALL category types, subsequent events get ONLY defense factors
+5. Make reasonable assumptions about:
+   - Standard maritime procedures that should have been followed
+   - Typical crew training and qualifications
+   - Normal vessel maintenance practices
+   - Common safety equipment and systems
+   - Weather and sea conditions if not specified
+   - Communication protocols and chain of command
+6. State assumptions clearly using phrases like:
+   - "Based on standard maritime practice..."
+   - "It is reasonable to assume that..."
+   - "This suggests that..."
+   - "Typically in such situations..."
+   - "Industry standards would require..."
 """
     
     def _create_analysis_improvement_prompt(self, analysis_text: str, supporting_findings: List[Finding]) -> str:
