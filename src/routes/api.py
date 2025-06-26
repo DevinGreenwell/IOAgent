@@ -1012,10 +1012,21 @@ def create_analysis_section(project_id):
         if not title or not analysis_text:
             return jsonify({'success': False, 'error': 'Title and analysis text are required'}), 400
         
+        # Validate category based on event type (USCG requirement)
+        event_type = data.get('event_type', 'initiating')
+        category = data.get('category', 'organization')
+        
+        if event_type == 'subsequent' and category != 'defense':
+            return jsonify({
+                'success': False, 
+                'error': 'Subsequent events can ONLY have defense factors (per USCG MCI-O3B requirements)'
+            }), 400
+        
         analysis_section = AnalysisSection(
             id=str(uuid.uuid4()),
             title=title[:200],
-            category=data.get('category', 'organization'),
+            event_type=event_type,
+            category=category,
             analysis_text=analysis_text,
             causal_factor_id=data.get('causal_factor_id'),
             project_id=project_id
@@ -1063,8 +1074,22 @@ def update_analysis_section(project_id, section_id):
                 return jsonify({'success': False, 'error': 'Title cannot be empty'}), 400
             analysis_section.title = title[:200]
         
+        # Handle event_type and category validation (USCG requirement)
+        if 'event_type' in data:
+            analysis_section.event_type = data['event_type']
+        
         if 'category' in data:
-            analysis_section.category = data['category']
+            # Validate category based on event type
+            new_category = data['category']
+            current_event_type = data.get('event_type', analysis_section.event_type)
+            
+            if current_event_type == 'subsequent' and new_category != 'defense':
+                return jsonify({
+                    'success': False, 
+                    'error': 'Subsequent events can ONLY have defense factors (per USCG MCI-O3B requirements)'
+                }), 400
+                
+            analysis_section.category = new_category
         
         if 'analysis_text' in data:
             analysis_text = data['analysis_text'].strip()

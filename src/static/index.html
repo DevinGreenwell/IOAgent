@@ -896,6 +896,14 @@
                             <input type="text" class="form-control" id="editSectionTitle" placeholder="Analysis section title">
                         </div>
                         <div class="mb-3">
+                            <label for="editSectionEventType" class="form-label">Related Event Type</label>
+                            <select class="form-select" id="editSectionEventType" onchange="app.updateCategoryOptions()">
+                                <option value="initiating">Initiating Event (first adverse outcome)</option>
+                                <option value="subsequent">Subsequent Event (follows initiating event)</option>
+                            </select>
+                            <div class="form-text">Select whether this analysis relates to the initiating event or a subsequent event.</div>
+                        </div>
+                        <div class="mb-3">
                             <label for="editSectionCategory" class="form-label">Causal Factor Category</label>
                             <select class="form-select" id="editSectionCategory">
                                 <option value="organization">Organization</option>
@@ -904,7 +912,7 @@
                                 <option value="production">Production</option>
                                 <option value="defense">Defense</option>
                             </select>
-                            <div class="form-text">Select the appropriate causal factor category for this analysis section.</div>
+                            <div class="form-text" id="categoryHelpText">Select the appropriate causal factor category for this analysis section.</div>
                         </div>
                         <div class="mb-3">
                             <label for="editSectionAnalysisText" class="form-label">Analysis Text</label>

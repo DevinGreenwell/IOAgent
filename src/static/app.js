@@ -1733,6 +1733,7 @@ class IOAgent {
                     </div>
                 </div>
                 <p class="text-muted small mb-2">
+                    <span class="badge ${section.event_type === 'subsequent' ? 'bg-warning' : 'bg-info'} me-1">${section.event_type === 'subsequent' ? 'SUBSEQUENT' : 'INITIATING'}</span>
                     <span class="badge bg-secondary me-2">${(section.category || 'organization').toUpperCase()}</span>
                     ${section.causal_factor_id ? `Linked to causal factor` : 'Standalone section'}
                 </p>
@@ -1790,19 +1791,27 @@ class IOAgent {
 
             // Populate modal with existing data
             document.getElementById('editSectionTitle').value = section.title || '';
+            document.getElementById('editSectionEventType').value = section.event_type || 'initiating';
             document.getElementById('editSectionCategory').value = section.category || 'organization';
             document.getElementById('editSectionAnalysisText').value = section.analysis_text || '';
             document.getElementById('editSectionCausalFactor').value = section.causal_factor_id || '';
+            
+            // Update category options based on event type
+            this.updateCategoryOptions();
 
             // Store the section ID for update
             this.editingAnalysisSectionId = sectionId;
         } else {
             // Creating new section
             document.getElementById('editSectionTitle').value = '';
+            document.getElementById('editSectionEventType').value = 'initiating';
             document.getElementById('editSectionCategory').value = 'organization';
             document.getElementById('editSectionAnalysisText').value = '';
             document.getElementById('editSectionCausalFactor').value = '';
             this.editingAnalysisSectionId = null;
+            
+            // Update category options for new section
+            this.updateCategoryOptions();
         }
 
         // Show modal
@@ -1824,9 +1833,37 @@ class IOAgent {
         }
     }
 
+    updateCategoryOptions() {
+        const eventTypeSelect = document.getElementById('editSectionEventType');
+        const categorySelect = document.getElementById('editSectionCategory');
+        const helpText = document.getElementById('categoryHelpText');
+        
+        if (eventTypeSelect.value === 'subsequent') {
+            // For subsequent events, only defense is allowed
+            categorySelect.innerHTML = '<option value="defense">Defense</option>';
+            categorySelect.value = 'defense';
+            categorySelect.disabled = true;
+            helpText.textContent = 'Per USCG MCI-O3B requirements: Subsequent events can ONLY have defense factors.';
+            helpText.className = 'form-text text-warning';
+        } else {
+            // For initiating events, all categories are available
+            categorySelect.innerHTML = `
+                <option value="organization">Organization</option>
+                <option value="workplace">Workplace</option>
+                <option value="precondition">Precondition</option>
+                <option value="production">Production</option>
+                <option value="defense">Defense</option>
+            `;
+            categorySelect.disabled = false;
+            helpText.textContent = 'Select the appropriate causal factor category for this analysis section.';
+            helpText.className = 'form-text';
+        }
+    }
+
     async saveAnalysisSection() {
         const sectionData = {
             title: document.getElementById('editSectionTitle').value,
+            event_type: document.getElementById('editSectionEventType').value,
             category: document.getElementById('editSectionCategory').value,
             analysis_text: document.getElementById('editSectionAnalysisText').value,
             causal_factor_id: document.getElementById('editSectionCausalFactor').value || null

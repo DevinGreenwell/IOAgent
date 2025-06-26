@@ -303,6 +303,7 @@ class AnalysisSection(db.Model):
     
     id = db.Column(db.String(100), primary_key=True)  # UUID string
     title = db.Column(db.String(200), nullable=False)
+    event_type = db.Column(db.String(20), default='initiating')  # initiating, subsequent
     category = db.Column(db.String(50), default='organization')  # organization, workplace, precondition, production, defense
     analysis_text = db.Column(db.Text, nullable=False)
     causal_factor_id = db.Column(db.String(100), db.ForeignKey('causal_factors.id'), nullable=True)
@@ -351,6 +352,7 @@ class AnalysisSection(db.Model):
         data = {
             'id': self.id,
             'title': self.title,
+            'event_type': self.event_type,
             'category': self.category,
             'analysis_text': self.analysis_text,
             'causal_factor_id': self.causal_factor_id,
