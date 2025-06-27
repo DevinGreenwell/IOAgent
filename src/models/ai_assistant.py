@@ -39,9 +39,9 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o3-mini-2025-01-31",
+                model="o3-2025-04-16",
                 messages=[
-                    {"role": "system", "content": "You are an expert USCG marine casualty investigator."},
+                    {"role": "system", "content": "You are a senior USCG marine casualty investigator with 20+ years of experience conducting formal investigations under 46 CFR Part 4. You excel at comprehensive document analysis and timeline reconstruction from complex investigation materials. You understand that timeline entries become the foundation for Findings of Fact in Reports of Investigation, so your extraction must be meticulous, complete, and evidence-based. You have extensive knowledge of maritime operations, vessel systems, crew procedures, and emergency response protocols."},
                     {"role": "user", "content": prompt}
                 ]
             )
@@ -195,7 +195,7 @@ class AIAssistant:
             return []
     
     def _create_timeline_suggestion_prompt(self, evidence_text: str, existing_timeline: List[Any]) -> str:
-        """Create prompt for timeline suggestions"""
+        """Create comprehensive timeline extraction prompt matching ROI methodology"""
         existing_entries = "\n".join([
             f"- {entry.get('timestamp', entry.timestamp if hasattr(entry, 'timestamp') else '')}: "
             f"{entry.get('type', entry.type if hasattr(entry, 'type') else '').title()} - "
@@ -205,35 +205,118 @@ class AIAssistant:
         ])
         
         return f"""
-Based on the following evidence text, suggest timeline entries for a USCG marine casualty investigation.
+# COMPREHENSIVE TIMELINE EXTRACTION FOR USCG MARINE CASUALTY INVESTIGATION
 
-IMPORTANT CLASSIFICATION RULES:
-- Action: Something performed solely by an individual (e.g., "Captain ordered full astern", "Engineer started pump")
-- Condition: The state of a person, place, or thing at a specific time (e.g., "Visibility was 0.5 miles", "Engine room was flooding")
-- Event: An adverse outcome that requires causal factor analysis (e.g., "Vessel collided with pier", "Fire broke out in engine room")
+## YOUR MISSION
+You are extracting timeline entries from investigation documentation to build the factual foundation for a Report of Investigation. These timeline entries will become "Findings of Fact" - the most critical evidence-based foundation of the entire ROI.
 
-Look for specific timestamps, dates, and times mentioned in the text. Extract key facts that describe:
-1. What people did (Actions)
-2. Environmental or equipment states (Conditions)
-3. Adverse outcomes or incidents (Events)
+## DOCUMENT ANALYSIS REQUIREMENTS
+SCRUTINIZE THE COMPLETE DOCUMENT for every single mention of:
 
-Evidence text:
+### 1. ACTIONS (Human/Crew Decisions & Behaviors)
+- Navigation decisions (course changes, speed adjustments)
+- Equipment operations (starting engines, activating pumps, deploying gear)
+- Communication actions (radio calls, alarms, notifications)
+- Safety actions (donning life jackets, launching boats, evacuation orders)
+- Maintenance/inspection activities
+- Watch changes and personnel movements
+- Emergency response actions
+
+### 2. CONDITIONS (Environmental, Equipment, Personnel States)
+- Weather conditions (wind, seas, visibility, precipitation)
+- Vessel condition (stability, damage, flooding, list/trim)
+- Equipment status (operational, failed, maintenance mode)
+- Personnel factors (fatigue, experience, medical conditions)
+- Environmental factors (lighting, temperature, currents)
+- Operational context (fishing operations, transit, anchored)
+- Time pressures or constraints
+
+### 3. EVENTS (Adverse Outcomes & Incidents)
+- Collisions, allisions, groundings
+- Fires, explosions, structural failures
+- Personnel injuries, fatalities, man overboard
+- Equipment failures and malfunctions
+- Loss of propulsion, steering, or navigation
+- Flooding, capsizing, sinking
+- Any deviation from normal operations
+
+## EXTRACTION METHODOLOGY
+
+### TEMPORAL ANALYSIS
+- Extract EVERY timestamp mentioned (exact times, relative times, sequence indicators)
+- Look for: "at 0800", "approximately 1430", "shortly after", "during the morning watch"
+- Infer logical time sequences even when exact times aren't specified
+- Pay attention to watch schedules, tidal information, sunrise/sunset references
+
+### DETAILED SCRUTINY
+Read the document multiple times looking for:
+1. **Explicit timeline elements** - directly stated times and events
+2. **Implicit sequences** - "after that", "meanwhile", "prior to", "following"  
+3. **Personnel actions** - every decision, order, movement mentioned
+4. **Equipment changes** - every start, stop, failure, adjustment
+5. **Environmental shifts** - weather changes, visibility changes, sea state
+6. **Operational phases** - departure, transit, fishing, return, emergency response
+
+### COMPLETENESS CHECK
+Ensure you capture:
+- Pre-incident operations and preparations
+- The incident sequence itself
+- Post-incident response and rescue operations
+- Equipment testing and investigation activities
+- All personnel interviews and statements referenced
+
+## CLASSIFICATION PRECISION
+
+**ACTION Examples:**
+- "Chief Engineer started the fire pump"
+- "Captain ordered all stop"
+- "Crew deployed fishing gear"
+- "First Mate called Coast Guard on Channel 16"
+
+**CONDITION Examples:**
+- "Seas were 4-6 feet with 15-knot winds"
+- "Engine room was taking on water"
+- "Visibility dropped to less than 100 yards"
+- "Crew had been working for 14 hours straight"
+
+**EVENT Examples:**
+- "Vessel struck submerged object"
+- "Fire broke out in galley"
+- "Crewmember fell overboard"
+- "Starboard engine failed"
+
+## EVIDENCE TEXT TO ANALYZE:
 {evidence_text}
 
-Existing timeline entries:
+## EXISTING TIMELINE (avoid duplication):
 {existing_entries}
 
-Please suggest new timeline entries in JSON format. Include specific timestamps when mentioned in the text:
+## OUTPUT REQUIREMENTS
+Provide a comprehensive JSON array of ALL timeline entries found. For each entry:
+
+```json
 [
   {{
-    "timestamp": "YYYY-MM-DD HH:MM",
+    "timestamp": "2023-08-01 05:00" // Use YYYY-MM-DD HH:MM format, infer times logically if not explicit
     "type": "action|condition|event",
-    "description": "Clear, factual description of what happened",
-    "confidence": "high|medium|low",
-    "assumptions": ["any assumptions made if timestamp or details are inferred"],
-    "personnel_involved": ["names or roles of people involved if mentioned"]
+    "description": "Precise, factual description using terminology from the document",
+    "confidence": "high|medium|low", // high=explicitly stated, medium=clearly inferred, low=assumption
+    "assumptions": ["List any logical assumptions made about timing or details"],
+    "personnel_involved": ["Specific names, roles, or positions mentioned"],
+    "location": "Where this occurred if specified",
+    "source_reference": "Page/paragraph reference if available"
   }}
 ]
+```
+
+## CRITICAL SUCCESS FACTORS
+1. **COMPLETENESS**: Extract every actionable timeline element
+2. **ACCURACY**: Use exact language from the source document
+3. **SEQUENCE**: Maintain proper chronological relationships
+4. **EVIDENCE-BASED**: Only include what can be supported by the documentation
+5. **COMPREHENSIVE**: Don't miss any Actions, Conditions, or Events
+
+Your timeline extraction must be so thorough that it provides the complete factual foundation needed for professional USCG Findings of Fact.
 """
     
     def _create_causal_analysis_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
