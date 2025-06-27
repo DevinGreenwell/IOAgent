@@ -500,7 +500,7 @@
                                     </div>
                                     <div class="mb-3">
                                         <label for="incidentDate" class="form-label">Incident Date</label>
-                                        <input type="datetime-local" class="form-control" id="incidentDate">
+                                        <input type="date" class="form-control" id="incidentDate">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -509,28 +509,15 @@
                                         <input type="text" class="form-control" id="incidentLocation">
                                     </div>
                                     <div class="mb-3">
-                                        <label for="incidentType" class="form-label">Incident Type</label>
-                                        <select class="form-select" id="incidentType">
-                                            <option value="">Select incident type</option>
-                                            <option value="collision">Collision</option>
-                                            <option value="allision">Allision</option>
-                                            <option value="fire">Fire</option>
-                                            <option value="explosion">Explosion</option>
-                                            <option value="grounding">Grounding</option>
-                                            <option value="capsizing">Capsizing</option>
-                                            <option value="sinking">Sinking</option>
-                                            <option value="personnel_casualty">Personnel Casualty</option>
-                                            <option value="pollution">Pollution</option>
-                                            <option value="other">Other</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="projectStatus" class="form-label">Status</label>
-                                        <select class="form-select" id="projectStatus">
-                                            <option value="draft">Draft</option>
-                                            <option value="review">Under Review</option>
-                                            <option value="complete">Complete</option>
-                                        </select>
+                                        <label for="officialNumber" class="form-label">Official Number (O.N.)</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="officialNumber" placeholder="Enter official number">
+                                            <div class="input-group-text">
+                                                <input type="checkbox" id="officialNumberNA" onchange="toggleOfficialNumber()">
+                                                <label for="officialNumberNA" class="ms-1">N/A</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-text">Leave blank and check N/A if vessel has no official number</div>
                                     </div>
                                 </div>
                             </div>

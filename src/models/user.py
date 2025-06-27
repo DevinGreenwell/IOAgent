@@ -56,6 +56,7 @@ class Project(db.Model):
     incident_date = db.Column(db.DateTime)
     incident_location = db.Column(db.Text)
     incident_type = db.Column(db.String(100))
+    official_number = db.Column(db.String(50))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -79,6 +80,7 @@ class Project(db.Model):
             'incident_date': self.incident_date.isoformat() if self.incident_date else None,
             'incident_location': self.incident_location,
             'incident_type': self.incident_type,
+            'official_number': self.official_number,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'user_id': self.user_id
@@ -97,7 +99,8 @@ class Project(db.Model):
                 'incident_info': {
                     'incident_date': self.incident_date.isoformat() if self.incident_date else None,
                     'location': self.incident_location,
-                    'incident_type': self.incident_type
+                    'incident_type': self.incident_type,
+                    'official_number': self.official_number
                 }
             })
         

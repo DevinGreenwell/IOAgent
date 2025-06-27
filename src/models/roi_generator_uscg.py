@@ -113,16 +113,19 @@ class USCGROIGenerator:
         self.document.add_page_break()
     
     def _generate_uscg_title(self) -> str:
-        """Generate title in USCG format"""
-        # Extract vessel information
-        vessel_parts = []
-        for vessel in self.project.vessels:
-            if vessel.official_name:
-                # Remove any F/V prefix as per USCG standards
-                name = vessel.official_name.replace("F/V ", "").replace("M/V ", "").strip()
-                vessel_parts.append(f"{name.upper()} (O.N. {vessel.identification_number or '#######'})")
+        """Generate title in USCG format using Investigation Title and Official Number"""
+        # Use Investigation Title and Official Number from project info
+        investigation_title = self.project.metadata.title or "VESSEL INCIDENT"
+        official_number = getattr(self.project, 'official_number', None)
         
-        vessel_text = ", ".join(vessel_parts) if vessel_parts else "VESSEL NAME (O.N. #######)"
+        # Format official number
+        if official_number and official_number != 'N/A':
+            on_text = f"(O.N. {official_number})"
+        else:
+            on_text = ""
+        
+        # Build title in USCG format
+        vessel_text = f"{investigation_title.upper()} {on_text}".strip()
         
         # Determine casualty type with injuries/fatalities
         casualty_type = self.project.incident_info.incident_type or "MARINE CASUALTY"

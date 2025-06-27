@@ -752,10 +752,18 @@ class IOAgent {
         document.getElementById('projectTitleInput').value = project.metadata.title || '';
         document.getElementById('investigatingOfficer').value = project.metadata.investigating_officer || '';
         document.getElementById('incidentDate').value = project.incident_info.incident_date ? 
-            new Date(project.incident_info.incident_date).toISOString().slice(0, 16) : '';
+            new Date(project.incident_info.incident_date).toISOString().slice(0, 10) : '';
         document.getElementById('incidentLocation').value = project.incident_info.location || '';
-        document.getElementById('incidentType').value = project.incident_info.incident_type || '';
-        document.getElementById('projectStatus').value = project.metadata.status || 'draft';
+        
+        // Handle official number
+        const officialNumber = project.incident_info.official_number || '';
+        const isNA = officialNumber === 'N/A' || !officialNumber;
+        
+        document.getElementById('officialNumber').value = isNA ? '' : officialNumber;
+        document.getElementById('officialNumberNA').checked = isNA;
+        
+        // Update UI state
+        toggleOfficialNumber();
     }
 
     async saveProjectInfo() {
@@ -764,14 +772,18 @@ class IOAgent {
             return;
         }
 
+        // Handle official number
+        const officialNumberInput = document.getElementById('officialNumber')?.value || '';
+        const isNA = document.getElementById('officialNumberNA')?.checked;
+        const officialNumber = isNA ? 'N/A' : officialNumberInput;
+
         const formData = {
             title: document.getElementById('projectTitleInput')?.value || '',
             investigating_officer: document.getElementById('investigatingOfficer')?.value || '',
-            status: document.getElementById('projectStatus')?.value || 'draft',
             incident_info: {
                 incident_date: document.getElementById('incidentDate')?.value || '',
                 location: document.getElementById('incidentLocation')?.value || '',
-                incident_type: document.getElementById('incidentType')?.value || ''
+                official_number: officialNumber
             }
         };
 
@@ -2120,6 +2132,21 @@ if (document.readyState === 'loading') {
         console.log('IOAgent initialized successfully (immediate)');
     } catch (error) {
         console.error('Failed to initialize IOAgent (immediate):', error);
+    }
+}
+
+// Global functions for UI interactions
+function toggleOfficialNumber() {
+    const checkbox = document.getElementById('officialNumberNA');
+    const input = document.getElementById('officialNumber');
+    
+    if (checkbox.checked) {
+        input.disabled = true;
+        input.value = '';
+        input.placeholder = 'N/A selected';
+    } else {
+        input.disabled = false;
+        input.placeholder = 'Enter official number';
     }
 }
 

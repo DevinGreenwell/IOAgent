@@ -145,6 +145,8 @@ def update_project(project_id):
                 project.incident_location = str(incident_data['location'])[:500] if incident_data['location'] else None
             if 'incident_type' in incident_data:
                 project.incident_type = str(incident_data['incident_type'])[:100] if incident_data['incident_type'] else None
+            if 'official_number' in incident_data:
+                project.official_number = str(incident_data['official_number'])[:50] if incident_data['official_number'] else None
         
         project.updated_at = datetime.utcnow()
         db.session.commit()
