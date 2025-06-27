@@ -1,0 +1,892 @@
+United States Coast Guard
+MISLE Incident Investigation Report
+For
+LEGACY - Crewmember Death
+On 01Aug2023 14:30:00 Z
+MISLE Activity Number: 7759207
+MISLE Case Number: 1362282
+Page 7 of  36 Case Number: 1362282
+I.III LOCATIONS
+Description Latitude Longitude
+Warren Channel, Alaska 55°59.2 N 133°50.6 W
+Petersburg Medical Center, Petersburg, AK 56°48.8 N 132°57.3 WI. PRELIMINARY INVESTIGATION – GENERAL INFORMATION
+On 01 August 2023 at approximately 0630 local time, a crew member aboard the commercial fishing 
+vessel LEGACY died while conducting commercial fishing operations in Warren Channel near Prince of 
+Wales Island, Alaska. 
+The crew of LEGACY was running out the net for the 3 rd set of the day. The crew member operating the 
+skiff, hereafter referred to as crew member 1, radioed to the master of LEGACY that the skiff was too 
+close to the rocks along the shoreline. The master attempted to use the net, already attached to the 
+seine skiff, as a tow line and proceeded to pull the skiff under LEGACY's power. The master noticed 
+that the skiff was beginning to heel so he instructed crew member 1 to release the net. Crew member 1 
+complied and actuated the quick release mechanism, which caused the skiff to pitch suddenly with the 
+loss of tension imparted by the net. The master radioed back to crew member 1 but received no 
+response. Soon thereafter, the master noticed crew member 1's blue raincoat floating in the water. The 
+master quickly maneuvered LEGACY to crew member 1's location and observed crew member 1 
+floating with arms and shoulders on top of the water with face submerged. Another crew member 
+aboard LEGACY recovered crew member 1 and commenced cardio pulmonary resuscitation (CPR). 
+Another nearby vessel arrived on scene and provided 2 automated external defibrillators (AED). The 
+crew attempted to utilize both AEDs to shock crew member 1, but each time the devices displayed "do 
+not shock" messages. The crew continued with CPR for approximately an hour and a half with no pulse 
+detected on crew member 1. Crew member 1's body was delivered to the Alaska State Troopers in 
+Wrangell, Alaska for transfer to the State of Alaska Medical Examiners Office. 
+As a result of its preliminary investigation, the Coast Guard has determined this incident is reportable 
+under 46 CFR 4.05-1. Level of investigative effort will be ENHANCED.
+I.I EXCEPTIONS
+Marine Casualty Investigation: No
+Criteria Met:  
+I.II DETAILS
+Incident Involves: Marine Casualty, Reportable
+Level Of Investigation: Informal
+IMO Classification: Routine
+US Classification: Routine
+Serious Marine Incident: Yes
+Was a Marine Board convened by Commandant? NoPollution Investigation: NA
+Criteria Met: 
+Personnel Investigation: NA
+Criteria Met: 
+I.IV INVOLVED PERSONNEL
+Name: BAUMAN, BENJAMIN A
+Team Lead: No
+Point Of Contact: No
+Page 8 of  36 Case Number: 1362282
+Role: Investigation Administration/Review
+Status: Assigned
+Department Id: 008338
+Type/Rank: Civilian/GS-13
+Agency Type/Agency: Federal - DHS/U. S. Coast Guard
+Source Id/Source:  2063303/Direct Access Personnel
+Comments: 
+Name: GREENWELL, DEVIN CARDIN
+Team Lead: Yes
+Point Of Contact: Yes
+Role: Investigation Administration/Review
+Status: Assigned
+Department Id: 003879
+Type/Rank: Officers w/ Prior Enl Exp/Military Officer (O3E)
+Agency Type/Agency: Federal - DHS/U. S. Coast Guard
+Source Id/Source:  2067775/Direct Access Personnel
+Comments: 
+Name: VORHOLT, ALLEN Richard
+Team Lead: No
+Point Of Contact: No
+Role: Investigation Administration/Review
+Status: Assigned
+Department Id: 003879
+Type/Rank: Officer/Military Officer (O3)
+Agency Type/Agency: Federal - DHS/U. S. Coast Guard
+Source Id/Source:  2097038/Direct Access Personnel
+Comments: 
+I.V INVOLVED TEAM
+Involved Vessels
+Name: LEGACY
+Flag: UNITED STATES
+Primary VIN: 530648
+Call Sign: WDH4623
+Damage Status: Undamaged
+Role: Involved in a Marine Casualty
+Classification, Type, Subtype: Fishing Vessel , Fish Catching Vessel , General
+Gross Tonnage:
+Net Tonnage:
+Dead Wt. Tonnage:
+Length: 48.4
+Home/Hailing Port: PETERSBURG
+Keel Laid Date:
+Delivery Date:
+Place of Construction: BLAINE, Washington , 
+Builder Name:
+Propulsion Type:
+Ahead HP:I.VI INVOLVED SUBJECTS
+Page 9 of  36 Case Number: 1362282
+Drug and Alcohol Testing.   The following people have been determined by the Coast Guard, 
+Law Enforcement Personnel, and/or the Marine Employer to have been directly involved in a 
+Serious Marine Incident as defined in 46 CFR 4.03-2:
+           CISNEY, JOE ; Subject of Investigation
+           KAVON, PAUL ; Subject of Investigation
+  Master:   JOE CISNEY
+Classification Society:
+Owner:
+Operator:
+Inspection Subchapter:
+Most Recent Vessel Inspection Activity:
+ 
+Involved Persons
+CISNEY, JOE
+Status: Not at Risk
+Role: Subject of Investigation
+Sex:
+Age:
+SSN: XXX-XX-5549
+Birth Date:
+Email Address:
+Phone Number  (Work): 907 772 4341
+Address (Home/Primary Residence): 994 REHBERG RD
+(GREENBANK WA 98253)
+PO BOX 349
+PETERSBURG, Alaska 99833
+UNITED STATES
+Comments:
+KAVON, PAUL
+Status: Dead
+Role: Subject of Investigation
+Sex:
+Age:
+SSN:
+Birth Date:
+Email Address:
+Phone Number :
+Address (Home/Primary Residence): PO BOX 1416
+PETERSBURGH, Alaska 99833
+UNITED STATES
+Comments:
+Involved Organizations: None
+Involved Facilities: None
+Involved Waterways
+COASTAL WATERS OF SOUTHEAST ALASKA AND BRITISH COLUMBIA
+Role: Location
+Description: Warren Channel, Alaska
+Involved Other Subjects
+RESTLESS II; Good Samaritan Vessel
+Page 10 of  36 Case Number: 1362282
+II.I LOCATIONS
+Description Latitude Longitude
+Warren Channel, Alaska 55°59.2 N 133°50.6 W
+Petersburg Medical Facility, Petersburg, AK 56°48.7 N 132°57.3 WII. INCIDENT INVESTIGATION – GENERAL INFORMATION
+On 01 August 2023, at approximately 0615  local time, the fishing vessel LEGACY was conducting seine 
+fishing operations near Point Warde in Southeast Alaska with four crew members aboard the main 
+vessel and one crew member, hereafter referred to as "crew member 1," operating the seine skiff. 
+During their third seine set of the day, the vessels were working to maneuver the deployed seine net 
+along the shoreline when the seine skiff ran aground on an outcrop of rocks. As the grounded skiff 
+began to heel over due to tension from the seine net, the captain instructed crew member 1 to release 
+the net using the quick release device. When the quick release mechanism was activated, the skiff 
+violently recoiled from the sudden change in tension, ejecting crew member 1 into the water.
+The LEGACY crew attempted recovery of crew member 1  as quickly as possible, estimating an in-water 
+time of no more than five minutes. When they reached him, crew member 1 was face down and 
+unresponsive, not wearing a life jacket despite one being available in the skiff. The crew immediately 
+began cardiopulmonary resuscitation (CPR) and continued resuscitation efforts for approximately one 
+and a half hours, including the use of automated external defibrillators provided by a Good Samaritan 
+vessel. Emergency medical services transported crew member 1 to Wrangell Medical Center, where he 
+was pronounced deceased.
+As a result of its investigation, the Coast Guard determined that the initiating event for this casualty was 
+the seine skiff running aground on the rock outcrop. Causal factors that contributed to this casualty 
+include: (1) crew member 1's limited familiarity with local fishing operations, and (2) the failure to 
+maintain adequate distance from shore obstacles, (3) the absence of tension-dampening release 
+systems that could have prevented the violent vessel recoil when the emergency net release was 
+activated, and (4) Crew member 1's decision not to wear the available personal flotation device during 
+skiff operations, which significantly reduced survival chances after entering the water.
+Personnel Casualty Summary
+Total Missing = 0
+Total Dead = 1
+Total Injured = 0
+Total At Risk, Not Injured = 0
+Total People At Risk = 1
+Vessel(s) Status Summary
+Actual Total Loss = 0
+Total Constructive Loss Salvaged = 0
+Total Constructive Loss Unsalvaged = 0
+Damaged = 0
+Undamaged = 1
+Property Damage Summary
+Vessel(s) = $ 0
+Cargo = $ 0
+Facility(s) = $ 0
+Other =  $ 0
+* Includes estimates 
+Page 11 of  36 Case Number: 1362282
+II.II INVOLVED PERSONNEL
+Name: BAUMAN, BENJAMIN A
+Team Lead: No
+Point Of Contact: No
+Role: Investigation Support
+Status: Assigned
+Department Id: 008338
+Type/Rank: Civilian - GS-13
+Agency Type/Agency: Federal - DHS/Federal - DHS
+Source Id/Source:  2063303/Direct Access Personnel
+Comments: 
+Name: GREENWELL, DEVIN CARDIN
+Team Lead: Yes
+Point Of Contact: Yes
+Role: Investigating Officer - Field Investigation
+Status: Assigned
+Department Id: 003879
+Type/Rank: Officers w/ Prior Enl Exp - Military Officer (O3E)
+Agency Type/Agency: Federal - DHS/Federal - DHS
+Source Id/Source:  2067775/Direct Access Personnel
+Comments: 
+Name: VORHOLT, ALLEN Richard
+Team Lead: No
+Point Of Contact: No
+Role: Investigating Officer - Field Investigation
+Status: Assigned
+Department Id: 003879
+Type/Rank: Officer - Military Officer (O3)
+Agency Type/Agency: Federal - DHS/Federal - DHS
+Source Id/Source:  2097038/Direct Access Personnel
+Comments: 
+II.III INVOLVED TEAM
+Involved Vessels
+Name: LEGACY
+Flag: UNITED STATES
+Primary VIN: 530648
+Call Sign: WDH4623
+Damage Status: Undamaged
+Role: Involved in a Marine Casualty
+Classification, Type, Subtype: Fishing Vessel , Fish Catching Vessel , General
+Gross Tonnage:
+Net Tonnage:
+Dead Wt. Tonnage:
+Length: 48.4
+Home/Hailing Port: PETERSBURGII.IV INVOLVED SUBJECTS
+Page 12 of  36 Case Number: 1362282
+Keel Laid Date:
+Delivery Date:
+Place of Construction: BLAINE, Washington , 
+Builder Name:
+Propulsion Type:
+Ahead HP:
+Master:   JOE CISNEY
+Classification Society:
+Owner:
+Operator:
+Inspection Subchapter:
+Most Recent Vessel Inspection Activity:
+ 
+Involved Persons
+Cisney, Jack
+Status: Not at Risk
+Role: Subject of Investigation
+Sex: Male
+Age:
+SSN:
+Birth Date:
+Email Address:
+Phone Number :
+Address:
+Comments:
+Cisney, Jennifer
+Status: Not at Risk
+Role: Subject of Investigation
+Sex: Female
+Age:
+SSN:
+Birth Date:
+Email Address:
+Phone Number :
+Address:
+Comments:
+CISNEY, JOE
+Status: Not at Risk
+Role: Subject of Investigation
+Sex:
+Age:
+SSN: XXX-XX-5549
+Birth Date:
+Email Address:
+Phone Number  (Work): 907 772 4341
+Address (Home/Primary Residence): 994 REHBERG RD
+(GREENBANK WA 98253)
+PO BOX 349
+PETERSBURG, Alaska 99833
+UNITED STATES
+Comments:
+KAVON, PAUL
+Status: Dead
+Role: Subject of Investigation
+Sex:
+Age:
+SSN:
+Birth Date:
+Email Address:
+Phone Number :
+Page 13 of  36 Case Number: 1362282
+II.V EVIDENCEDrug and Alcohol Testing.   The following people have been determined by the Coast Guard, 
+Law Enforcement Personnel, and/or the Marine Employer to have been directly involved in a 
+Serious Marine Incident as defined in 46 CFR 4.03-2:
+           CISNEY, JOE; Subject of Investigation
+           KAVON, PAUL ; Subject of Investigation
+           Cisney, Jack ; Subject of Investigation
+           Cisney, Jennifer ; Subject of Investigation
+           Shea, John ; Subject of Investigation
+  Address (Home/Primary Residence): PO BOX 1416
+PETERSBURGH, Alaska 99833
+UNITED STATES
+Comments: NOK: Seria Cortez (dauther) 805-760-4509
+PASCHALL, STEVEN
+Status: Not at Risk
+Role: Medical Review Officer
+Sex: Male
+Age: 71
+SSN: XXX-XX-7003
+Birth Date: 30Mar1954
+Email Address: info@drugfreeworkplace.com
+Phone Number  (Work): 317-547-8620
+Address (Work): 7160 GRAHAM ROAD
+INDIANAPOLIS, Indiana 46250
+UNITED STATES
+Comments:
+Shea, John
+Status: Not at Risk
+Role: Subject of Investigation
+Sex: Male
+Age:
+SSN:
+Birth Date:
+Email Address:
+Phone Number :
+Address:
+Comments:
+Involved Organizations: None
+Involved Facilities: None
+Involved Waterways
+COASTAL WATERS OF SOUTHEAST ALASKA AND BRITISH COLUMBIA
+Role: Location
+Description: Warren Channel, Alaska
+Involved Other Subjects
+RESTLESS II; Good Samaritan Vessel
+ 
+Page 14 of  36 Case Number: 1362282
+Control Number: 7759207 - MISLE - 0
+           Description: MISLE Notification #1125039 for a report of an incident received by VHF/FM 
+(Channel 16) voice
+           Evidence Type: Misle Notification
+           Collection Information
+                      Date/Time:
+                      Location:
+                      Collected By:02Aug2023 23:31:25 Z
+Sector Southeast Alaska
+ALLEN VORHOLT; U. S. Coast Guard
+Attachments
+Control Number: 7759207-DCG-001
+           Description: Autopsy Report
+           Evidence Type: Standard
+           Collection Information
+                      Date/Time:
+                      Location:
+                      Collected By:09Apr2025 16:33:37 Z
+Sector Southeast Alaska
+DEVIN GREENWELL; U. S. Coast Guard
+Attachments
+           2023-01459 Autopsy.pdf_safe; Other;
+                      09Apr2025 16:38:01 Z; No
+Control Number: 7759207-DCG-002
+           Description: Toxicology Report
+           Evidence Type: Standard
+           Collection Information
+                      Date/Time:
+                      Location:
+                      Collected By:09Apr2025 16:36:24 Z
+Sector Southeast Alaska
+DEVIN GREENWELL; U. S. Coast Guard
+Attachments
+           2023-01459_Toxicology; Other;
+                      09Apr2025 16:38:32 Z; No
+Control Number: 7759207-DCG-003
+           Description: CG-2692, CG-2692B, CG-2692C
+           Evidence Type: Standard
+           Collection Information
+                      Date/Time:
+                      Location:
+                      Collected By:14Apr2025 18:43:07 Z
+DEVIN GREENWELL; U. S. Coast Guard
+Attachments
+           LEGACY 2692; CG-2692-Rpt of Marine, Comm Dive, or OCS Casualty;
+                      06May2025 18:44:28 Z; No
+           LEGACY 2692B; CG-2692B-Rpt of Mandatory Chem Test Following SMI;
+                      All negative; 06May2025 18:45:55 Z; No
+           LEGACY 2692C; CG-2692C-Personnel Casualty Addendum;
+                      06May2025 18:46:11 Z; No
+Page 15 of  36 Case Number: 1362282
+Control Number: 7759207-DCG-004
+           Description: DOT Test Results (all)
+           Evidence Type: Standard
+           Collection Information
+                      Date/Time:
+                      Location:
+                      Collected By:10Aug2025 18:47:20 Z
+ALLEN VORHOLT; U. S. Coast Guard
+Attachments
+           Test Results - Jack Cisney; Documentary Evidence;
+                      negative; 06May2025 18:55:03 Z; No
+           Test Results - Jennifer Cisney; Documentary Evidence;
+                      negative-dilute; 06May2025 18:55:38 Z; No
+           Test Results - Joe Cisney; Documentary Evidence;
+                      negative; 06May2025 18:56:00 Z; No
+           Test Results - John Shea; Documentary Evidence;
+                      negative; 06May2025 18:56:33 Z; No
+Control Number: 7759207-DCG-005
+           Description: Wrangell PD Report
+           Evidence Type: Standard
+           Collection Information
+                      Date/Time:
+                      Location:
+                      Collected By:14Apr2025 18:59:21 Z
+DEVIN GREENWELL; U. S. Coast Guard
+Attachments
+Control Number: 7759207-DCG-006
+           Description: Investigation Summary provided by LT Vorholt
+           Evidence Type: Standard
+           Collection Information
+                      Date/Time:
+                      Location:
+                      Collected By:26Apr2025 19:01:58 Z
+DEVIN GREENWELL; U. S. Coast Guard
+Attachments
+           LEGACY Investigation Summary; Documentary Evidence;
+                      Full summary provided by Investigating Officer, LT Allen Vorholt; 06May2025 
+19:05:40 Z ; No
+Page 16 of  36 Case Number: 1362282
+Control Number: 7759207-DCG-007
+           Description: Witness Interview
+           Evidence Type: Standard
+           Collection Information
+                      Date/Time:
+                      Location:
+                      Collected By:03Aug2023 23:14:31 Z
+DEVIN GREENWELL; U. S. Coast Guard
+Attachments
+           Officer Damon Roher P-1; Other;
+                      Police Report; 03Jun2025 23:18:21 Z; No
+01Aug2023 08:00:00 Z to 01Aug2023 08:00:00 Z (Estimated): The LEGACY, a 48-foot fishing vessel, 
+was engaged in seine fishing in the vicinity of Point Warde, AK. Legacy was built in 1971 and had on 
+board a crew of five the day of this incident.
+Timeline Type:
+Timeline Subtype:
+Location:Condition
+Vessel - Material/Equipment Condition
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+LEGACY Vessel Undamaged Involved in a Marine Casualty
+System: Operations/Management
+Subsystem: Vessel Activity
+Component: Other
+Cite: 
+Involves CG Approved Equipment : No
+Security Violation: No
+Deficiency: No
+01Aug2023 08:01:00 Z to 01Aug2023 08:01:00 Z (Estimated): Crew member 1 was a 64 year old male 
+who had a previous work history with the Captain of LEGACY. He was solicited by the Captain to assist 
+with the 2023 fishing season due to his competence, knowledge, and ability to work the seine skiff 
+autonomously. At the time of the incident, he was on several medications and medical treatments, 
+including those used to treat hypertension, diabetes, insomnia and sleep apnea. He was reportedly 
+struggling with the physical demands of deck work leading up to the incident.
+Timeline Type:
+Timeline Subtype:
+Location:Condition
+Person - Person Condition
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and DetailsII.VI TIMELINE
+Page 17 of  36 Case Number: 1362282
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+System: Personnel
+Subsystem: Work Experience
+Component: Experience in Current Type of Position
+Cite: 
+Involves CG Approved Equipment : No
+Security Violation: No
+Deficiency: No
+01Aug2023 08:06:00 Z to 01Aug2025 08:06:00 Z (Estimated): The seine net was fully deployed in the 
+water and secured on either end to the LEGACY and the seine skiff. There was a quick release device 
+installed to release the net in case of an emergency.
+Timeline Type:
+Timeline Subtype:
+Location:Condition
+Environment - Working Environment
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+LEGACY Vessel Undamaged Involved in a Marine Casualty
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+01Aug2023 14:00:05 Z to 01Aug2023 14:00:05 Z (Estimated): Crew member 1 navigated the skiff in 
+parallel with the LEGACY while trying to stay near the shoreline and away from shoal water.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Bridge Operations - Shiphandling
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+01Aug2023 14:15:20 Z to 01Aug2023 14:15:20 Z (Estimated): Crew member 1 maintained radio 
+communications with the LEGACY captain throughout operations, relaying that the skiff was too close to 
+shore and in danger of running aground on an outcrop of rocks. He requested the captain use the 
+attached net to pull the siene skiff to port, away from the shoreline.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Communications
+Known
+Page 18 of  36 Case Number: 1362282
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+JOE CISNEY Person Not at Risk Subject of Investigation
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+01Aug2023 14:15:30 Z to 01Aug2023 14:15:30 Z (Estimated): The captain quickly maneuvered the 
+LEGACY away from the shoreline as requested in an attempt to direct the seine away from running 
+aground.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Bridge Operations - Shiphandling
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+JOE CISNEY Person Not at Risk Subject of Investigation
+01Aug2023 14:15:40 Z to 01Aug2023 14:15:40 Z (Estimated): The seine skiff with crew member 1 
+onboard ran aground on the outcrop of rocks near the shoreline.
+Timeline Type:
+Timeline Subtype:
+Location:Event
+Grounding
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+LEGACY Vessel Undamaged Involved in a Marine Casualty
+Type Of Grounding: Hard
+Type Of Bottom: Rock
+Charted Depth Of Water (feet): 59
+Actual Depth Of Water (feet): 60
+Recorded Depth Of Water (feet): 60
+Part Of Vessel Aground: Centerline Midships
+Additional Information: 
+Page 19 of  36 Case Number: 1362282
+01Aug2023 14:15:55 Z to 01Aug2023 14:15:55 Z (Estimated): The net connection between LEGACY 
+and its skiff was under tension due to the skiff being hard aground and the LEGACY continuing to 
+maneuver away from it.
+Timeline Type:
+Timeline Subtype:
+Location:Condition
+Environment - Working Environment
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+LEGACY Vessel Undamaged Involved in a Marine Casualty
+01Aug2023 14:16:00 Z to 01Aug2023 14:16:00 Z (Estimated): The captain radioed crew member 1 to 
+"let go of the net" when he noticed the skiff beginning to heel from the force of the LEGACY pulling on it.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Communications
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+JOE CISNEY Person Not at Risk Subject of Investigation
+01Aug2023 14:16:05 Z to 01Aug2023 14:16:05 Z (Estimated): Crew member 1 used the quick release 
+device on the skiff-end of the seine net, separating the seine from the net under tension.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Safety and Emergency Operations - General Safety
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+01Aug2023 14:16:10 Z to 01Aug2023 14:16:10 Z (Estimated): Crew member 1 was ejected into the 
+water from the skiff after the vessel recoiled from tension release.
+Timeline Type:
+Timeline Subtype:
+Location:Event
+Personnel Ejected from Vessel
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Page 20 of  36 Case Number: 1362282
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+01Aug2023 14:16:30 Z to 01Aug2023 14:16:30 Z (Estimated): The Captain maneuvered the LEGACY to 
+recover crew member 1 after unsuccessul radio attempts.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Bridge Operations - Shiphandling
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+JOE CISNEY Person Not at Risk Subject of Investigation
+01Aug2023 14:20:00 Z to 01Aug2023 14:20:00 Z (Estimated): Crew member 1 was recovered face down 
+in the water with arms and shoulders floating on the surface of the water.
+Timeline Type:
+Timeline Subtype:
+Location:Condition
+Person - Person Condition
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+System: Personnel
+Subsystem: Physical Condition
+Component: Other physical capability
+Cite: 
+Involves CG Approved Equipment : No
+Security Violation: No
+Deficiency: No
+01Aug2023 14:20:10 Z to 01Aug2023 14:20:10 Z (Estimated): Crew member 2 administered chest 
+compressions and rescue breaths to Crew member 1 upon recovery from water.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Safety and Emergency Operations - Person Overboard Procedures
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Page 21 of  36 Case Number: 1362282
+Subject(s) and Details
+Name Type Status Role
+John Shea Person Not at Risk Subject of Investigation
+01Aug2023 14:30:00 Z to 01Aug2023 14:31:00 Z (Estimated): Crew member 1 died due to drowing.
+Timeline Type:
+Timeline Subtype:
+Location:Event
+Personnel Casualty - Death
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+Nature Of Event Causing Death: Noncontact Injury- Other
+Cause Of Death: Drowning
+Casualty Involved Diving: No
+02Aug2023 16:00:00 Z to 02Aug2023 16:00:00 Z (Estimated): Captain of LEGACY submitted all 
+required CG-2692 forms.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Incident/Casualty Reporting/Notification - CG-2692
+Known
+Primary Location: Yes
+Description: Warren Channel, Alaska
+Latitude:  55°59.2 N Longitude: 133°50.6 W
+Subject(s) and Details
+Name Type Status Role
+JOE CISNEY Person Not at Risk Subject of Investigation
+02Aug2023 17:00:00 Z to 02Aug2023 20:00:00 Z (Estimated): All crew members of LEGACY were 
+directed by the marine employer to complete post-casualty drug testing. All results returned as negative.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Drug/Alcohol Testing - DOT Drug Testing
+Known
+Primary Location: No
+Description: Petersburg Medical Facility, Petersburg, AK
+Latitude:  56°48.7 N Longitude: 132°57.3 W
+Subject(s) and Details
+Name Type Status Role
+JOE CISNEY Person Not at Risk Subject of Investigation
+Reason Directed To Provide Sample(s):  Post-casualty
+Page 22 of  36 Case Number: 1362282
+Direction To Provide Sample(s)
+Date/Time Directed: 01Aug2023 16:00 Z
+Means Of Direction: Marine Employer
+Organization Directing Chemical Test Sample: Marine Employer
+Description: Post-Casualty
+Mariner Directed To Get A DOT Drug Test: Yes
+Chemical Test Sample Provided: Yes
+Page 23 of  36 Case Number: 1362282
+18Aug2023 19:14:00 Z to 18Aug2023 20:00:00 Z (Estimated): Post-mortem alcohol testing was 
+performed on crew member 1, the findings of which were negative.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Drug/Alcohol Testing - Alcohol Testing
+Known
+Primary Location: No
+Description: Petersburg Medical Facility, Petersburg, AK
+Latitude:  56°48.7 N Longitude: 132°57.3 W
+Subject(s) and Details
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+Reason Directed To Provide Sample(s):  Post-casualty
+Direction To Provide Sample(s)
+Date/Time Directed: 18Aug2023 19:14 Z
+Means Of Direction: Medial Examiner
+Organization Directing Chemical Test Sample: Other Law Enforcement Agency
+Description: State of Alaska Medical Examiners Office
+Chemical Test Sample(s) Provided: Yes
+Method Of Analysis: Blood Test
+Instrument Used For Analysis: Headspace Gas Chromatography
+Date/Time Results Obtained: 18Aug2023 19:14 Z
+Sample Test Results: Alcohol Not Detected
+Blood Alcohol Content (BAC): 
+Laboratory/Individual Conducting Test: NMS Labs
+Description Of Sample Analysis: Negative
+Irregularities In The Analysis Of The Sample: No
+18Aug2023 19:14:00 Z to 18Aug2023 20:00:00 Z (Estimated): Post-mortem drug testing was performed 
+on crew member 1, the findings of which were negative.
+Timeline Type:
+Timeline Subtype:
+Location:Action
+Drug/Alcohol Testing - Non-DOT Drug Testing
+Known
+Primary Location: No
+Description: Petersburg Medical Facility, Petersburg, AK
+Latitude:  56°48.7 N Longitude: 132°57.3 W
+Subject(s) and Details
+Name Type Status Role
+PAUL KAVON Person Dead Subject of Investigation
+II.VII CORRESPONDENCE
+Page 31 of  36 Case Number: 1362282
+II.VIII CONCLUSIONS – PART 1. CAUSE
+Initiating Event:
+Grounding (01Aug2023 14:15:40 Z)
+Failures of Defense Against Subsequent Events in the Incident
+Subsequent Event # 1:
+Personnel Ejected from Vessel (01Aug2023 14:16:10 Z)
+Defense Factors
+Missing - Absence of tension dampening in the quick release system.
+The skiff was equipped with a standard mechanical quick release device that did not 
+compensate for line under tension. It's reasonable to believe if the device had a tension 
+dampening design, the vessel may not have recoiled against the release, thus 
+preventing crew member 1 from being ejected from the skiff.
+Condition/Environment - Working Environment(01Aug2023 14:15:55Z); 
+Warren Channel, Alaska; The net connection between LEGACY and its skiff 
+was under tension due to the skiff being hard aground and the LEGACY 
+continuing to maneuver away from it. ; LEGACY
+Subsequent Event # 2:
+Personnel Casualty - Death (01Aug2023 14:30:00 Z)Precondition
+Mismatch - Between Person and Environment - Limited familiarity with local fishing operations.
+     Crew member 1 lived out of the area and was not consistently engaged in commercial fishing 
+operations before this incident. It is reasonable to believe his extended absence from both area and 
+trade may have affected his judgement and reaction to elevated risk.      
+Condition/Person - Person Condition (01Aug2023 08:01:00 Z); Warren Channel, Alaska; Crew 
+member 1 was a 64 year old male who had a previous work history with the Captain of LEGACY. 
+He was solicited by the Captain to assist with the 2023 fishing season due to his competence, 
+knowledge, and ability to work the seine skiff autonomously. At the time of the incident, he was on 
+several medications and medical treatments, including those used to treat hypertension, diabetes, 
+insomnia and sleep apnea. He was reportedly struggling with the physical demands of deck work 
+leading up to the incident. ; PAUL KAVON
+Production
+Execution Error – Attention Failure - Failure to maintain adequate distance from shore obstacles.
+     Crew member 1 navigated the skiff too close to the shoreline, and was unable to react quickly 
+enough to avoid running aground. It is reasonable to believe if the skiff had maneuvered further away 
+from hazards, it may not have run aground.      
+Action/Bridge Operations - Shiphandling (01Aug2023 14:00:05 Z); Warren Channel, Alaska; Crew 
+member 1 navigated the skiff in parallel with the LEGACY while trying to stay near the shoreline 
+and away from shoal water. ; PAUL KAVON
+Action/Communications (01Aug2023 14:15:20 Z); Warren Channel, Alaska; Crew member 1 
+maintained radio communications with the LEGACY captain throughout operations, relaying that the 
+skiff was too close to shore and in danger of running aground on an outcrop of rocks. He requested 
+the captain use the attached net to pull the siene skiff to port, away from the shoreline.; JOE 
+CISNEY, PAUL KAVON
+Action/Bridge Operations - Shiphandling (01Aug2023 14:15:30 Z); Warren Channel, Alaska; The 
+captain quickly maneuvered the LEGACY away from the shoreline as requested in an attempt to 
+direct the seine away from running aground. ; JOE CISNEY
+Page 32 of  36 Case Number: 1362282
+II.IX CONCLUSIONS – PART 2. ENFORCEMENT REFERRALS
+None
+II.X SAFETY RECOMMENDATIONS
+Safety Alerts:Defense Factors
+Missing - Missing personal flotation device during skiff operations.
+Although there was a life jacket present in the skiff, Crew member 1 was not wearing it 
+during skiff operations. It is reasonable to believe if Crew member 1 had been wearing 
+the life jacket, it may have prevented the drowning.
+Condition/Person - Person Condition(01Aug2023 14:20:00Z); Warren Channel, 
+Alaska; Crew member 1 was recovered face down in the water with arms and 
+shoulders floating on the surface of the water. ; PAUL KAVON
+Case History Report
+25JUN2025 13:06Z
+---Administrative Data---
+---Incident Data---
+lMISLE Activity Id: 7757807 Status: Closed - Agency Action Complete Start Date: 01AUG2023
+Type:  Incident Management
+Originating Unit: Sector Southeast Alaska Owning Unit: Sector Southeast Alaska
+Notification Method: VHF/FM (Channel 16) voice
+Incident Summary:  010730U AUG 23: SCC Juneau received notification from the F/V LEGACY that one 
+of their crew members had fallen into the water off the sein skiff that the member was operating at 
+0635 local. The patient was reported to be unresponsive, and CPR was being administered. A good 
+Sam vessel in the area responded to the incident and delivered two AEDs. Both AEDs returned a "do 
+not shock" message and to continue with CPR. SCC contacted Wrangell SAR and ASTs to initiate 
+response as well as launched a helo asset from AIRSTA Sitka. SCC briefed DFS on the situation and 
+conferenced in another crew member from the LEGACY, who was a prior Marine Corpsman and 
+directing medical response to the patient on scene. The Corpsman confirmed there was no pulse, and 
+the patient remains unresponsive after 1 hour of CPR. DFS recommended to cease CPR as all Other Activities (Non IMA or Non Sortie) in Case:
+MISLE Activity Id: 7759196 Enf Activity Id: Type: Preliminary Investigation
+MISLE Activity Id: 7759207 Enf Activity Id: Type: Incident InvestigationMISLE Case Id:  1362282  Open Date: 01AUG2023 15:28Z
+Status: Closed - Agency Action Complete
+Title: SAR/MS - MEDEVAC/DEATH IN AOR - F/V LEGACY - WRANGELL - BRADFIELD CANAL
+Owning Unit: Sector Southeast Alaska Originating Unit:  Sector Southeast Alaska
+Page 33 of  36 Case Number: 1362282
+information suggested that further medical treatment would be futile. The good Sam departed the 
+scene and the F/V LEGACY began to return to Wrangell and plans to meet Wrangel SAR in route to 
+transfer the patient. SCC Juneau notified MSD Ketchikan. MSD Ketchikan will make marine casualty 
+determination. Case Closed for SAR; Case Pends for MS.
+lMISLE Activity Id: 7757815 Status: Closed - Agency Action Complete Start Date: 01AUG2023
+Type:  Incident Management
+Originating Unit: District 17 (dr) Owning Unit: District 17 (dr)
+Notification Method: 
+Incident Summary:  Sector SE AK received a report of a 63 YOM who fell overboard off of F/V Legacy, 
+was recovered, and seems to be experiencing cardiac arrest IVO Bradfield Canal. Sector SE AK 
+requested a helo and D17 granted the helo. While helo was enroute, SEC SE AK requested to speak 
+with the DFS (LCDR Eastman). LCDR Eastman recommended the helo does not conduct a hoist and to 
+stop CPR.
+Vessel Name: LEGACY Call Sign: 
+Primary VIN: 530648 Gross Tonnage: 
+Role: Approx. Length: 48.4 Feet
+Flag: UNITED STATES Year Completed: 1971
+Service: Commercial Fishing Vessel Propulsion Type: 
+Damage Status: 
+Vessel Name: LEGACY Call Sign: 
+Primary VIN: 530648 Gross Tonnage: 
+Role: Involved in a Marine Casualty Approx. Length: 48.4 Feet
+Flag: UNITED STATES Year Completed: 1971
+Service: Commercial Fishing Vessel Propulsion Type: 
+Damage Status: Undamaged
+Person Name: Unknown Reporting Party, M/V Relentless Status: 
+Role: Birth Date: 
+Identification(s)
+Person Name: Unknown Reporting Source, M/V Relentless Status: 
+Role: Birth Date: 
+Identification(s)
+Person Name: KAVON, PAUL Status: Dead
+Role: Subject of Investigation Birth Date: 
+Identification(s)
+IPN/COFR #: IP99038065
+Person Name: KAVON, PAUL Status: Dead
+Role: Subject of Investigation Birth Date: 
+Identification(s)
+IPN/COFR #: IP99038065
+Person Name: PASCHALL, STEVEN Status: Not at Risk---Involved Subjects---
+Page 34 of  36 Case Number: 1362282

@@ -484,11 +484,36 @@ class USCGROIGenerator:
         subheading = self.document.add_paragraph()
         subheading.add_run("4.1. The Incident:").bold = True
         
-        # Generate numbered findings from timeline
-        finding_number = 1
-        for finding in self.project.roi_document.findings_of_fact:
-            para = self.document.add_paragraph(f"4.1.{finding_number}. {finding.statement}")
-            finding_number += 1
+        # Generate professional findings from timeline using AI
+        if self.project.roi_document.findings_of_fact:
+            # Use existing findings if available
+            finding_number = 1
+            for finding in self.project.roi_document.findings_of_fact:
+                para = self.document.add_paragraph(f"4.1.{finding_number}. {finding.statement}")
+                finding_number += 1
+        else:
+            # Generate findings from timeline using AI
+            from src.models.ai_assistant import AIAssistant
+            ai_assistant = AIAssistant()
+            
+            if ai_assistant.client and self.project.timeline:
+                # Convert timeline entries to appropriate format
+                timeline_objects = []
+                for entry in self.project.timeline:
+                    timeline_objects.append(entry)
+                
+                evidence_objects = []
+                for evidence in self.project.evidence_library:
+                    evidence_objects.append(evidence)
+                
+                findings_statements = ai_assistant.generate_findings_of_fact_from_timeline(timeline_objects, evidence_objects)
+                
+                # Add AI-generated findings
+                for finding_statement in findings_statements:
+                    para = self.document.add_paragraph(finding_statement)
+            else:
+                # Fallback to basic timeline conversion
+                self._generate_basic_findings_from_timeline()
         
         # 4.2 Additional/Supporting Information (if needed)
         if self.project.evidence_library:
@@ -503,6 +528,28 @@ class USCGROIGenerator:
                 )
         
         self.document.add_paragraph()  # Section spacing
+    
+    def _generate_basic_findings_from_timeline(self):
+        """Fallback method for basic timeline to findings conversion"""
+        if not self.project.timeline:
+            self.document.add_paragraph("4.1.1. No timeline entries have been documented for this incident.")
+            return
+        
+        # Sort timeline by timestamp
+        sorted_timeline = sorted(
+            [entry for entry in self.project.timeline if entry.timestamp],
+            key=lambda x: x.timestamp
+        )
+        
+        finding_number = 1
+        for entry in sorted_timeline:
+            # Format timestamp in USCG style
+            time_str = self._format_date(entry.timestamp) + f", at {self._format_time(entry.timestamp)}"
+            
+            # Create professional finding statement
+            finding_text = f"4.1.{finding_number}. On {time_str}, {entry.description}"
+            self.document.add_paragraph(finding_text)
+            finding_number += 1
     
     def _generate_section_5_analysis(self):
         """Section 5: Analysis - THE MOST CRITICAL SECTION OF THE ROI"""

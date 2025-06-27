@@ -103,6 +103,29 @@ class AIAssistant:
         except Exception as e:
             raise RuntimeError(f"OpenAI API call failed: {e}")
     
+    def generate_findings_of_fact_from_timeline(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> List[str]:
+        """Generate professional findings of fact statements from timeline entries"""
+        if not self.client:
+            return []
+        
+        prompt = self._create_findings_generation_prompt(timeline, evidence)
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="o3-2025-04-16",
+                messages=[
+                    {"role": "system", "content": "You are an expert USCG marine casualty investigator with extensive experience writing professional Reports of Investigation. You excel at converting timeline data into polished, professional findings of fact that meet USCG standards and read like expert investigative reports."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            findings = self._parse_findings_statements(response.choices[0].message.content)
+            return findings
+            
+        except Exception as e:
+            print(f"Error generating findings of fact: {e}")
+            return []
+
     def improve_analysis_text(self, analysis_text: str, supporting_findings: List[Finding]) -> str:
         """Improve analysis section text"""
         if not self.client:
@@ -305,6 +328,49 @@ CRITICAL REQUIREMENTS:
    - "Industry standards would require..."
 """
     
+    def _create_findings_generation_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
+        """Create prompt for generating professional findings of fact from timeline"""
+        timeline_text = "\n".join([
+            f"- {entry.timestamp.strftime('%B %d, %Y, at %H%M') if entry.timestamp else 'Time unknown'}: {entry.type.title()} - {entry.description}"
+            for entry in sorted(timeline, key=lambda x: x.timestamp or datetime.min)
+        ])
+        
+        evidence_text = "\n".join([
+            f"- {ev.type}: {ev.description} (Source: {ev.source})"
+            for ev in evidence
+        ])
+        
+        return f"""
+Convert this timeline and evidence into professional USCG "Findings of Fact" statements for a Report of Investigation.
+
+TIMELINE ENTRIES:
+{timeline_text}
+
+SUPPORTING EVIDENCE:
+{evidence_text}
+
+REQUIREMENTS:
+1. Write as numbered statements (4.1.1, 4.1.2, etc.)
+2. Use professional, objective language appropriate for legal documents
+3. Include specific times, dates, locations, and measurements when available
+4. Follow chronological order
+5. Each statement should be a complete factual assertion supported by evidence
+6. Use past tense throughout
+7. Include vessel details, personnel information, and operational context
+8. Write as coherent narrative, not bullet points
+9. Ensure each finding can stand alone as a factual statement
+
+STYLE EXAMPLES:
+- "On August 1, 2023, at 0500, the commercial fishing vessel departed New Bedford, Massachusetts, with a crew of five for a planned 10-day fishing trip."
+- "At 0530, the vessel cleared the harbor and set course southeast toward fishing grounds approximately 200 nautical miles from port."
+- "Weather conditions at the time of departure included light winds from the southwest at 5-10 knots and calm seas."
+
+Please provide the findings of fact as a JSON array of strings:
+["4.1.1. [First finding statement]", "4.1.2. [Second finding statement]", ...]
+
+Focus on creating professional, detailed findings that establish the factual foundation for the investigation.
+"""
+    
     def _create_analysis_improvement_prompt(self, analysis_text: str, supporting_findings: List[Finding]) -> str:
         """Create prompt for improving analysis text"""
         findings_text = "\n".join([
@@ -415,6 +481,30 @@ Please identify any consistency issues in JSON format:
         except:
             pass
         return []
+    
+    def _parse_findings_statements(self, response_text: str) -> List[str]:
+        """Parse findings of fact statements from AI response"""
+        try:
+            # Try to extract JSON array from response
+            start = response_text.find('[')
+            end = response_text.rfind(']') + 1
+            if start >= 0 and end > start:
+                json_text = response_text[start:end]
+                return json.loads(json_text)
+        except:
+            pass
+        
+        # Fallback: parse line by line
+        findings = []
+        lines = response_text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line and ('4.1.' in line or '4.2.' in line):
+                # Remove any leading bullets or quotes
+                line = line.strip('"\'•-*')
+                findings.append(line)
+        
+        return findings if findings else ["4.1.1. Timeline data requires further development to generate findings."]
     
     def _parse_causal_factors(self, response_text: str) -> List[Dict[str, Any]]:
         """Parse causal factors from AI response"""

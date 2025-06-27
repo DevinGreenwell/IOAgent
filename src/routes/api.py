@@ -611,6 +611,66 @@ def update_causal_factor(project_id, factor_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': f'Failed to update causal factor: {str(e)}'}), 500
 
+@api_bp.route('/projects/<project_id>/generate-findings', methods=['POST'])
+@jwt_required()
+def generate_findings_from_timeline(project_id):
+    """Generate professional findings of fact from timeline"""
+    try:
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        
+        # Get timeline entries
+        timeline_entries = project.timeline_entries
+        if not timeline_entries:
+            return jsonify({'success': False, 'error': 'No timeline entries found'}), 400
+        
+        # Convert to wrapper objects for AI processing
+        class TimelineEntryWrapper:
+            def __init__(self, entry_dict):
+                self.timestamp = datetime.fromisoformat(entry_dict['timestamp']) if entry_dict.get('timestamp') else datetime.utcnow()
+                self.type = entry_dict.get('type', 'event')
+                self.description = entry_dict.get('description', '')
+                self.id = entry_dict.get('id', '')
+        
+        class EvidenceWrapper:
+            def __init__(self, evidence_dict):
+                self.type = evidence_dict.get('type', 'document')
+                self.description = evidence_dict.get('description', '')
+                self.source = evidence_dict.get('source', 'user_upload')
+        
+        timeline_objects = [TimelineEntryWrapper(entry.to_dict()) for entry in timeline_entries]
+        evidence_objects = [EvidenceWrapper(item.to_dict()) for item in project.evidence_items]
+        
+        # Use AI to generate professional findings
+        findings_statements = []
+        if ai_assistant.client:
+            try:
+                findings_statements = ai_assistant.generate_findings_of_fact_from_timeline(timeline_objects, evidence_objects)
+                current_app.logger.info(f"Generated {len(findings_statements)} findings statements")
+            except Exception as ai_error:
+                current_app.logger.warning(f"AI findings generation failed: {ai_error}")
+        
+        if not findings_statements:
+            # Fallback to basic conversion
+            findings_statements = []
+            for i, entry in enumerate(sorted(timeline_entries, key=lambda x: x.timestamp or datetime.min), 1):
+                time_str = entry.timestamp.strftime("%B %d, %Y, at %H%M") if entry.timestamp else "At an unknown time"
+                findings_statements.append(f"4.1.{i}. On {time_str}, {entry.description}")
+        
+        return jsonify({
+            'success': True,
+            'findings': findings_statements,
+            'message': f'Generated {len(findings_statements)} findings of fact statements.'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating findings for project {project_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to generate findings: {str(e)}'}), 500
+
 @api_bp.route('/projects/<project_id>/causal-factors/<factor_id>', methods=['DELETE'])
 @jwt_required()
 def delete_causal_factor(project_id, factor_id):
