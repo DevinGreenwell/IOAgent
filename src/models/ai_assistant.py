@@ -33,11 +33,17 @@ class AIAssistant:
     def suggest_timeline_entries(self, evidence_text: str, existing_timeline: List[Any]) -> List[Dict[str, Any]]:
         """Suggest timeline entries based on evidence text"""
         if not self.client:
+            print("DEBUG: No OpenAI client available")
             return []
         
+        print(f"DEBUG: Evidence text length: {len(evidence_text)}")
+        print(f"DEBUG: Existing timeline entries: {len(existing_timeline)}")
+        
         prompt = self._create_timeline_suggestion_prompt(evidence_text, existing_timeline)
+        print(f"DEBUG: Generated prompt length: {len(prompt)}")
         
         try:
+            print("DEBUG: Sending request to OpenAI...")
             response = self.client.chat.completions.create(
                 model="o3-2025-04-16",
                 messages=[
@@ -46,12 +52,17 @@ class AIAssistant:
                 ]
             )
             
+            print("DEBUG: Received response from OpenAI")
+            
             # Parse response and return suggestions
             suggestions = self._parse_timeline_suggestions(response.choices[0].message.content)
+            print(f"DEBUG: Final result: {len(suggestions)} suggestions")
             return suggestions
             
         except Exception as e:
             print(f"Error getting timeline suggestions: {e}")
+            import traceback
+            traceback.print_exc()
             return []
     
     def identify_causal_factors(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> List[Dict[str, Any]]:
@@ -292,22 +303,32 @@ Ensure you capture:
 {existing_entries}
 
 ## OUTPUT REQUIREMENTS
-Provide a comprehensive JSON array of ALL timeline entries found. For each entry:
+Provide a comprehensive JSON array of ALL timeline entries found:
 
-```json
 [
   {{
-    "timestamp": "2023-08-01 05:00" // Use YYYY-MM-DD HH:MM format, infer times logically if not explicit
-    "type": "action|condition|event",
+    "timestamp": "2023-08-01 05:00",
+    "type": "action",
     "description": "Precise, factual description using terminology from the document",
-    "confidence": "high|medium|low", // high=explicitly stated, medium=clearly inferred, low=assumption
+    "confidence": "high",
     "assumptions": ["List any logical assumptions made about timing or details"],
     "personnel_involved": ["Specific names, roles, or positions mentioned"],
     "location": "Where this occurred if specified",
     "source_reference": "Page/paragraph reference if available"
+  }},
+  {{
+    "timestamp": "2023-08-01 06:00",
+    "type": "condition", 
+    "description": "Another timeline entry",
+    "confidence": "medium",
+    "assumptions": [],
+    "personnel_involved": [],
+    "location": "",
+    "source_reference": ""
   }}
 ]
-```
+
+IMPORTANT: Return ONLY valid JSON array format. Do not include markdown code blocks or explanatory text.
 
 ## CRITICAL SUCCESS FACTORS
 1. **COMPLETENESS**: Extract every actionable timeline element
@@ -554,15 +575,49 @@ Please identify any consistency issues in JSON format:
     
     def _parse_timeline_suggestions(self, response_text: str) -> List[Dict[str, Any]]:
         """Parse timeline suggestions from AI response"""
+        import json
+        
+        print(f"DEBUG: Raw AI response length: {len(response_text)}")
+        print(f"DEBUG: First 500 chars: {response_text[:500]}")
+        
         try:
             # Try to extract JSON from response
             start = response_text.find('[')
             end = response_text.rfind(']') + 1
             if start >= 0 and end > start:
                 json_text = response_text[start:end]
-                return json.loads(json_text)
-        except:
-            pass
+                print(f"DEBUG: Extracted JSON text: {json_text[:200]}...")
+                result = json.loads(json_text)
+                print(f"DEBUG: Successfully parsed {len(result)} timeline entries")
+                return result
+        except Exception as e:
+            print(f"DEBUG: JSON parsing failed: {e}")
+            print(f"DEBUG: Attempting fallback parsing...")
+            
+            # Fallback: try to find timeline entries in text format
+            lines = response_text.split('\n')
+            entries = []
+            current_entry = {}
+            
+            for line in lines:
+                line = line.strip()
+                if '"timestamp"' in line and '"type"' in line:
+                    # Try to extract a single line entry
+                    try:
+                        # Look for JSON-like structure in the line
+                        if line.startswith('{') and line.endswith(','):
+                            line = line[:-1]  # Remove trailing comma
+                        if line.startswith('{') and line.endswith('}'):
+                            entry = json.loads(line)
+                            entries.append(entry)
+                    except:
+                        continue
+            
+            if entries:
+                print(f"DEBUG: Fallback parsing found {len(entries)} entries")
+                return entries
+                
+        print("DEBUG: No timeline entries could be parsed")
         return []
     
     def _parse_findings_statements(self, response_text: str) -> List[str]:
