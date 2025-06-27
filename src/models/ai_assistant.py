@@ -45,7 +45,7 @@ class AIAssistant:
         try:
             print("DEBUG: Sending request to OpenAI...")
             response = self.client.chat.completions.create(
-                model="o3-2025-04-16",
+                model="o3-mini-2025-01-31",
                 messages=[
                     {"role": "system", "content": "You are a senior USCG marine casualty investigator with 20+ years of experience conducting formal investigations under 46 CFR Part 4. You excel at comprehensive document analysis and timeline reconstruction from complex investigation materials. You understand that timeline entries become the foundation for Findings of Fact in Reports of Investigation, so your extraction must be meticulous, complete, and evidence-based. You have extensive knowledge of maritime operations, vessel systems, crew procedures, and emergency response protocols."},
                     {"role": "user", "content": prompt}
