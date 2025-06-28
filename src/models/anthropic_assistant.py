@@ -1,0 +1,285 @@
+# Anthropic AI Assistant for ROI generation
+import os
+import json
+from typing import List, Dict, Any, Optional
+from datetime import datetime
+import anthropic
+from dotenv import load_dotenv
+
+from src.models.roi_models import (
+    InvestigationProject, TimelineEntry, CausalFactor, 
+    Evidence, Finding, AnalysisSection
+)
+
+# Load environment variables
+load_dotenv()
+
+class AnthropicAssistant:
+    """Anthropic AI Assistant specifically for ROI document generation"""
+    
+    def __init__(self):
+        self.client = None
+        self._initialize_client()
+    
+    def _initialize_client(self):
+        """Initialize Anthropic client with API key from environment"""
+        api_key = os.getenv('ANTHROPIC_API_KEY')
+        if api_key:
+            self.client = anthropic.Anthropic(api_key=api_key)
+        else:
+            print("Warning: ANTHROPIC_API_KEY not found in environment variables")
+    
+    def generate_complete_roi_sections(self, project: InvestigationProject) -> Dict[str, Any]:
+        """Generate complete ROI sections using Anthropic Claude"""
+        if not self.client:
+            return {}
+        
+        prompt = self._create_complete_roi_prompt(project)
+        
+        try:
+            message = self.client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=4000,
+                temperature=0.3,
+                system="You are an expert USCG marine casualty investigator with 20+ years experience writing Reports of Investigation. You produce professional, concise documents that match the style of actual USCG investigation reports. Your writing is clear, factual, and follows the exact format of USCG ROI documents. You avoid verbose technical language and focus on concise, professional narrative.",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            
+            return self._parse_roi_sections(message.content[0].text)
+            
+        except Exception as e:
+            print(f"Error generating ROI sections with Anthropic: {e}")
+            return {}
+    
+    def generate_findings_of_fact_from_timeline(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> List[str]:
+        """Generate professional findings of fact using Anthropic"""
+        if not self.client:
+            return []
+        
+        prompt = self._create_findings_generation_prompt(timeline, evidence)
+        
+        try:
+            message = self.client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=2000,
+                temperature=0.2,
+                system="You are a senior USCG investigator writing findings of fact for a Report of Investigation. Write concise, professional findings that establish the factual foundation. Match the style of actual USCG investigation reports - clear, factual, and properly numbered.",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            
+            return self._parse_findings_statements(message.content[0].text)
+            
+        except Exception as e:
+            print(f"Error generating findings with Anthropic: {e}")
+            return []
+    
+    def improve_analysis_text(self, factor: CausalFactor) -> str:
+        """Generate concise, professional analysis text for a causal factor"""
+        if not self.client:
+            return factor.analysis_text or factor.description
+        
+        prompt = f"""
+Write a concise professional analysis for this causal factor in a USCG Report of Investigation.
+
+CAUSAL FACTOR:
+Title: {factor.title}
+Category: {factor.category}
+Description: {factor.description}
+Current Analysis: {factor.analysis_text or 'None provided'}
+
+REQUIREMENTS:
+1. Write 2-3 concise sentences maximum
+2. Use "It is reasonable to believe..." phrasing when appropriate
+3. Focus on HOW this factor contributed to the casualty
+4. Avoid technical jargon and verbose explanations
+5. Match the professional style of actual USCG reports
+
+STYLE EXAMPLES FROM TARGET FORMAT:
+- "It is reasonable to believe that the lack of formal safety training contributed to the crew's inability to respond effectively to the emergency."
+- "The absence of proper maintenance records suggests that critical equipment failures went undetected."
+- "Limited operational experience in local waters was a direct factor in the navigation error."
+
+Provide ONLY the improved analysis text, no other commentary.
+"""
+        
+        try:
+            message = self.client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=300,
+                temperature=0.2,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            
+            return message.content[0].text.strip()
+            
+        except Exception as e:
+            print(f"Error improving analysis with Anthropic: {e}")
+            return factor.analysis_text or factor.description
+    
+    def _create_complete_roi_prompt(self, project: InvestigationProject) -> str:
+        """Create comprehensive prompt for full ROI generation"""
+        # Gather project data
+        vessel_info = []
+        for vessel in project.vessels:
+            vessel_info.append(f"- {vessel.official_name} (O.N. {vessel.identification_number})")
+        
+        timeline_text = []
+        for entry in sorted(project.timeline, key=lambda x: x.timestamp or datetime.min)[:20]:
+            if entry.timestamp:
+                timeline_text.append(f"- {entry.timestamp.strftime('%B %d, %Y at %H%M')}: {entry.description}")
+        
+        causal_factors_text = []
+        for factor in project.causal_factors:
+            causal_factors_text.append(f"- {factor.category.upper()}: {factor.title}")
+        
+        return f"""
+Generate professional USCG Report of Investigation sections based on this incident data. Match the concise, professional style of actual USCG reports.
+
+INCIDENT INFORMATION:
+Type: {project.incident_info.incident_type}
+Location: {project.incident_info.location}
+Date: {project.incident_info.incident_date.strftime('%B %d, %Y') if project.incident_info.incident_date else 'Unknown'}
+Vessels: {', '.join(vessel_info)}
+
+KEY TIMELINE EVENTS:
+{chr(10).join(timeline_text)}
+
+IDENTIFIED CAUSAL FACTORS:
+{chr(10).join(causal_factors_text)}
+
+Generate the following ROI sections in JSON format:
+
+1. EXECUTIVE SUMMARY (3 paragraphs):
+   - Paragraph 1: Scene setting - what activity was taking place
+   - Paragraph 2: Outcomes - what happened as a result
+   - Paragraph 3: Causal factors determination
+
+2. KEY FINDINGS OF FACT (10-15 numbered statements):
+   - Professional factual statements from the timeline
+   - Properly numbered (4.1.1, 4.1.2, etc.)
+   - Include times, dates, specific details
+
+3. CONCLUSIONS (3-5 numbered statements):
+   - Concise determination of cause
+   - Focus on initiating event and key factors
+
+4. ACTIONS TAKEN (2-3 specific actions):
+   - Post-casualty testing
+   - Safety orders issued
+   - Industry notifications
+
+5. RECOMMENDATIONS (3-5 concise items):
+   - Specific safety improvements
+   - Training enhancements
+   - Equipment upgrades
+
+STYLE REQUIREMENTS:
+- Be concise and professional
+- Avoid verbose technical language
+- Use active voice where appropriate
+- Match actual USCG report style
+- Focus on facts over procedural language
+
+Provide response as JSON:
+{{
+  "executive_summary": {{
+    "scene_setting": "paragraph text",
+    "outcomes": "paragraph text",
+    "causal_factors": "paragraph text"
+  }},
+  "findings_of_fact": ["4.1.1. Finding one", "4.1.2. Finding two", ...],
+  "conclusions": ["6.1.1. Conclusion one", "6.1.2. Conclusion two", ...],
+  "actions_taken": ["7.1. Action one", "7.2. Action two", ...],
+  "recommendations": ["8.1.1. Recommendation one", "8.1.2. Recommendation two", ...]
+}}
+"""
+    
+    def _create_findings_generation_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
+        """Create prompt for findings generation"""
+        timeline_text = []
+        for entry in sorted(timeline, key=lambda x: x.timestamp or datetime.min):
+            if entry.timestamp:
+                time_str = entry.timestamp.strftime('%B %d, %Y, at %H%M')
+                timeline_text.append(f"- {time_str}: {entry.type.upper()} - {entry.description}")
+        
+        return f"""
+Convert this timeline into professional USCG Findings of Fact for Section 4.1 of a Report of Investigation.
+
+TIMELINE:
+{chr(10).join(timeline_text)}
+
+Write 10-15 numbered findings (4.1.1, 4.1.2, etc.) that:
+1. Are concise and factual
+2. Include specific times, dates, and details
+3. Follow chronological order
+4. Use professional language
+5. Can stand alone as factual statements
+
+STYLE EXAMPLE:
+4.1.1. On August 1, 2023, at 0500, the commercial fishing vessel LEGACY departed Morehead City, North Carolina, with four crew members for local fishing operations.
+4.1.2. Weather conditions at departure included calm seas with winds from the southwest at 5-10 knots.
+4.1.3. At 0630, the vessel arrived at the fishing grounds located approximately 15 nautical miles southeast of the port.
+
+Provide findings as a JSON array of strings.
+"""
+    
+    def _parse_roi_sections(self, response_text: str) -> Dict[str, Any]:
+        """Parse ROI sections from Anthropic response"""
+        try:
+            # Extract JSON from response
+            start = response_text.find('{')
+            end = response_text.rfind('}') + 1
+            if start >= 0 and end > start:
+                json_text = response_text[start:end]
+                return json.loads(json_text)
+        except Exception as e:
+            print(f"Error parsing ROI sections: {e}")
+        
+        return {
+            "executive_summary": {
+                "scene_setting": "",
+                "outcomes": "",
+                "causal_factors": ""
+            },
+            "findings_of_fact": [],
+            "conclusions": [],
+            "actions_taken": [],
+            "recommendations": []
+        }
+    
+    def _parse_findings_statements(self, response_text: str) -> List[str]:
+        """Parse findings statements from response"""
+        try:
+            # Try JSON array first
+            start = response_text.find('[')
+            end = response_text.rfind(']') + 1
+            if start >= 0 and end > start:
+                json_text = response_text[start:end]
+                return json.loads(json_text)
+        except:
+            pass
+        
+        # Fallback to line parsing
+        findings = []
+        lines = response_text.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line and '4.1.' in line:
+                findings.append(line)
+        
+        return findings if findings else []

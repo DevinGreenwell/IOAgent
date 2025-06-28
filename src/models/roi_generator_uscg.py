@@ -507,11 +507,11 @@ class USCGROIGenerator:
                 para = self.document.add_paragraph(f"4.1.{finding_number}. {finding.statement}")
                 finding_number += 1
         else:
-            # Generate comprehensive findings from timeline using AI
-            from src.models.ai_assistant import AIAssistant
-            ai_assistant = AIAssistant()
+            # Generate comprehensive findings from timeline using Anthropic AI
+            from src.models.anthropic_assistant import AnthropicAssistant
+            anthropic_assistant = AnthropicAssistant()
             
-            if ai_assistant.client and self.project.timeline:
+            if anthropic_assistant.client and self.project.timeline:
                 # Convert timeline entries to appropriate format
                 timeline_objects = []
                 for entry in self.project.timeline:
@@ -521,8 +521,8 @@ class USCGROIGenerator:
                 for evidence in self.project.evidence_library:
                     evidence_objects.append(evidence)
                 
-                # Generate professional findings using AI
-                findings_statements = ai_assistant.generate_findings_of_fact_from_timeline(timeline_objects, evidence_objects)
+                # Generate professional findings using Anthropic
+                findings_statements = anthropic_assistant.generate_findings_of_fact_from_timeline(timeline_objects, evidence_objects)
                 
                 # Add AI-generated findings with proper numbering
                 finding_number = 1
@@ -621,21 +621,27 @@ class USCGROIGenerator:
             subheading_run.bold = True
             subheading_run.font.size = Pt(12)
             
-            # Concise professional analysis
-            analysis_para = self.document.add_paragraph()
-            analysis_text = factor.analysis_text or factor.description
+            # Use Anthropic to generate concise professional analysis
+            from src.models.anthropic_assistant import AnthropicAssistant
+            anthropic_assistant = AnthropicAssistant()
             
-            # Keep analysis concise and professional - remove verbose explanations
-            # Use "It is reasonable to believe..." phrasing like the target format
-            if not analysis_text.lower().startswith('it is reasonable'):
-                if factor.category == 'precondition':
-                    analysis_text = f"It is reasonable to believe that {analysis_text.lower()} contributed to the casualty sequence."
-                elif factor.category == 'production':
-                    analysis_text = f"The {analysis_text.lower()} was a direct factor in the incident."
-                elif factor.category == 'defense':
-                    analysis_text = f"The absence of {analysis_text.lower()} allowed the casualty to occur."
-                else:
-                    analysis_text = f"It is reasonable to believe that {analysis_text.lower()} was a contributing factor."
+            analysis_para = self.document.add_paragraph()
+            
+            # Get improved analysis text from Anthropic
+            if anthropic_assistant.client:
+                analysis_text = anthropic_assistant.improve_analysis_text(factor)
+            else:
+                # Fallback to simple format if Anthropic not available
+                analysis_text = factor.analysis_text or factor.description
+                if not analysis_text.lower().startswith('it is reasonable'):
+                    if factor.category == 'precondition':
+                        analysis_text = f"It is reasonable to believe that {analysis_text.lower()} contributed to the casualty sequence."
+                    elif factor.category == 'production':
+                        analysis_text = f"The {analysis_text.lower()} was a direct factor in the incident."
+                    elif factor.category == 'defense':
+                        analysis_text = f"The absence of {analysis_text.lower()} allowed the casualty to occur."
+                    else:
+                        analysis_text = f"It is reasonable to believe that {analysis_text.lower()} was a contributing factor."
             
             analysis_para.add_run(analysis_text)
             
