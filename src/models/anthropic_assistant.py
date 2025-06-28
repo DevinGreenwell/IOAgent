@@ -26,8 +26,9 @@ class AnthropicAssistant:
         api_key = os.getenv('ANTHROPIC_API_KEY')
         if api_key:
             self.client = anthropic.Anthropic(api_key=api_key)
+            print("🟡 Anthropic Assistant initialized successfully")
         else:
-            print("Warning: ANTHROPIC_API_KEY not found in environment variables")
+            print("❌ Warning: ANTHROPIC_API_KEY not found in environment variables")
     
     def generate_complete_roi_sections(self, project: InvestigationProject) -> Dict[str, Any]:
         """Generate complete ROI sections using Anthropic Claude"""
@@ -58,7 +59,9 @@ class AnthropicAssistant:
     
     def generate_findings_of_fact_from_timeline(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> List[str]:
         """Generate professional findings of fact using Anthropic"""
+        print("🟡 Anthropic: generate_findings_of_fact_from_timeline called")
         if not self.client:
+            print("❌ Anthropic: No client available, returning empty list")
             return []
         
         prompt = self._create_findings_generation_prompt(timeline, evidence)
@@ -85,7 +88,9 @@ class AnthropicAssistant:
     
     def improve_analysis_text(self, factor: CausalFactor) -> str:
         """Generate concise, professional analysis text for a causal factor"""
+        print("🟡 Anthropic: improve_analysis_text called")
         if not self.client:
+            print("❌ Anthropic: No client available, using fallback")
             return factor.analysis_text or factor.description
         
         prompt = f"""

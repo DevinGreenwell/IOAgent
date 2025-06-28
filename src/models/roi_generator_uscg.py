@@ -524,16 +524,10 @@ class USCGROIGenerator:
                 # Generate professional findings using Anthropic
                 findings_statements = anthropic_assistant.generate_findings_of_fact_from_timeline(timeline_objects, evidence_objects)
                 
-                # Add AI-generated findings with proper numbering
-                finding_number = 1
+                # Add AI-generated findings (they already have proper numbering)
                 for finding_statement in findings_statements:
-                    # Ensure proper numbering format
-                    if not finding_statement.strip().startswith('4.1.'):
-                        finding_text = f"4.1.{finding_number}. {finding_statement.strip()}"
-                        finding_number += 1
-                    else:
-                        finding_text = finding_statement.strip()
-                    
+                    # AI assistants already provide properly numbered findings
+                    finding_text = finding_statement.strip()
                     para = self.document.add_paragraph(finding_text)
                 
                 # If no AI findings generated, use enhanced fallback

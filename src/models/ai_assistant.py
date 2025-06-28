@@ -27,8 +27,9 @@ class AIAssistant:
         api_key = os.getenv('OPENAI_API_KEY')
         if api_key:
             self.client = openai.OpenAI(api_key=api_key)
+            print("🔵 OpenAI AIAssistant initialized successfully")
         else:
-            print("Warning: OPENAI_API_KEY not found in environment variables")
+            print("❌ Warning: OPENAI_API_KEY not found in environment variables")
     
     def suggest_timeline_entries(self, evidence_text: str, existing_timeline: List[Any]) -> List[Dict[str, Any]]:
         """Suggest timeline entries based on evidence text"""
@@ -116,7 +117,9 @@ class AIAssistant:
     
     def generate_findings_of_fact_from_timeline(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> List[str]:
         """Generate professional findings of fact statements from timeline entries"""
+        print("🔵 OpenAI: generate_findings_of_fact_from_timeline called")
         if not self.client:
+            print("❌ OpenAI: No client available, returning empty list")
             return []
         
         prompt = self._create_findings_generation_prompt(timeline, evidence)
