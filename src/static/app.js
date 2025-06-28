@@ -862,7 +862,7 @@ class IOAgent {
         formData.append('description', `Uploaded file: ${file.name}`);
 
         try {
-            this.showLoading(`Uploading and analyzing ${file.name}...`);
+            this.showLoading(`Uploading ${file.name} to knowledge bank...`);
             
             const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/upload`, {
                 method: 'POST',
@@ -878,20 +878,8 @@ class IOAgent {
             if (data.success) {
                 this.showAlert(data.message || `File ${file.name} uploaded successfully`, 'success');
                 
-                // Debug logging for timeline suggestions
-                console.log('Upload response data:', data);
-                console.log('Timeline suggestions:', data.timeline_suggestions);
-                
-                // If timeline suggestions were found, show them
-                if (data.timeline_suggestions && data.timeline_suggestions.length > 0) {
-                    console.log(`Showing ${data.timeline_suggestions.length} timeline suggestions`);
-                    this.showTimelineSuggestions(data.timeline_suggestions);
-                } else {
-                    console.log('No timeline suggestions found in upload response');
-                    if (data.timeline_suggestions === undefined) {
-                        console.log('timeline_suggestions field is undefined - may indicate AI extraction failed');
-                    }
-                }
+                // File successfully added to knowledge bank
+                console.log('File added to knowledge bank:', data.file);
                 
                 // Reload project data to show new evidence
                 await this.openProject(this.currentProject.id, true, false);
@@ -1547,7 +1535,7 @@ class IOAgent {
         }
 
         try {
-            this.showLoading('Analyzing evidence files to extract timeline entries...');
+            this.showLoading('Comprehensively analyzing knowledge bank files to extract timeline entries...');
             
             const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/extract-timeline`, {
                 method: 'POST',

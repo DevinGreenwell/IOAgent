@@ -351,48 +351,11 @@ class CausalAnalysisEngine:
         """Analyze a specific event for causal factors"""
         factors = []
         
-        # Look for preceding actions and conditions
-        event_time = event.timestamp
-        if not event_time:
-            return factors
-        
-        preceding_entries = [
-            entry for entry in timeline 
-            if entry.timestamp and entry.timestamp < event_time
-        ]
-        
-        # Analyze for different factor categories
-        for entry in preceding_entries:
-            if entry.type == 'action':
-                # Actions might indicate production or precondition factors
-                factor = self._create_factor_from_action(entry, event)
-                if factor:
-                    factors.append(factor)
-            elif entry.type == 'condition':
-                # Conditions might indicate workplace or organization factors
-                factor = self._create_factor_from_condition(entry, event)
-                if factor:
-                    factors.append(factor)
+        # Only analyze events, not actions and conditions
+        # The AI assistant handles proper causal factor identification
+        # This basic engine is being simplified to avoid generating
+        # generic "Action leading to..." and "Condition contributing to..." factors
         
         return factors
     
-    def _create_factor_from_action(self, action: TimelineEntry, event: TimelineEntry) -> CausalFactor:
-        """Create causal factor from an action"""
-        factor = CausalFactor()
-        factor.event_id = event.id
-        factor.category = 'production'  # Actions typically relate to production factors
-        factor.title = f"Action leading to {event.description}"
-        factor.description = action.description
-        factor.evidence_support = action.evidence_ids
-        return factor
-    
-    def _create_factor_from_condition(self, condition: TimelineEntry, event: TimelineEntry) -> CausalFactor:
-        """Create causal factor from a condition"""
-        factor = CausalFactor()
-        factor.event_id = event.id
-        factor.category = 'precondition'  # Conditions typically relate to preconditions
-        factor.title = f"Condition contributing to {event.description}"
-        factor.description = condition.description
-        factor.evidence_support = condition.evidence_ids
-        return factor
 

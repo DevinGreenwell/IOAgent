@@ -487,7 +487,7 @@ class USCGROIGenerator:
         subheading = self.document.add_paragraph()
         subheading.add_run("4.1. The Incident:").bold = True
         
-        # Generate professional findings from timeline using AI
+        # Generate professional findings from timeline using AI - ENHANCED VERSION
         if self.project.roi_document.findings_of_fact:
             # Use existing findings if available
             finding_number = 1
@@ -495,7 +495,7 @@ class USCGROIGenerator:
                 para = self.document.add_paragraph(f"4.1.{finding_number}. {finding.statement}")
                 finding_number += 1
         else:
-            # Generate findings from timeline using AI
+            # Generate comprehensive findings from timeline using AI
             from src.models.ai_assistant import AIAssistant
             ai_assistant = AIAssistant()
             
@@ -509,14 +509,27 @@ class USCGROIGenerator:
                 for evidence in self.project.evidence_library:
                     evidence_objects.append(evidence)
                 
+                # Generate professional findings using AI
                 findings_statements = ai_assistant.generate_findings_of_fact_from_timeline(timeline_objects, evidence_objects)
                 
-                # Add AI-generated findings
+                # Add AI-generated findings with proper numbering
+                finding_number = 1
                 for finding_statement in findings_statements:
-                    para = self.document.add_paragraph(finding_statement)
+                    # Ensure proper numbering format
+                    if not finding_statement.strip().startswith('4.1.'):
+                        finding_text = f"4.1.{finding_number}. {finding_statement.strip()}"
+                        finding_number += 1
+                    else:
+                        finding_text = finding_statement.strip()
+                    
+                    para = self.document.add_paragraph(finding_text)
+                
+                # If no AI findings generated, use enhanced fallback
+                if not findings_statements:
+                    self._generate_enhanced_findings_from_timeline()
             else:
-                # Fallback to basic timeline conversion
-                self._generate_basic_findings_from_timeline()
+                # Enhanced fallback method
+                self._generate_enhanced_findings_from_timeline()
         
         # 4.2 Additional/Supporting Information (if needed)
         if self.project.evidence_library:
@@ -532,8 +545,8 @@ class USCGROIGenerator:
         
         self.document.add_paragraph()  # Section spacing
     
-    def _generate_basic_findings_from_timeline(self):
-        """Fallback method for basic timeline to findings conversion"""
+    def _generate_enhanced_findings_from_timeline(self):
+        """Enhanced method for professional timeline to findings conversion"""
         if not self.project.timeline:
             self.document.add_paragraph("4.1.1. No timeline entries have been documented for this incident.")
             return
@@ -549,8 +562,16 @@ class USCGROIGenerator:
             # Format timestamp in USCG style
             time_str = self._format_date(entry.timestamp) + f", at {self._format_time(entry.timestamp)}"
             
-            # Create professional finding statement
-            finding_text = f"4.1.{finding_number}. On {time_str}, {entry.description}"
+            # Create professional finding statement with enhanced formatting
+            description = entry.description
+            if not description.endswith('.'):
+                description += '.'
+            
+            # Capitalize first letter for professional presentation
+            if description and description[0].islower():
+                description = description[0].upper() + description[1:]
+            
+            finding_text = f"4.1.{finding_number}. On {time_str}, {description}"
             self.document.add_paragraph(finding_text)
             finding_number += 1
     
@@ -565,27 +586,50 @@ class USCGROIGenerator:
         intro_para.add_run("The following analysis examines the causal factors that contributed to this marine casualty. Each factor is supported by findings of fact documented in Section 4 above.")
         self.document.add_paragraph()  # Extra spacing
         
+        # Check if we have causal factors to analyze
+        if not self.project.causal_factors:
+            # Generate a placeholder analysis section if no factors exist
+            self.document.add_paragraph("No causal factors have been identified for analysis at this time. Further investigation may be required to determine contributing factors.")
+            self.document.add_paragraph()
+            return
+        
         # Generate analysis for each causal factor with enhanced formatting
-        for i, section in enumerate(self.project.roi_document.analysis_sections, 1):
+        analysis_number = 1
+        for factor in self.project.causal_factors:
             # Analysis heading with negative phrasing emphasis
             subheading = self.document.add_paragraph()
-            subheading_run = subheading.add_run(f"5.{i}. {section.title}")
+            
+            # Ensure negative phrasing in title
+            title = factor.title
+            if not any(title.lower().startswith(phrase) for phrase in ['failure', 'lack', 'inadequate', 'absence', 'deficiency']):
+                if 'failure' not in title.lower() and 'lack' not in title.lower():
+                    title = f"Failure to properly address: {title}"
+            
+            subheading_run = subheading.add_run(f"5.{analysis_number}. {title}")
             subheading_run.bold = True
-            subheading_run.font.size = Pt(12)  # Slightly larger for emphasis
+            subheading_run.font.size = Pt(12)
             
             # Enhanced analysis text with findings references
             analysis_para = self.document.add_paragraph()
-            analysis_text = section.analysis_text
+            analysis_text = factor.analysis_text or factor.description
             
-            # Ensure analysis explains HOW the factor contributed
+            # Ensure comprehensive analysis explaining HOW and WHY
             if "contributed to" not in analysis_text.lower() and "led to" not in analysis_text.lower():
-                analysis_text += f" This factor directly contributed to the marine casualty by creating conditions that allowed the incident sequence to proceed."
+                analysis_text += f" This {factor.category} factor directly contributed to the marine casualty by creating conditions that allowed the incident sequence to proceed and prevented effective mitigation of the hazard."
+            
+            # Add evidence references if available
+            if hasattr(factor, 'evidence_support_list') and factor.evidence_support_list:
+                analysis_text += f" This conclusion is supported by evidence from the investigation files."
             
             analysis_para.add_run(analysis_text)
             
+            # Add factor category information
+            category_para = self.document.add_paragraph()
+            category_para.add_run(f"Category: {factor.category.title()} Factor").italic = True
+            
             # Add spacing between analyses for clarity
             self.document.add_paragraph()
-            self.document.add_paragraph()
+            analysis_number += 1
     
         self.document.add_paragraph()  # Section spacing
     
@@ -598,11 +642,38 @@ class USCGROIGenerator:
         subheading = self.document.add_paragraph()
         subheading.add_run("6.1. Determination of Cause:").bold = True
         
-        # Add conclusions
-        for i, conclusion in enumerate(self.project.roi_document.conclusions, 1):
-            self.document.add_paragraph(f"6.1.{i}. {conclusion.statement}")
+        # Generate comprehensive conclusions based on analysis
+        if hasattr(self.project, 'roi_document') and self.project.roi_document.conclusions:
+            # Use existing conclusions if available
+            for i, conclusion in enumerate(self.project.roi_document.conclusions, 1):
+                self.document.add_paragraph(f"6.1.{i}. {conclusion.statement}")
+        else:
+            # Generate conclusions from causal factors and timeline
+            conclusion_number = 1
+            
+            # Find initiating event
+            initiating_event = None
+            for entry in self.project.timeline:
+                if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event:
+                    initiating_event = entry
+                    break
+            
+            if initiating_event:
+                self.document.add_paragraph(f"6.1.{conclusion_number}. The Coast Guard determines that the initiating event for this marine casualty was {initiating_event.description.lower()}.")
+                conclusion_number += 1
+            
+            # Add causal factor conclusions
+            if self.project.causal_factors:
+                causal_factors_text = ", ".join([f.title.lower() for f in self.project.causal_factors[:3]])  # Limit to top 3
+                self.document.add_paragraph(f"6.1.{conclusion_number}. Contributing causal factors included: {causal_factors_text}.")
+                conclusion_number += 1
+                
+                # Add prevention conclusion
+                self.document.add_paragraph(f"6.1.{conclusion_number}. This casualty could have been prevented through proper implementation of established safety procedures and adherence to regulatory requirements.")
+            else:
+                self.document.add_paragraph(f"6.1.{conclusion_number}. The exact cause of this marine casualty requires further investigation to determine contributing factors.")
         
-        # 6.2 Evidence of violations (standard sections)
+        # 6.2-6.6 Standard enforcement sections (required by USCG format)
         self.document.add_paragraph()
         self.document.add_paragraph("6.2. Evidence of Act(s) or Violation(s) of Law by Any Coast Guard "
                                   "Credentialed Mariner Subject to Action Under 46 USC Chapter 77: None identified.")
@@ -641,23 +712,39 @@ class USCGROIGenerator:
         subheading = self.document.add_paragraph()
         subheading.add_run("8.1. Safety Recommendations:").bold = True
         
-        if self.project.roi_document.recommendations:
+        if hasattr(self.project, 'roi_document') and self.project.roi_document.recommendations:
             self.document.add_paragraph(self.project.roi_document.recommendations)
         else:
-            # Generate recommendations based on causal factors
-            for i, factor in enumerate(self.project.causal_factors, 1):
-                if factor.category == 'organizational':
-                    self.document.add_paragraph(
-                        f"8.1.{i}. Review and update organizational policies to address {factor.title.lower()}."
-                    )
-                elif factor.category == 'workplace':
-                    self.document.add_paragraph(
-                        f"8.1.{i}. Implement workplace improvements to mitigate {factor.title.lower()}."
-                    )
-                elif factor.category == 'defense':
-                    self.document.add_paragraph(
-                        f"8.1.{i}. Enhance safety barriers and defenses to prevent {factor.title.lower()}."
-                    )
+            # Generate comprehensive recommendations based on causal factors
+            if self.project.causal_factors:
+                rec_number = 1
+                for factor in self.project.causal_factors:
+                    if factor.category == 'organization':
+                        self.document.add_paragraph(
+                            f"8.1.{rec_number}. The Coast Guard recommends that vessel owners and operators review and strengthen organizational safety management systems to prevent {factor.title.lower()}. This should include enhanced safety policies, procedures, and training programs."
+                        )
+                    elif factor.category == 'workplace':
+                        self.document.add_paragraph(
+                            f"8.1.{rec_number}. The Coast Guard recommends implementing workplace safety improvements including equipment upgrades, environmental controls, and procedural modifications to mitigate {factor.title.lower()}."
+                        )
+                    elif factor.category == 'precondition':
+                        self.document.add_paragraph(
+                            f"8.1.{rec_number}. The Coast Guard recommends enhanced crew training, fatigue management, and operational planning to address preconditions that led to {factor.title.lower()}."
+                        )
+                    elif factor.category == 'production':
+                        self.document.add_paragraph(
+                            f"8.1.{rec_number}. The Coast Guard recommends improved operational procedures and enhanced crew competency training to prevent {factor.title.lower()}."
+                        )
+                    elif factor.category == 'defense':
+                        self.document.add_paragraph(
+                            f"8.1.{rec_number}. The Coast Guard recommends strengthening safety barriers and defense mechanisms to prevent {factor.title.lower()}. This includes backup systems, emergency procedures, and fail-safe devices."
+                        )
+                    rec_number += 1
+            else:
+                # Default recommendation when no specific factors identified
+                self.document.add_paragraph(
+                    "8.1.1. The Coast Guard recommends that vessel owners and operators review their safety management systems and ensure compliance with all applicable regulations to prevent similar marine casualties."
+                )
         
         # 8.2 Administrative Recommendations
         self.document.add_paragraph()

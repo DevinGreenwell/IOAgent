@@ -232,14 +232,8 @@ def upload_file(project_id):
         pm = ProjectManager()
         content = pm._extract_file_content(file_path)
         
-        # Get timeline suggestions if content was extracted
-        timeline_suggestions = []
-        if content:
-            ai = AIAssistant()
-            if ai.client:
-                # Get existing timeline for context
-                existing_timeline = [entry.to_dict() for entry in project.timeline_entries]
-                timeline_suggestions = ai.suggest_timeline_entries(content, existing_timeline)
+        # Don't extract timeline on upload - files are now part of knowledge bank
+        # Timeline extraction happens when user clicks "Extract Timeline" button
         
         # Store file record for reference (simpler than Evidence)
         # You might want to create a simpler UploadedFile model instead
@@ -266,8 +260,7 @@ def upload_file(project_id):
                 'filename': evidence.original_filename,
                 'uploaded_at': evidence.uploaded_at.isoformat() if evidence.uploaded_at else None
             },
-            'timeline_suggestions': timeline_suggestions,
-            'message': f'File uploaded successfully. Found {len(timeline_suggestions)} potential timeline entries.'
+            'message': f'File {evidence.original_filename} added to knowledge bank successfully.'
         })
     except Exception as e:
         db.session.rollback()
