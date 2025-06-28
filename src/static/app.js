@@ -1307,11 +1307,13 @@ class IOAgent {
             this.showLoading('Running causal analysis...');
             
             const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/causal-analysis`, {
-                method: 'POST'
+                method: 'POST',
+                body: JSON.stringify({})
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
