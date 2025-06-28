@@ -339,6 +339,12 @@ class DatabaseToROIConverter:
         # Sort timeline by timestamp for cross-referencing
         sorted_timeline = sorted(timeline, key=lambda x: x.timestamp or datetime.min)
         
+        # Import AI assistant for evidence analysis
+        from src.models.ai_assistant import AIAssistant
+        from src.models.project_manager import ProjectManager
+        ai_assistant = AIAssistant()
+        pm = ProjectManager()
+        
         # Generate findings from evidence, not timeline
         for evidence in evidence_library:
             # Each piece of evidence can support multiple findings
@@ -367,7 +373,52 @@ class DatabaseToROIConverter:
                     finding.analysis_refs = []
                     findings.append(finding)
             else:
-                # Evidence without timeline entry - create general finding
+                # Evidence without timeline entry - use AI to analyze content directly
+                try:
+                    # Extract content from evidence file
+                    if hasattr(evidence, 'file_path') and evidence.file_path:
+                        # Try to get the full file path
+                        import os
+                        from flask import current_app
+                        
+                        # Try different possible base paths
+                        possible_paths = [
+                            evidence.file_path,  # Already full path
+                            os.path.join('uploads', evidence.file_path),  # Relative to uploads
+                            os.path.join(current_app.config.get('UPLOAD_FOLDER', 'uploads'), evidence.file_path)  # From config
+                        ]
+                        
+                        content = None
+                        for path in possible_paths:
+                            if os.path.exists(path):
+                                content = pm._extract_file_content(path)
+                                if content and content.strip():
+                                    break
+                        
+                        if content and content.strip():
+                            # Use AI to generate findings from evidence content
+                            if ai_assistant.client:
+                                # Generate findings directly from evidence content
+                                findings_statements = ai_assistant.generate_findings_from_evidence_content(
+                                    content,
+                                    evidence.filename
+                                )
+                                
+                                if findings_statements:
+                                    # Create findings from AI-generated statements
+                                    for i, statement in enumerate(findings_statements):
+                                        finding = Finding()
+                                        finding.statement = statement
+                                        finding.evidence_support = [evidence.id]
+                                        finding.timeline_refs = []
+                                        finding.analysis_refs = []
+                                        findings.append(finding)
+                                    continue  # Skip the fallback
+                    
+                except Exception as e:
+                    print(f"Error analyzing evidence content for {evidence.filename}: {e}")
+                
+                # Fallback: create general finding if AI analysis failed
                 finding = Finding()
                 finding.statement = f"Evidence item {evidence.filename} was examined as part of this investigation."
                 finding.evidence_support = [evidence.id]

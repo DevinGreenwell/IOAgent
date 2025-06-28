@@ -137,6 +137,29 @@ class AIAssistant:
             print(f"Error generating findings of fact: {e}")
             return []
 
+    def generate_findings_from_evidence_content(self, evidence_content: str, evidence_filename: str) -> List[str]:
+        """Generate findings of fact directly from evidence content"""
+        if not self.client:
+            return []
+        
+        prompt = self._create_evidence_findings_prompt(evidence_content, evidence_filename)
+        
+        try:
+            response = self.client.chat.completions.create(
+                model="o3-2025-04-16",
+                messages=[
+                    {"role": "system", "content": "You are an expert USCG marine casualty investigator with extensive experience writing professional Reports of Investigation. You excel at analyzing evidence documents and extracting factual findings that meet USCG standards and read like expert investigative reports."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            findings = self._parse_findings_statements(response.choices[0].message.content)
+            return findings
+            
+        except Exception as e:
+            print(f"Error generating findings from evidence content: {e}")
+            return []
+
     def improve_analysis_text(self, analysis_text: str, supporting_findings: List[Finding]) -> str:
         """Improve analysis section text"""
         if not self.client:
@@ -473,6 +496,49 @@ Please provide the findings of fact as a JSON array of strings:
 ["4.1.1. [First finding statement]", "4.1.2. [Second finding statement]", ...]
 
 Focus on creating professional, detailed findings that establish the factual foundation for the investigation.
+"""
+    
+    def _create_evidence_findings_prompt(self, evidence_content: str, evidence_filename: str) -> str:
+        """Create prompt for generating findings of fact directly from evidence content"""
+        return f"""
+Analyze this evidence document and extract professional USCG "Findings of Fact" statements for a Report of Investigation.
+
+EVIDENCE DOCUMENT: {evidence_filename}
+
+DOCUMENT CONTENT:
+{evidence_content}
+
+REQUIREMENTS:
+1. Write as numbered statements (4.1.1, 4.1.2, etc.)
+2. Use professional, objective language appropriate for legal documents
+3. Include specific times, dates, locations, and measurements when available
+4. Follow chronological order if temporal information is present
+5. Each statement should be a complete factual assertion supported by the document
+6. Use past tense throughout
+7. Include vessel details, personnel information, and operational context when mentioned
+8. Write as coherent narrative, not bullet points
+9. Ensure each finding can stand alone as a factual statement
+10. Focus on factual information, not analysis or conclusions
+
+EXTRACTION GUIDELINES:
+- Look for specific dates, times, and locations
+- Identify vessel names, crew members, and their roles
+- Extract operational details (departure times, weather conditions, equipment status)
+- Note any incidents, accidents, or unusual events
+- Include relevant measurements, distances, speeds, or other quantitative data
+- Capture official statements, reports, or documentation references
+- Identify any safety equipment, procedures, or protocols mentioned
+
+STYLE EXAMPLES:
+- "On August 1, 2023, at 0500, the commercial fishing vessel departed New Bedford, Massachusetts, with a crew of five for a planned 10-day fishing trip."
+- "At 0530, the vessel cleared the harbor and set course southeast toward fishing grounds approximately 200 nautical miles from port."
+- "Weather conditions at the time of departure included light winds from the southwest at 5-10 knots and calm seas."
+- "The vessel's safety equipment included life jackets for all crew members and a properly maintained EPIRB."
+
+Please provide the findings of fact as a JSON array of strings:
+["4.1.1. [First finding statement]", "4.1.2. [Second finding statement]", ...]
+
+Focus on creating professional, detailed findings that establish the factual foundation for the investigation based on the evidence document content.
 """
     
     def _create_analysis_improvement_prompt(self, analysis_text: str, supporting_findings: List[Finding]) -> str:
