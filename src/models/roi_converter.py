@@ -408,7 +408,15 @@ class DatabaseToROIConverter:
                                     # Create findings from AI-generated statements
                                     for i, statement in enumerate(findings_statements):
                                         finding = Finding()
-                                        finding.statement = statement
+                                        # Strip AI-generated numbering to avoid duplicates later
+                                        clean_statement = statement.strip()
+                                        if clean_statement.startswith('4.1.'):
+                                            # Remove the AI-generated number (e.g., "4.1.1. " -> "")
+                                            import re
+                                            original = clean_statement
+                                            clean_statement = re.sub(r'^4\.1\.\d+\.\s*', '', clean_statement)
+                                            print(f"🔧 ROI Converter: Stripped numbering from: '{original}' -> '{clean_statement}'")
+                                        finding.statement = clean_statement
                                         finding.evidence_support = [evidence.id]
                                         finding.timeline_refs = []
                                         finding.analysis_refs = []

@@ -501,7 +501,7 @@ class USCGROIGenerator:
         
         # Generate professional findings from timeline using AI - ENHANCED VERSION
         if self.project.roi_document.findings_of_fact:
-            # Use existing findings if available
+            # Use existing findings if available (statements are stored without numbers)
             finding_number = 1
             for finding in self.project.roi_document.findings_of_fact:
                 para = self.document.add_paragraph(f"4.1.{finding_number}. {finding.statement}")
