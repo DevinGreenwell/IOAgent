@@ -538,30 +538,130 @@ class USCGROIGenerator:
                 self._generate_enhanced_findings_from_timeline()
         
         # 4.2 Additional/Supporting Information (if needed)
-        if self.project.evidence_library:
-            self.document.add_paragraph()
-            subheading = self.document.add_paragraph()
-            subheading.add_run("4.2. Additional/Supporting Information:").bold = True
-            
-            # Add evidence summary
-            for i, evidence in enumerate(self.project.evidence_library, 1):
-                self.document.add_paragraph(
-                    f"4.2.{i}. Evidence item: {evidence.filename} - {evidence.description}"
-                )
+        self._generate_section_4_2_supporting_findings()
         
         self.document.add_paragraph()  # Section spacing
     
+    def _generate_section_4_2_supporting_findings(self):
+        """Generate Section 4.2 - Supporting/Background Information"""
+        # Identify incident date from initiating event
+        incident_date = None
+        for entry in self.project.timeline:
+            if entry.is_initiating_event and entry.timestamp:
+                incident_date = entry.timestamp.date()
+                break
+        
+        # Collect background timeline entries (pre-incident and post-casualty)
+        background_entries = []
+        post_casualty_entries = []
+        
+        if incident_date:
+            for entry in self.project.timeline:
+                if entry.timestamp:
+                    if entry.timestamp.date() < incident_date:
+                        background_entries.append(entry)
+                    elif entry.timestamp.date() > incident_date:
+                        post_casualty_entries.append(entry)
+        
+        # Sort entries
+        background_entries.sort(key=lambda x: x.timestamp or datetime.min)
+        post_casualty_entries.sort(key=lambda x: x.timestamp or datetime.min)
+        
+        # Only add section if there's supporting information
+        if not (background_entries or post_casualty_entries or self.project.evidence_library):
+            return
+        
+        self.document.add_paragraph()
+        subheading = self.document.add_paragraph()
+        subheading.add_run("4.2. Additional/Supporting Information:").bold = True
+        
+        finding_number = 1
+        
+        # Pre-incident background findings
+        if background_entries:
+            # Group by general timeframe to avoid too many findings
+            for entry in background_entries[-5:]:  # Last 5 most relevant background entries
+                time_str = self._format_date(entry.timestamp)
+                description = entry.description
+                if not description.endswith('.'):
+                    description += '.'
+                
+                # Format as background finding
+                finding_text = f"4.2.{finding_number}. Prior to the incident, on {time_str}, {description}"
+                self.document.add_paragraph(finding_text)
+                finding_number += 1
+        
+        # Add evidence-based findings if AI not available
+        if self.project.evidence_library and finding_number <= 3:
+            # Try to extract meaningful information from evidence
+            from src.models.anthropic_assistant import AnthropicAssistant
+            anthropic_assistant = AnthropicAssistant()
+            
+            if anthropic_assistant.client:
+                try:
+                    # Generate background findings from evidence
+                    evidence_findings = anthropic_assistant.generate_background_findings_from_evidence(
+                        self.project.evidence_library,
+                        incident_date
+                    )
+                    
+                    for finding in evidence_findings[:5]:  # Limit to 5 findings
+                        finding_text = f"4.2.{finding_number}. {finding}"
+                        self.document.add_paragraph(finding_text)
+                        finding_number += 1
+                except:
+                    pass
+            
+            # Fallback if AI not available
+            if finding_number == 1:
+                for i, evidence in enumerate(self.project.evidence_library[:3], finding_number):
+                    if evidence.type in ['crew_statement', 'inspection_report', 'maintenance_record']:
+                        finding_text = f"4.2.{i}. Documentary evidence '{evidence.filename}' provides {evidence.type.replace('_', ' ')} regarding vessel operations."
+                        self.document.add_paragraph(finding_text)
+                        finding_number += 1
+        
+        # Post-casualty findings
+        if post_casualty_entries and finding_number <= 8:
+            for entry in post_casualty_entries[:3]:  # First 3 post-casualty entries
+                time_str = self._format_date(entry.timestamp) + f", at {self._format_time(entry.timestamp)}"
+                description = entry.description
+                if not description.endswith('.'):
+                    description += '.'
+                
+                finding_text = f"4.2.{finding_number}. Following the casualty, on {time_str}, {description}"
+                self.document.add_paragraph(finding_text)
+                finding_number += 1
+    
     def _generate_enhanced_findings_from_timeline(self):
-        """Enhanced method for professional timeline to findings conversion"""
+        """Enhanced method for professional timeline to findings conversion - focuses on incident day"""
         if not self.project.timeline:
             self.document.add_paragraph("4.1.1. No timeline entries have been documented for this incident.")
             return
         
+        # Identify incident date from initiating event
+        incident_date = None
+        for entry in self.project.timeline:
+            if entry.is_initiating_event and entry.timestamp:
+                incident_date = entry.timestamp.date()
+                break
+        
+        # Filter for incident-day entries only
+        incident_entries = []
+        if incident_date:
+            incident_entries = [
+                entry for entry in self.project.timeline 
+                if entry.timestamp and entry.timestamp.date() == incident_date
+            ]
+        else:
+            # Fallback: use all entries if no incident date identified
+            incident_entries = [entry for entry in self.project.timeline if entry.timestamp]
+        
         # Sort timeline by timestamp
-        sorted_timeline = sorted(
-            [entry for entry in self.project.timeline if entry.timestamp],
-            key=lambda x: x.timestamp
-        )
+        sorted_timeline = sorted(incident_entries, key=lambda x: x.timestamp)
+        
+        if not sorted_timeline:
+            self.document.add_paragraph("4.1.1. No incident-day timeline entries have been documented.")
+            return
         
         finding_number = 1
         for entry in sorted_timeline:

@@ -86,6 +86,62 @@ class AnthropicAssistant:
             print(f"Error generating findings with Anthropic: {e}")
             return []
     
+    def generate_background_findings_from_evidence(self, evidence_library: List[Evidence], incident_date) -> List[str]:
+        """Generate background/supporting findings from evidence for Section 4.2"""
+        if not self.client:
+            return []
+        
+        # Prepare evidence summary
+        evidence_summary = []
+        for evidence in evidence_library[:10]:  # Limit to avoid token limits
+            evidence_summary.append(f"- {evidence.filename} ({evidence.type}): {evidence.description}")
+        
+        prompt = f"""
+Generate professional USCG Findings of Fact for Section 4.2 (Supporting Information) based on available evidence.
+
+INCIDENT DATE: {incident_date.strftime('%B %d, %Y') if incident_date else 'Unknown'}
+
+AVAILABLE EVIDENCE:
+{chr(10).join(evidence_summary)}
+
+Generate 3-5 supporting findings that provide:
+1. Vessel condition and maintenance history
+2. Crew qualifications and experience
+3. Weather and environmental conditions
+4. Regulatory compliance status
+5. Previous inspections or incidents
+
+DO NOT repeat incident-day events. Focus on BACKGROUND context.
+
+STYLE EXAMPLES for 4.2:
+- "The vessel's Certificate of Inspection was current and valid through December 31, 2023."
+- "Maintenance records indicate the main engine underwent major overhaul in March 2023."
+- "The captain held a valid 100-ton Master license with 15 years of experience in local waters."
+- "Weather reports for the week prior showed a developing low-pressure system."
+
+Provide findings as clean statements without numbering (numbering will be added later).
+Return as a JSON array of strings.
+"""
+        
+        try:
+            message = self.client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=1000,
+                temperature=0.2,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+            
+            return self._parse_findings_statements(message.content[0].text)
+            
+        except Exception as e:
+            print(f"Error generating background findings with Anthropic: {e}")
+            return []
+    
     def improve_analysis_text(self, factor: CausalFactor) -> str:
         """Generate concise, professional analysis text for a causal factor"""
         print("🟡 Anthropic: improve_analysis_text called")
@@ -216,29 +272,61 @@ Provide response as JSON:
     
     def _create_findings_generation_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
         """Create prompt for findings generation"""
-        timeline_text = []
+        # Identify incident date from initiating event
+        incident_date = None
+        for entry in timeline:
+            if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event and entry.timestamp:
+                incident_date = entry.timestamp.date()
+                break
+        
+        # Separate timeline into incident-day and background entries
+        incident_entries = []
+        background_entries = []
+        
         for entry in sorted(timeline, key=lambda x: x.timestamp or datetime.min):
             if entry.timestamp:
-                time_str = entry.timestamp.strftime('%B %d, %Y, at %H%M')
-                timeline_text.append(f"- {time_str}: {entry.type.upper()} - {entry.description}")
+                if incident_date and entry.timestamp.date() == incident_date:
+                    incident_entries.append(entry)
+                else:
+                    background_entries.append(entry)
+        
+        # Format entries
+        incident_text = []
+        for entry in incident_entries:
+            time_str = entry.timestamp.strftime('%B %d, %Y, at %H%M')
+            incident_text.append(f"- {time_str}: {entry.type.upper()} - {entry.description}")
+        
+        background_text = []
+        for entry in background_entries[:5]:  # Limit background entries
+            time_str = entry.timestamp.strftime('%B %d, %Y')
+            background_text.append(f"- {time_str}: {entry.description}")
         
         return f"""
 Convert this timeline into professional USCG Findings of Fact for Section 4.1 of a Report of Investigation.
 
-TIMELINE:
-{chr(10).join(timeline_text)}
+FOCUS: Section 4.1 should focus on the INCIDENT DAY events - the actual casualty sequence and immediate circumstances.
+Background information and pre-incident conditions will be handled separately in Section 4.2.
 
-Write 10-15 numbered findings (4.1.1, 4.1.2, etc.) that:
-1. Are concise and factual
-2. Include specific times, dates, and details
-3. Follow chronological order
-4. Use professional language
-5. Can stand alone as factual statements
+INCIDENT DAY EVENTS (Primary focus for 4.1):
+{chr(10).join(incident_text) if incident_text else "No incident-day events identified"}
 
-STYLE EXAMPLE:
-4.1.1. On August 1, 2023, at 0500, the commercial fishing vessel LEGACY departed Morehead City, North Carolina, with four crew members for local fishing operations.
-4.1.2. Weather conditions at departure included calm seas with winds from the southwest at 5-10 knots.
-4.1.3. At 0630, the vessel arrived at the fishing grounds located approximately 15 nautical miles southeast of the port.
+BACKGROUND/PRE-INCIDENT INFORMATION (Save for 4.2):
+{chr(10).join(background_text) if background_text else "No background events"}
+
+Write 8-12 numbered findings (4.1.1, 4.1.2, etc.) focusing on:
+1. The incident sequence itself
+2. Immediate circumstances on the day of the casualty
+3. Direct causal events and conditions
+4. Critical timeline points during the incident
+5. Emergency response actions taken
+
+DO NOT include background information, vessel history, crew qualifications, or pre-incident conditions in 4.1.
+
+STYLE EXAMPLE for 4.1 (Incident Focus):
+4.1.1. On August 1, 2023, at 0500, the commercial fishing vessel LEGACY departed Morehead City, North Carolina, for routine fishing operations.
+4.1.2. At 1430, while operating in 6-foot seas, the vessel experienced a sudden loss of propulsion.
+4.1.3. The engineer reported flooding in the engine room through a failed shaft seal at 1435.
+4.1.4. The captain issued a distress call on VHF Channel 16 at 1442.
 
 Provide findings as a JSON array of strings.
 """
