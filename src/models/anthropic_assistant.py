@@ -31,7 +31,7 @@ class AnthropicAssistant:
         self.client = None
         self._initialize_client()
         # Use fixed Anthropic model (hard‑coded)
-        self.model_name = "claude-3-opus-20240229"
+        self.model_name = "claude-3-5-sonnet-20241022"
     
     def _initialize_client(self):
         """Initialize Anthropic client with API key from environment"""
@@ -394,6 +394,9 @@ Provide findings as a JSON array of strings.
         
         try:
             print("DEBUG: Sending request to Anthropic...")
+            print(f"DEBUG: Using model: {self.model_name}")
+            print(f"DEBUG: Prompt length: {len(prompt)}")
+            
             message = self.client.messages.create(
                 model=self.model_name,
                 max_tokens=3000,
@@ -553,66 +556,35 @@ Provide findings as a JSON array of strings.
             if (hasattr(entry, 'timestamp') and entry.timestamp) or (isinstance(entry, dict) and entry.get('timestamp'))
         ])
         
-        return f"""
-# COMPREHENSIVE TIMELINE EXTRACTION FOR USCG MARINE CASUALTY INVESTIGATION
+        return f"""Extract timeline entries from this marine casualty investigation document. Look for:
 
-## YOUR MISSION
-You are extracting timeline entries from investigation documentation to build the factual foundation for a Report of Investigation. These timeline entries will become "Findings of Fact" - the most critical evidence-based foundation of the entire ROI.
+1. ACTIONS: Crew decisions, equipment operations, communications
+2. CONDITIONS: Weather, vessel status, personnel factors  
+3. EVENTS: Incidents, failures, casualties
 
-## DOCUMENT ANALYSIS REQUIREMENTS
-SCRUTINIZE THE COMPLETE DOCUMENT for every single mention of:
+DOCUMENT CONTENT:
+{evidence_text[:10000] if len(evidence_text) > 10000 else evidence_text}
 
-### 1. ACTIONS (Human/Crew Decisions & Behaviors)
-- Navigation decisions (course changes, speed adjustments)
-- Equipment operations (starting engines, activating pumps, deploying gear)
-- Communication actions (radio calls, alarms, notifications)
-- Safety actions (donning life jackets, launching boats, evacuation orders)
-- Maintenance/inspection activities
-- Watch changes and personnel movements
-- Emergency response actions
-
-### 2. CONDITIONS (Environmental, Equipment, Personnel States)
-- Weather conditions (wind, seas, visibility, precipitation)
-- Vessel condition (stability, damage, flooding, list/trim)
-- Equipment status (operational, failed, maintenance mode)
-- Personnel factors (fatigue, experience, medical conditions)
-- Environmental factors (lighting, temperature, currents)
-- Operational context (fishing operations, transit, anchored)
-- Time pressures or constraints
-
-### 3. EVENTS (Adverse Outcomes & Incidents)
-- Collisions, allisions, groundings
-- Fires, explosions, structural failures
-- Personnel injuries, fatalities, man overboard
-- Equipment failures and malfunctions
-- Loss of propulsion, steering, or navigation
-- Flooding, capsizing, sinking
-- Any deviation from normal operations
-
-## EVIDENCE TEXT TO ANALYZE:
-{evidence_text[:15000] if len(evidence_text) > 15000 else evidence_text}
-
-## EXISTING TIMELINE (avoid duplication):
+EXISTING TIMELINE (avoid duplicates):
 {existing_entries}
 
-## OUTPUT REQUIREMENTS
-Provide a comprehensive JSON array of ALL timeline entries found:
+Return a JSON array of timeline entries found. Each entry should have:
+- timestamp: Date/time (YYYY-MM-DD HH:MM format)
+- type: "action", "condition", or "event" 
+- description: Factual description from document
+- confidence: "high", "medium", or "low"
 
+Example format:
 [
   {{
     "timestamp": "2023-08-01 05:00",
-    "type": "action",
-    "description": "Precise, factual description using terminology from the document",
-    "confidence": "high",
-    "assumptions": ["List any logical assumptions made about timing or details"],
-    "personnel_involved": ["Specific names, roles, or positions mentioned"],
-    "location": "Where this occurred if specified",
-    "source_reference": "Page/paragraph reference if available"
+    "type": "action", 
+    "description": "Vessel departed port for fishing operations",
+    "confidence": "high"
   }}
 ]
 
-IMPORTANT: Return ONLY valid JSON array format. Do not include markdown code blocks or explanatory text.
-"""
+Return ONLY the JSON array, no other text."""
 
     def _create_causal_analysis_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
         """Create prompt for causal factor identification"""
