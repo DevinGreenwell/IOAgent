@@ -8,7 +8,11 @@ from werkzeug.exceptions import RequestEntityTooLarge
 
 # Load environment variables FIRST, before any other imports
 from dotenv import load_dotenv
-load_dotenv()
+# Use absolute path to ensure .env file is found regardless of working directory
+env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+load_dotenv(dotenv_path=env_path)
+print(f"DEBUG: Loading .env from: {env_path}")
+print(f"DEBUG: ANTHROPIC_API_KEY found: {'ANTHROPIC_API_KEY' in os.environ}")
 
 # Add the current directory to Python path to import from src
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
