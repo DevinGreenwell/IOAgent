@@ -111,6 +111,33 @@ class USCGROIGenerator:
         
         self.document.add_paragraph()
         
+        # Use AI-generated executive summary if available
+        if hasattr(self.project.roi_document, 'executive_summary') and self.project.roi_document.executive_summary:
+            exec_summary = self.project.roi_document.executive_summary
+            
+            # Check if we have properly generated AI content
+            if hasattr(exec_summary, 'scene_setting') and exec_summary.scene_setting:
+                # Use the AI-generated comprehensive paragraphs
+                self.document.add_paragraph(exec_summary.scene_setting)
+                self.document.add_paragraph()  # Space between paragraphs
+                
+                if hasattr(exec_summary, 'outcomes') and exec_summary.outcomes:
+                    self.document.add_paragraph(exec_summary.outcomes)
+                    self.document.add_paragraph()  # Space between paragraphs
+                
+                if hasattr(exec_summary, 'causal_factors') and exec_summary.causal_factors:
+                    self.document.add_paragraph(exec_summary.causal_factors)
+            else:
+                # Fallback to old methods if AI content is not available
+                self._generate_fallback_executive_summary()
+        else:
+            # Fallback to old methods if no executive summary
+            self._generate_fallback_executive_summary()
+        
+        self.document.add_page_break()
+    
+    def _generate_fallback_executive_summary(self) -> None:
+        """Generate fallback executive summary using old methods"""
         # Paragraph 1: Scene Setting
         scene_para = self._generate_scene_setting_paragraph()
         self.document.add_paragraph(scene_para)
@@ -126,8 +153,6 @@ class USCGROIGenerator:
         # Paragraph 3: Causal Factors
         causal_para = self._generate_causal_factors_paragraph()
         self.document.add_paragraph(causal_para)
-        
-        self.document.add_page_break()
     
     def _generate_uscg_title(self) -> str:
         """Generate title in USCG format using Investigation Title and Official Number"""

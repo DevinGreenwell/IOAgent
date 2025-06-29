@@ -459,8 +459,32 @@ Example: {{"incident_date": "2023-08-01", "location": "Point Warde, Alaska", "in
         return roi_doc
     
     def _generate_executive_summary(self, roi_project: InvestigationProject) -> ExecutiveSummary:
-        """Generate executive summary from project data"""
+        """Generate executive summary using AI assistant"""
         summary = ExecutiveSummary()
+        
+        # Try to use AI to generate comprehensive executive summary
+        try:
+            from src.models.anthropic_assistant import AnthropicAssistant
+            ai_assistant = AnthropicAssistant()
+            
+            if ai_assistant.client:
+                ai_summary = ai_assistant.generate_executive_summary(roi_project)
+                if ai_summary and 'scene_setting' in ai_summary:
+                    summary.scene_setting = ai_summary.get('scene_setting', '')
+                    summary.outcomes = ai_summary.get('outcomes', '')
+                    summary.causal_factors = ai_summary.get('causal_factors', '')
+                    
+                    # Log successful AI generation
+                    import logging
+                    logging.getLogger('app').info("🟢 Executive summary generated using AI assistant")
+                    return summary
+        except Exception as e:
+            import logging
+            logging.getLogger('app').error(f"Error generating AI executive summary: {e}")
+        
+        # Fallback to hardcoded generation if AI fails
+        import logging
+        logging.getLogger('app').warning("⚠️ Using fallback executive summary generation")
         
         incident_date = roi_project.incident_info.incident_date
         date_str = incident_date.strftime("%B %d, %Y") if incident_date else "an unknown date"
