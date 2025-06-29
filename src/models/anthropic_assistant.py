@@ -90,7 +90,7 @@ class AnthropicAssistant:
                 model=self.model_name,
                 max_tokens=2000,
                 temperature=0.2,
-                system="You are a senior USCG investigator writing findings of fact for a Report of Investigation. Write concise, professional findings that establish the factual foundation. Match the style of actual USCG investigation reports - clear, factual, and properly numbered.",
+                system="You are a senior USCG investigator writing findings of fact for a Report of Investigation. Your goal is to write professional findings that establish the factual foundation. Match the style of actual USCG investigation reports - clear, factual, and properly numbered.",
                 messages=[
                     {
                         "role": "user",
@@ -146,7 +146,7 @@ Return as a JSON array of strings.
             message = self.client.messages.create(
                 model="claude-3-opus-20240229",
                 max_tokens=1000,
-                temperature=0.2,
+                temperature=0.4,
                 messages=[
                     {
                         "role": "user",
@@ -169,7 +169,7 @@ Return as a JSON array of strings.
             return factor.analysis_text or factor.description
         
         prompt = f"""
-Write a concise professional analysis for this causal factor in a USCG Report of Investigation.
+Write a professional analysis for this causal factor in a USCG Report of Investigation.
 
 CAUSAL FACTOR:
 Title: {factor.title}
@@ -178,7 +178,7 @@ Description: {factor.description}
 Current Analysis: {factor.analysis_text or 'None provided'}
 
 REQUIREMENTS:
-1. Write 2-3 concise sentences maximum
+1. Write 3-5 concise sentences maximum
 2. Use "It is reasonable to believe..." phrasing when appropriate
 3. Focus on HOW this factor contributed to the casualty
 4. Avoid technical jargon and verbose explanations
@@ -187,7 +187,7 @@ REQUIREMENTS:
 STYLE EXAMPLES FROM TARGET FORMAT:
 - "It is reasonable to believe that the lack of formal safety training contributed to the crew's inability to respond effectively to the emergency."
 - "The absence of proper maintenance records suggests that critical equipment failures went undetected."
-- "Limited operational experience in local waters was a direct factor in the navigation error."
+- "Limited operational experience in local waters was likely a factor in the navigation error."
 
 Provide ONLY the improved analysis text, no other commentary.
 """
@@ -195,7 +195,7 @@ Provide ONLY the improved analysis text, no other commentary.
         try:
             message = self.client.messages.create(
                 model=self.model_name,
-                max_tokens=300,
+                max_tokens=400,
                 temperature=0.2,
                 messages=[
                     {
@@ -232,7 +232,7 @@ EXEMPLAR (mirror headings, tone, and numbering):
 {STYLE_SNIPPET}
 
 ---
-Generate professional USCG Report of Investigation sections based on this incident data. Match the concise, professional style of actual USCG reports.
+Generate professional USCG Report of Investigation sections based on this incident data. Match the professional style of actual USCG reports.
 
 INCIDENT INFORMATION:
 Type: {project.incident_info.incident_type}
@@ -249,9 +249,9 @@ IDENTIFIED CAUSAL FACTORS:
 Generate the following ROI sections in JSON format:
 
 1. EXECUTIVE SUMMARY (3 paragraphs):
-   - Paragraph 1: Scene setting - what activity was taking place
-   - Paragraph 2: Outcomes - what happened as a result
-   - Paragraph 3: Causal factors determination
+   - Paragraph 1: Scene setting - include the date/time, what activity was taking place, who was involved, where it happened, and what was happening. This should give the reader a good sense of the overall context of the incident.
+   - Paragraph 2: Outcomes - this should include immediate reactions or responses to to main casualty and other outcomes that played out. The reader should be able to follow the sequence of events and understand the overall impact of the incident.
+   - Paragraph 3: Causal factors determination - this should include the causal factors in order, beginning with the initiating event.
 
 2. KEY FINDINGS OF FACT (10-15 numbered statements):
    - Professional factual statements from the timeline
@@ -261,6 +261,7 @@ Generate the following ROI sections in JSON format:
 3. CONCLUSIONS (3-5 numbered statements):
    - Concise determination of cause
    - Focus on initiating event and key factors
+   - Order of conclusions must match order of causal factors
 
 4. ACTIONS TAKEN (2-3 specific actions):
    - Post-casualty testing
@@ -273,7 +274,7 @@ Generate the following ROI sections in JSON format:
    - Equipment upgrades
 
 STYLE REQUIREMENTS:
-- Be concise and professional
+- Be descriptive and professional
 - Avoid verbose technical language
 - Use active voice where appropriate
 - Match actual USCG report style
@@ -327,8 +328,8 @@ Provide response as JSON:
         return f"""
 Convert this timeline into professional USCG Findings of Fact for Section 4.1 of a Report of Investigation.
 
-FOCUS: Section 4.1 should focus on the INCIDENT DAY events - the actual casualty sequence and immediate circumstances.
-Background information and pre-incident conditions will be handled separately in Section 4.2.
+FOCUS: Section 4.1 should focus on the INCIDENT DAY events - it should tell the story ofthe actual casualty sequence and immediate circumstances.
+Background information, pre-incident conditions, and vessel or personnel history will be handled separately in Section 4.2.
 
 INCIDENT DAY EVENTS (Primary focus for 4.1):
 {chr(10).join(incident_text) if incident_text else "No incident-day events identified"}
@@ -518,8 +519,8 @@ Provide findings as a JSON array of strings.
             message = self.client.messages.create(
                 model=self.model_name,
                 max_tokens=1500,
-                temperature=0.2,
-                system="You are an expert USCG investigator writing executive summaries.",
+                temperature=0.5,
+                system="You are an expert USCG investigator writing executive summaries. You understand the details required to write a professional executive summary involve setting a clear scene, describing the outcomes, and listing the causal factors in order.",
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
@@ -569,9 +570,9 @@ Provide findings as a JSON array of strings.
         
         return f"""Extract timeline entries from this marine casualty investigation document. Look for:
 
-1. ACTIONS: Crew decisions, equipment operations, communications
+1. ACTIONS: Individual decisions, equipment operations, communications
 2. CONDITIONS: Weather, vessel status, personnel factors  
-3. EVENTS: Incidents, failures, casualties
+3. EVENTS: Adverse outcomes, failures, casualties
 
 DOCUMENT CONTENT:
 {evidence_text[:10000] if len(evidence_text) > 10000 else evidence_text}
@@ -622,7 +623,7 @@ Please identify causal factors in JSON format following USCG methodology:
 [
   {{
     "category": "organization|workplace|precondition|production|defense",
-    "title": "Brief title describing the causal factor",
+    "title": "Brief title describing the causal factor, stated in the negative (e.g., 'Lack of...', 'Failure to...', 'Inadequate...', etc.)",",
     "description": "Detailed description of the causal factor",
     "evidence_support": ["references to supporting evidence"],
     "analysis": "In-depth analysis of how this factor contributed to the incident"
