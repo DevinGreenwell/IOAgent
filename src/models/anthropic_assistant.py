@@ -393,29 +393,78 @@ Provide findings as a JSON array of strings.
         logger = logging.getLogger('app')
         
         # First, try to strip markdown code blocks if present
+        original_text = text
         if '```json' in text:
             # Extract content between ```json and ```
-            match = re.search(r'```json\s*\n?(.*?)\n?```', text, re.DOTALL)
+            match = re.search(r'```json\s*\n(.*?)(?:\n```|$)', text, re.DOTALL)
             if match:
-                text = match.group(1)
-                logger.info("🟡 JSON EXTRACT: Stripped markdown code blocks")
+                text = match.group(1).strip()
+                logger.info("🟡 JSON EXTRACT: Stripped markdown code blocks (json)")
+                logger.debug(f"Extracted text: {text[:100]}...")
         elif '```' in text:
             # Generic code block without language specifier
-            match = re.search(r'```\s*\n?(.*?)\n?```', text, re.DOTALL)
+            match = re.search(r'```\s*\n(.*?)(?:\n```|$)', text, re.DOTALL)
             if match:
-                text = match.group(1)
+                text = match.group(1).strip()
                 logger.info("🟡 JSON EXTRACT: Stripped generic code blocks")
+        
+        # Also handle case where the text starts with ```json without capturing it
+        if text.startswith('```json'):
+            text = text[7:].strip()
+            if text.endswith('```'):
+                text = text[:-3].strip()
+            logger.info("🟡 JSON EXTRACT: Stripped markdown markers directly")
         
         try:
             # Try to parse the whole text as JSON first
-            return json.loads(text.strip())
-        except json.JSONDecodeError:
+            result = json.loads(text.strip())
+            logger.info(f"🟢 JSON EXTRACT: Successfully parsed JSON (type: {type(result)}, length: {len(result) if isinstance(result, list) else 'n/a'})")
+            return result
+        except json.JSONDecodeError as e:
+            logger.warning(f"⚠️ JSON EXTRACT: Direct parse failed: {e}")
+            
             # If that fails, try to find JSON object/array
             try:
+                # More aggressive search - find first [ or { and last ] or }
+                start_idx = -1
+                end_idx = -1
+                
+                # Find start of JSON
+                for i, char in enumerate(text):
+                    if char in '[{':
+                        start_idx = i
+                        break
+                
+                # Find end of JSON (matching bracket)
+                if start_idx >= 0:
+                    bracket_count = 0
+                    start_char = text[start_idx]
+                    end_char = ']' if start_char == '[' else '}'
+                    
+                    for i in range(start_idx, len(text)):
+                        if text[i] == start_char:
+                            bracket_count += 1
+                        elif text[i] == end_char:
+                            bracket_count -= 1
+                            if bracket_count == 0:
+                                end_idx = i
+                                break
+                    
+                    if end_idx > start_idx:
+                        json_text = text[start_idx:end_idx + 1]
+                        result = json.loads(json_text)
+                        logger.info(f"🟢 JSON EXTRACT: Extracted JSON via bracket matching (type: {type(result)})")
+                        return result
+                
+                # Final fallback - regex
                 candidate = re.search(r'(\{.*\}|\[.*\])', text, re.S).group(1)
-                return json.loads(candidate)
+                result = json.loads(candidate)
+                logger.info(f"🟢 JSON EXTRACT: Extracted JSON via regex (type: {type(result)})")
+                return result
             except Exception as exc:
-                logger.error(f"🔴 JSON EXTRACT: Failed to parse JSON from text: {text[:200]}...")
+                logger.error(f"🔴 JSON EXTRACT: All extraction attempts failed")
+                logger.error(f"🔴 JSON EXTRACT: Original text: {original_text[:500]}...")
+                logger.error(f"🔴 JSON EXTRACT: After stripping: {text[:500]}...")
                 raise ValueError("No valid JSON found") from exc
 
     def _parse_findings_statements(self, response_text: str) -> List[str]:
