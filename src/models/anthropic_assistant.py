@@ -547,18 +547,36 @@ Provide findings as a JSON array of strings.
         
         prompt = self._create_executive_summary_prompt(project)
         
+        # Log the prompt being sent to debug data quality issues
+        import logging
+        logger = logging.getLogger('app')
+        logger.info(f"🟡 EXEC SUMMARY: Generating summary with {len(project.timeline)} timeline entries, {len(project.causal_factors)} causal factors")
+        logger.info(f"🟡 EXEC SUMMARY: Vessel info: {[v.official_name for v in project.vessels]}")
+        
         try:
             message = self.client.messages.create(
                 model=self.model_name,
-                max_tokens=1500,
-                temperature=0.5,
-                system="You are an expert USCG investigator and professional writer specializing in executive summaries for marine casualty investigations. You excel at crafting compelling narratives that tell the complete story of maritime incidents. Your executive summaries are comprehensive, detailed paragraphs (4-6 sentences each) that read like professional maritime journalism - engaging, thorough, and factual. You avoid simple, telegraphic sentences and instead create flowing narratives that synthesize complex incident information into accessible prose.",
+                max_tokens=2500,  # Increased for detailed paragraphs
+                temperature=0.3,  # Reduced for more consistent quality
+                system="You are an expert USCG investigator and professional writer specializing in executive summaries for marine casualty investigations. You excel at crafting compelling narratives that tell the complete story of maritime incidents. Your executive summaries are comprehensive, detailed paragraphs (4-6 sentences each) that read like professional maritime journalism - engaging, thorough, and factual. You avoid simple, telegraphic sentences and instead create flowing narratives that synthesize complex incident information into accessible prose. CRITICAL: You must write exactly as instructed - 4-6 complete sentences per paragraph in flowing narrative style. Do not write short, choppy sentences.",
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
             )
             
-            summary = self._parse_executive_summary(message.content[0].text)
+            raw_response = message.content[0].text
+            logger.info(f"🟡 EXEC SUMMARY: Raw AI response length: {len(raw_response)}")
+            logger.info(f"🟡 EXEC SUMMARY: Response preview: {raw_response[:300]}")
+            
+            summary = self._parse_executive_summary(raw_response)
+            
+            # Validate summary quality
+            for section, content in summary.items():
+                if content and not content.startswith('error'):
+                    sentence_count = len([s for s in content.split('.') if s.strip()])
+                    if sentence_count < 3:
+                        logger.warning(f"⚠️ EXEC SUMMARY: {section} only has {sentence_count} sentences (should be 4-6)")
+            
             return summary
             
         except Exception as e:
@@ -788,7 +806,9 @@ Please provide the findings of fact as a JSON array of strings:
                 personnel_info.append(f"- {person.role}: {person.status}")
         
         return f"""
-Write a professional three-paragraph executive summary for a USCG Report of Investigation. Each paragraph must be 4-6 comprehensive sentences that tell a complete story.
+You are writing a professional executive summary for a USCG Report of Investigation. This is NOT a brief summary - each paragraph must be 4-6 FULL, DETAILED sentences that create a compelling narrative.
+
+CRITICAL INSTRUCTION: Write exactly 3 paragraphs. Each paragraph must be 4-6 complete sentences. Do NOT write short, telegraphic sentences like "At 0615, the vessel departed." Instead write flowing, detailed prose like "On the morning of August 1st, 2023, the commercial fishing vessel LEGACY departed New Bedford Harbor with a crew of five experienced mariners aboard for what was planned to be a routine 10-day seine fishing operation in the productive waters southeast of Point Warde, Alaska."
 
 PROJECT INFORMATION:
 - Vessels: {', '.join(vessel_info) if vessel_info else 'Not specified'}
@@ -833,13 +853,14 @@ Write a professional determination that:
 - Explains how these factors contributed to the casualty
 - Concludes with the overall causal determination
 
-CRITICAL REQUIREMENTS:
-- Each paragraph must be 4-6 complete, detailed sentences
-- Avoid simple, telegraphic writing
-- Create flowing, narrative prose that tells the complete story
-- Use specific details from the timeline and project information
-- Write at a professional maritime journalism level
-- Synthesize complex information into accessible prose
+CRITICAL REQUIREMENTS - MANDATORY WRITING STYLE:
+- Each paragraph MUST be exactly 4-6 complete, detailed sentences (not bullet points, not short phrases)
+- FORBIDDEN: Simple telegraphic sentences like "At 0615, vessel departed" or "Crew member was injured"
+- REQUIRED: Complex, detailed narrative sentences that paint a complete picture
+- Example of GOOD writing: "On August 1st, 2023, at approximately 0615 in the early morning hours, the 42-foot commercial fishing vessel LEGACY was engaged in seine fishing operations approximately two nautical miles southeast of Point Warde in the protected waters of Southeast Alaska, where Captain Joseph Cisney and his four-person crew were conducting their third seine set of what had begun as a routine fishing day under favorable weather conditions with light winds and calm seas."
+- Example of BAD writing: "On August 1, 2023, at 0615, the LEGACY was fishing. Weather was calm. Third seine set began."
+- Write at the level of professional maritime journalism - detailed, engaging, comprehensive
+- Every sentence should advance the narrative and provide meaningful detail
 
 Please provide the executive summary in JSON format:
 {{
