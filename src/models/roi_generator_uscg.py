@@ -2,23 +2,24 @@
 # Follows USCG Marine Investigation Documentation and Reporting Procedures Manual standards
 
 import os
-from datetime import datetime
-from typing import List, Dict, Any, Optional
+from datetime import datetime, date
+from typing import List, Dict, Any, Optional, Union
 from docx import Document
 from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.style import WD_STYLE_TYPE
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from zoneinfo import ZoneInfo  # Python 3.9+ standard tz database
 
-from src.models.roi_models import InvestigationProject, ROIDocument, TimelineEntry, CausalFactor, Vessel, Personnel
+from src.models.roi_models import InvestigationProject, ROIDocument, TimelineEntry, CausalFactor, Vessel, Personnel, Evidence
 
 class USCGROIGenerator:
     """USCG-compliant ROI document generator following official standards"""
     
-    def __init__(self):
-        self.project = None
-        self.document = None
+    def __init__(self) -> None:
+        self.project: Optional[InvestigationProject] = None
+        self.document: Optional[Document] = None
     
     def generate_roi(self, project: InvestigationProject, output_path: str) -> str:
         """Generate complete USCG-compliant ROI document"""
@@ -36,8 +37,11 @@ class USCGROIGenerator:
         self.document.save(output_path)
         return output_path
     
-    def _setup_uscg_formatting(self):
+    def _setup_uscg_formatting(self) -> None:
         """Set up USCG-required document formatting"""
+        if not self.document:
+            return
+            
         # Set default font to Times New Roman 12-pitch as required
         style = self.document.styles['Normal']
         font = style.font
@@ -57,25 +61,38 @@ class USCGROIGenerator:
             section.left_margin = Inches(1)
             section.right_margin = Inches(1)
     
-    def _format_date(self, date: datetime) -> str:
+    def _format_date(self, date_obj: Optional[datetime]) -> str:
         """Format date according to USCG standard: Month DD, YYYY"""
-        if date:
-            return date.strftime("%B %d, %Y")
+        if date_obj:
+            return date_obj.strftime("%B %d, %Y")
         return "[Date to be determined]"
     
-    def _format_time(self, time: datetime) -> str:
-        """Format time according to USCG standard: HHMM in 24-hour format"""
-        if time:
-            return time.strftime("%H%M")
-        return "[Time unknown]"
+    def _format_time(self, time_obj: Optional[datetime]) -> str:
+        """Format time according to USCG standard (HHMM) and the incident's local time zone if provided"""
+        if not time_obj:
+            return "[Time unknown]"
+        if not self.project:
+            return time_obj.strftime("%H%M")
+            
+        tz_name = getattr(self.project.incident_info, "time_zone", None)
+        if tz_name:
+            try:
+                time_obj = time_obj.astimezone(ZoneInfo(tz_name))
+            except Exception:
+                # Fallback silently if tz string is invalid
+                pass
+        return time_obj.strftime("%H%M")
     
     def _italicize_vessel_names(self, text: str) -> str:
         """Helper to mark vessel names for italicization"""
         # This is a placeholder - actual italicization happens when adding to document
         return text
     
-    def _generate_executive_summary(self):
+    def _generate_executive_summary(self) -> None:
         """Generate Executive Summary section per USCG standards"""
+        if not self.document or not self.project:
+            return
+            
         # Generate title in USCG format
         title = self._generate_uscg_title()
         
@@ -114,6 +131,9 @@ class USCGROIGenerator:
     
     def _generate_uscg_title(self) -> str:
         """Generate title in USCG format using Investigation Title and Official Number"""
+        if not self.project:
+            return "VESSEL INCIDENT"
+            
         # Use Investigation Title and Official Number from project info
         investigation_title = self.project.metadata.title or "VESSEL INCIDENT"
         official_number = getattr(self.project, 'official_number', None)
@@ -162,6 +182,9 @@ class USCGROIGenerator:
     
     def _generate_scene_setting_paragraph(self) -> str:
         """Generate paragraph 1 of Executive Summary - Scene Setting"""
+        if not self.project:
+            return "Scene setting information not available."
+            
         # Get incident date and time
         incident_date = self._format_date(self.project.incident_info.incident_date)
         
@@ -203,6 +226,9 @@ class USCGROIGenerator:
     
     def _generate_outcomes_paragraph(self) -> str:
         """Generate paragraph 2 of Executive Summary - Outcomes"""
+        if not self.project:
+            return "Outcome information not available."
+            
         outcomes = []
         
         # Scan timeline for outcomes
@@ -245,10 +271,13 @@ class USCGROIGenerator:
     
     def _generate_causal_factors_paragraph(self) -> str:
         """Generate paragraph 3 of Executive Summary - Causal Factors"""
+        if not self.project:
+            return "Causal factor information not available."
+            
         # Identify initiating event
         initiating_event = None
         for entry in self.project.timeline:
-            if entry.is_initiating_event or entry.type == 'event':
+            if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event:
                 initiating_event = entry
                 break
         
@@ -273,9 +302,12 @@ class USCGROIGenerator:
     
     def _describe_incident_from_timeline(self) -> str:
         """Extract incident description from timeline"""
+        if not self.project:
+            return "an incident occurred"
+            
         # Look for event type entries that describe what happened
         for entry in self.project.timeline:
-            if entry.type == 'event' or entry.is_initiating_event:
+            if entry.type == 'event' or (hasattr(entry, 'is_initiating_event') and entry.is_initiating_event):
                 # Clean up the description
                 desc = entry.description
                 if desc[0].isupper():
@@ -286,59 +318,39 @@ class USCGROIGenerator:
         incident_type = self.project.incident_info.incident_type or "a marine casualty"
         return f"A {incident_type.lower()} occurred"
     
-    def _generate_investigating_officers_report(self):
+    def _generate_investigating_officers_report(self) -> None:
         """Generate the main Investigating Officer's Report"""
-        # Professional Header for IO Report
-        p = self.document.add_paragraph()
-        p.add_run("Commandant\n")
-        p.add_run("United States Coast Guard\n")
-        
-        # Extract location for sector determination
-        location = self.project.incident_info.location or 'Unknown Location'
-        if 'florida' in location.lower() or 'miami' in location.lower():
-            sector = 'Miami'
-        elif 'north carolina' in location.lower() or 'carolina' in location.lower():
-            sector = 'North Carolina'
-        elif 'virginia' in location.lower():
-            sector = 'Hampton Roads'
-        else:
-            sector = 'Investigation Unit'
+        if not self.document or not self.project:
+            return
             
-        p.add_run(f"Sector {sector}\n")
-        p.add_run("100 MacArthur Causeway\n")
-        p.add_run("Miami Beach, FL 33139\n")
-        p.add_run("Staff Symbol: INV\n")
-        p.add_run("Phone: (305) 535-4314\n")
-        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        
-        # Add spacing
+        # [Header block intentionally omitted per new guidance]
         self.document.add_paragraph()
         self.document.add_paragraph()
-        
+
         # Add date and control number
         p = self.document.add_paragraph()
         p.add_run("16732\n")
         p.add_run(self._format_date(datetime.now()))
-        
+
         # Add spacing
         self.document.add_paragraph()
         self.document.add_paragraph()
-        
+
         # Title
         title = self._generate_uscg_title()
         title_para = self.document.add_paragraph()
         title_para.add_run(title).bold = True
         title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
+
         self.document.add_paragraph()
-        
+
         # INVESTIGATING OFFICER'S REPORT heading
         report_heading = self.document.add_paragraph()
         report_heading.add_run("INVESTIGATING OFFICER'S REPORT").bold = True
         report_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        
+
         self.document.add_paragraph()
-        
+
         # Generate all required sections
         self._generate_section_1_preliminary_statement()
         self._generate_section_2_vessels_involved()
@@ -348,35 +360,38 @@ class USCGROIGenerator:
         self._generate_section_6_conclusions()
         self._generate_section_7_actions_taken()
         self._generate_section_8_recommendations()
-        
+
         # Add signature block
         self._generate_signature_block()
     
-    def _generate_section_1_preliminary_statement(self):
+    def _generate_section_1_preliminary_statement(self) -> None:
         """Section 1: Preliminary Statement"""
+        if not self.document or not self.project:
+            return
+            
         # Section heading
         heading = self.document.add_paragraph()
         heading.add_run("1. Preliminary Statement").bold = True
-        
+
         # 1.1 - Authority statement
         self.document.add_paragraph(
             "1.1. This marine casualty investigation was conducted and this report was submitted in "
             "accordance with Title 46, Code of Federal Regulations (CFR), Subpart 4.07, and under the "
             "authority of Title 46, United States Code (USC) Chapter 63."
         )
-        
+
         # 1.2 - Parties in interest (if any)
         parties = []
         if self.project.vessels:
             for vessel in self.project.vessels:
                 if vessel.official_name:
                     parties.append(f"the owner of the {vessel.official_name}")
-        
+
         # Add personnel as parties if involved
         for person in self.project.personnel:
             if person.role.lower() in ['master', 'captain', 'operator']:
                 parties.append(f"the {person.role.lower()}")
-        
+
         if parties:
             parties_text = ", ".join(parties)
             self.document.add_paragraph(
@@ -384,68 +399,75 @@ class USCGROIGenerator:
                 f"investigation. No other individuals, organizations, or parties were designated a party-in-"
                 f"interest in accordance with 46 CFR Subsection 4.03-10."
             )
-        
+
         # 1.3 - Lead agency statement
         self.document.add_paragraph(
             "1.3. The Coast Guard was lead agency for all evidence collection activities involving this "
             "investigation."
         )
-        
+
         # Check for loss of life
-        has_fatality = any('deceased' in e.description.lower() or 'death' in e.description.lower() 
+        has_fatality = any('deceased' in e.description.lower() or 'death' in e.description.lower()
                           for e in self.project.timeline)
-        
+
         if has_fatality:
             self.document.add_paragraph(
                 "Due to this investigation involving a loss of life, the Coast Guard Investigative "
                 "Service (CGIS) was notified and agreed to provide technical assistance as required."
             )
-        
+
         self.document.add_paragraph(
             "No other persons or organizations assisted in this investigation."
         )
-        
+
         # 1.4 - Time format statement
+        tz_note = getattr(self.project.incident_info, "time_zone", "local time").replace("_", " ")
         self.document.add_paragraph(
-            "1.4. All times listed in this report are approximate, and in Eastern Standard Time using a 24-"
-            "hour format."
+            f"1.4. All times listed in this report are approximate and expressed in {tz_note} using a 24‑hour format."
         )
-        
+
         self.document.add_paragraph()  # Add spacing
     
-    def _generate_section_2_vessels_involved(self):
+    def _generate_section_2_vessels_involved(self) -> None:
         """Section 2: Vessels Involved in the Incident"""
+        if not self.document or not self.project:
+            return
+            
         heading = self.document.add_paragraph()
         heading.add_run("2. Vessels Involved in the Incident").bold = True
-        
+
         for vessel in self.project.vessels:
             # Add photo placeholder
             self.document.add_paragraph()
             photo_para = self.document.add_paragraph()
             photo_para.add_run("Figure 1. Undated Photograph of Vessel").italic = True
             self.document.add_paragraph()
-            
+
+            # Helper for placeholder handling
+            def _safe(val: Any, default: str = "Not documented") -> str:
+                return str(val) if val not in [None, "", "##", "YYYY"] else default
+
             # Create vessel information table
             table = self.document.add_table(rows=13, cols=2)
             table.style = 'Table Grid'
-            
+
             # Populate vessel information in table format
             vessel_info = [
-                ("Official Name:", vessel.official_name or 'Unknown'),
-                ("", f"({vessel.official_name.upper() if vessel.official_name else 'VESSEL NAME'})"),
-                ("Identification Number:", f"{vessel.identification_number or '0000000'} - Official Number (US)"),
-                ("Flag:", vessel.flag or 'United States'),
-                ("Vessel Class/Type/Sub-Type", f"{vessel.vessel_class or 'Unknown'}/{vessel.vessel_type or 'Unknown'}/{vessel.vessel_subtype or 'N/A'}"),
-                ("Build Year:", vessel.build_year or 'YYYY'),
-                ("Gross Tonnage:", f"{vessel.gross_tonnage or '##'} GT"),
-                ("Length:", f"{vessel.length or '##'} feet"),
-                ("Beam/Width:", f"{vessel.beam or '##'} feet"),
-                ("Draft/Depth:", f"{vessel.draft or '##'} feet"),
-                ("Main/Primary Propulsion:", vessel.propulsion or 'Configuration/System Type, Ahead Horse Power'),
-                ("Owner:", f"{vessel.owner or 'Line 1 = Official Name'}\n{vessel.owner_location or 'Line 2 = City, State/Country'}"),
-                ("Operator:", f"{vessel.operator or 'Line 1 = Official Name'}\n{vessel.operator_location or 'Line 2 = City, State/Country'}")
+                ("Official Name:", _safe(vessel.official_name)),
+                ("", f"({_safe(vessel.official_name.upper() if vessel.official_name else 'VESSEL NAME')})"),
+                ("Identification Number:", f"{_safe(vessel.identification_number)} - Official Number (US)"),
+                ("Flag:", _safe(vessel.flag, "United States")),
+                ("Vessel Class/Type/Sub-Type", f"{_safe(vessel.vessel_class)}/{_safe(vessel.vessel_type)}/{_safe(vessel.vessel_subtype, 'N/A')}"),
+                ("Build Year:", _safe(vessel.build_year)),
+                ("Gross Tonnage:", f"{_safe(vessel.gross_tonnage)} GT"),
+                ("Length:", f"{_safe(vessel.length)} feet"),
+                ("Beam/Width:", f"{_safe(vessel.beam)} feet"),
+                ("Draft/Depth:", f"{_safe(vessel.draft)} feet"),
+                ("Main/Primary Propulsion:", _safe(vessel.propulsion, 'Configuration/System Type, Ahead Horse Power')),
+                ("Owner:", f"{_safe(vessel.owner, 'Line 1 = Official Name')}\n{_safe(vessel.owner_location, 'Line 2 = City, State/Country')}"),
+                ("Operator:", f"{_safe(vessel.operator, 'Line 1 = Official Name')}\n{_safe(vessel.operator_location, 'Line 2 = City, State/Country')}")
             ]
-            
+
             # Fill table with vessel information
             for i, (label, value) in enumerate(vessel_info):
                 row = table.rows[i]
@@ -455,13 +477,16 @@ class USCGROIGenerator:
                 if i == 1:
                     for run in row.cells[1].paragraphs[0].runs:
                         run.italic = True
-            
+
             self.document.add_paragraph()  # Spacing between vessels
-        
+
         self.document.add_paragraph()  # Section spacing
     
-    def _generate_section_3_personnel_casualties(self):
+    def _generate_section_3_personnel_casualties(self) -> None:
         """Section 3: Deceased, Missing, and/or Injured Persons"""
+        if not self.document or not self.project:
+            return
+            
         heading = self.document.add_paragraph()
         heading.add_run("3. Deceased, Missing, and/or Injured Persons").bold = True
         
@@ -490,8 +515,11 @@ class USCGROIGenerator:
         
         self.document.add_paragraph()  # Section spacing
     
-    def _generate_section_4_findings_of_fact(self):
+    def _generate_section_4_findings_of_fact(self) -> None:
         """Section 4: Findings of Fact"""
+        if not self.document or not self.project:
+            return
+            
         heading = self.document.add_paragraph()
         heading.add_run("4. Findings of Fact").bold = True
         
@@ -500,7 +528,7 @@ class USCGROIGenerator:
         subheading.add_run("4.1. The Incident:").bold = True
         
         # Generate professional findings from timeline using AI - ENHANCED VERSION
-        if self.project.roi_document.findings_of_fact:
+        if hasattr(self.project, 'roi_document') and self.project.roi_document.findings_of_fact:
             # Use existing findings if available (statements are stored without numbers)
             finding_number = 1
             for finding in self.project.roi_document.findings_of_fact:
@@ -513,11 +541,11 @@ class USCGROIGenerator:
             
             if anthropic_assistant.client and self.project.timeline:
                 # Convert timeline entries to appropriate format
-                timeline_objects = []
+                timeline_objects: List[TimelineEntry] = []
                 for entry in self.project.timeline:
                     timeline_objects.append(entry)
                 
-                evidence_objects = []
+                evidence_objects: List[Evidence] = []
                 for evidence in self.project.evidence_library:
                     evidence_objects.append(evidence)
                 
@@ -542,18 +570,21 @@ class USCGROIGenerator:
         
         self.document.add_paragraph()  # Section spacing
     
-    def _generate_section_4_2_supporting_findings(self):
+    def _generate_section_4_2_supporting_findings(self) -> None:
         """Generate Section 4.2 - Supporting/Background Information"""
+        if not self.document or not self.project:
+            return
+            
         # Identify incident date from initiating event
-        incident_date = None
+        incident_date: Optional[date] = None
         for entry in self.project.timeline:
-            if entry.is_initiating_event and entry.timestamp:
+            if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event and entry.timestamp:
                 incident_date = entry.timestamp.date()
                 break
         
         # Collect background timeline entries (pre-incident and post-casualty)
-        background_entries = []
-        post_casualty_entries = []
+        background_entries: List[TimelineEntry] = []
+        post_casualty_entries: List[TimelineEntry] = []
         
         if incident_date:
             for entry in self.project.timeline:
@@ -599,7 +630,7 @@ class USCGROIGenerator:
             
             if anthropic_assistant.client:
                 try:
-                    # Generate background findings from evidence
+                    # Generate background findings from evidence - fix the date parameter
                     evidence_findings = anthropic_assistant.generate_background_findings_from_evidence(
                         self.project.evidence_library,
                         incident_date
@@ -609,7 +640,8 @@ class USCGROIGenerator:
                         finding_text = f"4.2.{finding_number}. {finding}"
                         self.document.add_paragraph(finding_text)
                         finding_number += 1
-                except:
+                except Exception as e:
+                    print(f"Error generating background findings: {e}")
                     pass
             
             # Fallback if AI not available
@@ -632,21 +664,24 @@ class USCGROIGenerator:
                 self.document.add_paragraph(finding_text)
                 finding_number += 1
     
-    def _generate_enhanced_findings_from_timeline(self):
+    def _generate_enhanced_findings_from_timeline(self) -> None:
         """Enhanced method for professional timeline to findings conversion - focuses on incident day"""
+        if not self.document or not self.project:
+            return
+            
         if not self.project.timeline:
             self.document.add_paragraph("4.1.1. No timeline entries have been documented for this incident.")
             return
         
         # Identify incident date from initiating event
-        incident_date = None
+        incident_date: Optional[date] = None
         for entry in self.project.timeline:
-            if entry.is_initiating_event and entry.timestamp:
+            if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event and entry.timestamp:
                 incident_date = entry.timestamp.date()
                 break
         
         # Filter for incident-day entries only
-        incident_entries = []
+        incident_entries: List[TimelineEntry] = []
         if incident_date:
             incident_entries = [
                 entry for entry in self.project.timeline 
@@ -657,7 +692,7 @@ class USCGROIGenerator:
             incident_entries = [entry for entry in self.project.timeline if entry.timestamp]
         
         # Sort timeline by timestamp
-        sorted_timeline = sorted(incident_entries, key=lambda x: x.timestamp)
+        sorted_timeline = sorted(incident_entries, key=lambda x: x.timestamp or datetime.min)
         
         if not sorted_timeline:
             self.document.add_paragraph("4.1.1. No incident-day timeline entries have been documented.")
@@ -681,8 +716,11 @@ class USCGROIGenerator:
             self.document.add_paragraph(finding_text)
             finding_number += 1
     
-    def _generate_section_5_analysis(self):
+    def _generate_section_5_analysis(self) -> None:
         """Section 5: Analysis - THE MOST CRITICAL SECTION OF THE ROI"""
+        if not self.document or not self.project:
+            return
+            
         # Add emphasis that this is the most important section
         heading = self.document.add_paragraph()
         heading.add_run("5. Analysis").bold = True
@@ -723,7 +761,21 @@ class USCGROIGenerator:
             
             # Get improved analysis text from Anthropic
             if anthropic_assistant.client:
-                analysis_text = anthropic_assistant.improve_analysis_text(factor)
+                try:
+                    analysis_text = anthropic_assistant.improve_analysis_text(factor)
+                except Exception as e:
+                    print(f"Error improving analysis text: {e}")
+                    # Fallback to simple format if Anthropic fails
+                    analysis_text = factor.analysis_text or factor.description
+                    if not analysis_text.lower().startswith('it is reasonable'):
+                        if factor.category == 'precondition':
+                            analysis_text = f"It is reasonable to believe that {analysis_text.lower()} contributed to the casualty sequence."
+                        elif factor.category == 'production':
+                            analysis_text = f"The {analysis_text.lower()} was a direct factor in the incident."
+                        elif factor.category == 'defense':
+                            analysis_text = f"The absence of {analysis_text.lower()} allowed the casualty to occur."
+                        else:
+                            analysis_text = f"It is reasonable to believe that {analysis_text.lower()} was a contributing factor."
             else:
                 # Fallback to simple format if Anthropic not available
                 analysis_text = factor.analysis_text or factor.description
@@ -745,61 +797,67 @@ class USCGROIGenerator:
     
         self.document.add_paragraph()  # Section spacing
     
-    def _generate_section_6_conclusions(self):
-        """Section 6: Conclusions"""
+    def _generate_section_6_conclusions(self) -> None:
+        """Section 6: Conclusions – formatted per updated unit guidance"""
+        if not self.document or not self.project:
+            return
+            
         heading = self.document.add_paragraph()
         heading.add_run("6. Conclusions").bold = True
-        
-        # 6.1 Determination of Cause
+
+        # --- 6.1 Determination of Cause ---
         subheading = self.document.add_paragraph()
         subheading.add_run("6.1. Determination of Cause:").bold = True
-        
-        # Generate comprehensive conclusions based on analysis
-        if hasattr(self.project, 'roi_document') and self.project.roi_document.conclusions:
-            # Use existing conclusions if available
-            for i, conclusion in enumerate(self.project.roi_document.conclusions, 1):
-                self.document.add_paragraph(f"6.1.{i}. {conclusion.statement}")
+
+        # Identify the initiating event
+        initiating_event = next(
+            (e for e in self.project.timeline if getattr(e, "is_initiating_event", False)), None
+        )
+
+        if initiating_event and initiating_event.description:
+            init_text = (
+                f"6.1.1. The initiating event for this casualty occurred when "
+                f"{initiating_event.description.lower()}."
+            )
         else:
-            # Generate conclusions from causal factors and timeline
-            conclusion_number = 1
-            
-            # Find initiating event
-            initiating_event = None
-            for entry in self.project.timeline:
-                if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event:
-                    initiating_event = entry
-                    break
-            
-            # Concise conclusions matching target format
-            if initiating_event:
-                self.document.add_paragraph(f"6.1.{conclusion_number}. The initiating event for this casualty was {initiating_event.description.lower()}.")
-                conclusion_number += 1
-            
-            # List causal factors simply
-            if self.project.causal_factors:
-                self.document.add_paragraph(f"6.1.{conclusion_number}. Contributing causal factors were identified in the areas of vessel operations, crew training, and safety management.")
-                conclusion_number += 1
-            else:
-                self.document.add_paragraph(f"6.1.{conclusion_number}. Investigation continues to determine specific causal factors.")
-        
-        # 6.2-6.6 Standard enforcement sections (required by USCG format)
-        self.document.add_paragraph()
-        self.document.add_paragraph("6.2. Evidence of Act(s) or Violation(s) of Law by Any Coast Guard "
-                                  "Credentialed Mariner Subject to Action Under 46 USC Chapter 77: None identified.")
-        
-        self.document.add_paragraph("6.3. Evidence of Act(s) or Violation(s) of Law by U.S. Coast Guard "
-                                  "Personnel, or any other person: None identified.")
-        
-        self.document.add_paragraph("6.4. Evidence of Act(s) Subject to Civil Penalty: None identified.")
-        
-        self.document.add_paragraph("6.5. Evidence of Criminal Act(s): None identified.")
-        
-        self.document.add_paragraph("6.6. Need for New or Amended U.S. Law or Regulation: None identified.")
-        
+            init_text = (
+                "6.1.1. The initiating event for this casualty could not be conclusively determined; "
+                "however, the following scenario is considered most probable based on available evidence."
+            )
+        self.document.add_paragraph(init_text)
+
+        # List every causal factor as sub‑paragraphs 6.1.1.1, 6.1.1.2, etc.
+        if self.project.causal_factors:
+            sub_index = 1
+            for factor in self.project.causal_factors:
+                # Prefer the descriptive text, fall back to title
+                text = factor.description or factor.title
+                para_num = f"6.1.1.{sub_index}"
+                self.document.add_paragraph(f"{para_num}. {text.rstrip('.')}." )
+                sub_index += 1
+        else:
+            self.document.add_paragraph(
+                "6.1.1.1. No specific causal factors were identified during the investigation."
+            )
+
+        # Brief placeholders for 6.2 – 6.7 to satisfy USCG numbering without duplicating analysis
+        skip_lines = [
+            "6.2. Evidence of Act(s) or Violation(s) of Law by Credentialed Mariners: See 6.1.",
+            "6.3. Evidence of Act(s) or Violation(s) of Law by U.S. Coast Guard personnel or others: See 6.1.",
+            "6.4. Evidence of Act(s) Subject to Civil Penalty: See 6.1.",
+            "6.5. Evidence of Criminal Act(s): See 6.1.",
+            "6.6. Need for New or Amended U.S. Law or Regulation: See 6.1.",
+        ]
+        for line in skip_lines:
+            self.document.add_paragraph(line)
+
         self.document.add_paragraph()  # Section spacing
     
-    def _generate_section_7_actions_taken(self):
+    def _generate_section_7_actions_taken(self) -> None:
         """Section 7: Actions Taken Since the Incident"""
+        if not self.document or not self.project:
+            return
+            
         heading = self.document.add_paragraph()
         heading.add_run("7. Actions Taken Since the Incident").bold = True
         
@@ -819,8 +877,11 @@ class USCGROIGenerator:
         
         self.document.add_paragraph()  # Section spacing
     
-    def _generate_section_8_recommendations(self):
+    def _generate_section_8_recommendations(self) -> None:
         """Section 8: Recommendations"""
+        if not self.document or not self.project:
+            return
+            
         heading = self.document.add_paragraph()
         heading.add_run("8. Recommendations").bold = True
         
@@ -870,8 +931,11 @@ class USCGROIGenerator:
         
         self.document.add_paragraph()  # Section spacing
     
-    def _generate_signature_block(self):
+    def _generate_signature_block(self) -> None:
         """Generate signature block"""
+        if not self.document or not self.project:
+            return
+            
         # Add spacing
         for _ in range(3):
             self.document.add_paragraph()

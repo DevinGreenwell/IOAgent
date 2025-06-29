@@ -5,7 +5,33 @@ import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import openai
+
 from dotenv import load_dotenv
+
+# ---------------------------------------------------------------------------
+# OpenAI model & token settings
+# ---------------------------------------------------------------------------
+TIMELINE_MODEL = "o3-mini-2025-06-15"
+ANALYSIS_MODEL = "o3-2025-06-15"
+MAX_TOKENS_TIMELINE = 3000   # generous for long evidence
+MAX_TOKENS_GENERIC  = 1500   # causal, findings, summary, etc.
+
+import re
+
+def _safe_json_extract(text: str):
+    """
+    Return the first valid JSON object or array found in `text`.
+    Raises ValueError if none is found.
+    """
+    import json
+    match = re.search(r'(\{.*\}|\[.*\])', text, re.S)
+    if not match:
+        raise ValueError("No JSON structure found")
+    return json.loads(match.group(1))
+
+def _first_n_chars(text: str, n: int = 15000) -> str:
+    """Soft‑cap very long evidence strings to keep prompts within context limits."""
+    return text if len(text) <= n else text[:n] + "\n[TRUNCATED]"
 
 from src.models.roi_models import (
     InvestigationProject, TimelineEntry, CausalFactor, 
@@ -46,7 +72,8 @@ class AIAssistant:
         try:
             print("DEBUG: Sending request to OpenAI...")
             response = self.client.chat.completions.create(
-                model="o3-mini-2025-01-31",
+                model=TIMELINE_MODEL,
+                max_tokens=MAX_TOKENS_TIMELINE,
                 messages=[
                     {"role": "system", "content": "You are a senior USCG marine casualty investigator with 20+ years of experience conducting formal investigations under 46 CFR Part 4. You excel at comprehensive document analysis and timeline reconstruction from complex investigation materials. You understand that timeline entries become the foundation for Findings of Fact in Reports of Investigation, so your extraction must be meticulous, complete, and evidence-based. You have extensive knowledge of maritime operations, vessel systems, crew procedures, and emergency response protocols."},
                     {"role": "user", "content": prompt}
@@ -75,7 +102,8 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o3-2025-04-16",
+                model=ANALYSIS_MODEL,
+                max_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert in USCG causal analysis methodology using the Swiss Cheese model. You have extensive experience in maritime operations, vessel safety systems, and human factors in marine casualties. When analyzing incidents, you make reasonable and probable assumptions based on standard maritime practices, typical crew behaviors, and common vessel configurations. You clearly state these assumptions in your analysis while maintaining professional objectivity."},
                     {"role": "user", "content": prompt}
@@ -89,7 +117,7 @@ class AIAssistant:
             print(f"Error identifying causal factors: {e}")
             return []
     
-    def chat(self, prompt: str, model: str = "o3-2025-04-16") -> str:
+    def chat(self, prompt: str, model: str = ANALYSIS_MODEL) -> str:
         """Generate a simple chat completion using the specified OpenAI chat model.
 
         Args:
@@ -109,6 +137,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=model,
+                max_tokens=MAX_TOKENS_GENERIC,
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.choices[0].message.content.strip()
@@ -126,7 +155,8 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o3-2025-04-16",
+                model=ANALYSIS_MODEL,
+                max_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert USCG marine casualty investigator with extensive experience writing professional Reports of Investigation. You excel at converting timeline data into polished, professional findings of fact that meet USCG standards and read like expert investigative reports."},
                     {"role": "user", "content": prompt}
@@ -149,7 +179,8 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o3-2025-04-16",
+                model=ANALYSIS_MODEL,
+                max_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert USCG marine casualty investigator with extensive experience writing professional Reports of Investigation. You excel at analyzing evidence documents and extracting factual findings that meet USCG standards and read like expert investigative reports."},
                     {"role": "user", "content": prompt}
@@ -172,7 +203,8 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o3-2025-04-16",
+                model=ANALYSIS_MODEL,
+                max_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert technical writer specializing in USCG investigation reports."},
                     {"role": "user", "content": prompt}
@@ -194,7 +226,8 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o3-2025-04-16",
+                model=ANALYSIS_MODEL,
+                max_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert USCG investigator writing executive summaries."},
                     {"role": "user", "content": prompt}
@@ -217,7 +250,8 @@ class AIAssistant:
         
         try:
             response = self.client.chat.completions.create(
-                model="o3-2025-04-16",
+                model=ANALYSIS_MODEL,
+                max_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are a quality assurance expert for USCG investigation reports."},
                     {"role": "user", "content": prompt}
@@ -282,7 +316,7 @@ SCRUTINIZE THE COMPLETE DOCUMENT for every single mention of:
 ### TEMPORAL ANALYSIS
 - Extract EVERY timestamp mentioned (exact times, relative times, sequence indicators)
 - Look for: "at 0800", "approximately 1430", "shortly after", "during the morning watch"
-- Infer logical time sequences even when exact times aren't specified
+- Infer logical time sequences even when exact times are not specified
 - Pay attention to watch schedules, tidal information, sunrise/sunset references
 
 ### DETAILED SCRUTINY
@@ -323,7 +357,7 @@ Ensure you capture:
 - "Starboard engine failed"
 
 ## EVIDENCE TEXT TO ANALYZE:
-{evidence_text}
+{_first_n_chars(evidence_text)}
 
 ## EXISTING TIMELINE (avoid duplication):
 {existing_entries}
@@ -361,7 +395,7 @@ IMPORTANT: Return ONLY valid JSON array format. Do not include markdown code blo
 2. **ACCURACY**: Use exact language from the source document
 3. **SEQUENCE**: Maintain proper chronological relationships
 4. **EVIDENCE-BASED**: Only include what can be supported by the documentation
-5. **COMPREHENSIVE**: Don't miss any Actions, Conditions, or Events
+5. **COMPREHENSIVE**: Do not miss any Actions, Conditions, or Events
 
 Your timeline extraction must be so thorough that it provides the complete factual foundation needed for professional USCG Findings of Fact.
 """
@@ -509,7 +543,7 @@ Analyze this evidence document and extract professional USCG "Findings of Fact" 
 EVIDENCE DOCUMENT: {evidence_filename}
 
 DOCUMENT CONTENT:
-{evidence_content}
+{_first_n_chars(evidence_content)}
 
 REQUIREMENTS:
 1. Write as numbered statements (4.1.1, 4.1.2, etc.)
@@ -643,108 +677,38 @@ Please identify any consistency issues in JSON format:
 """
     
     def _parse_timeline_suggestions(self, response_text: str) -> List[Dict[str, Any]]:
-        """Parse timeline suggestions from AI response"""
-        import json
-        
-        print(f"DEBUG: Raw AI response length: {len(response_text)}")
-        print(f"DEBUG: First 500 chars: {response_text[:500]}")
-        
         try:
-            # Try to extract JSON from response
-            start = response_text.find('[')
-            end = response_text.rfind(']') + 1
-            if start >= 0 and end > start:
-                json_text = response_text[start:end]
-                print(f"DEBUG: Extracted JSON text: {json_text[:200]}...")
-                result = json.loads(json_text)
-                print(f"DEBUG: Successfully parsed {len(result)} timeline entries")
-                return result
-        except Exception as e:
-            print(f"DEBUG: JSON parsing failed: {e}")
-            print(f"DEBUG: Attempting fallback parsing...")
-            
-            # Fallback: try to find timeline entries in text format
-            lines = response_text.split('\n')
-            entries = []
-            current_entry = {}
-            
-            for line in lines:
-                line = line.strip()
-                if '"timestamp"' in line and '"type"' in line:
-                    # Try to extract a single line entry
-                    try:
-                        # Look for JSON-like structure in the line
-                        if line.startswith('{') and line.endswith(','):
-                            line = line[:-1]  # Remove trailing comma
-                        if line.startswith('{') and line.endswith('}'):
-                            entry = json.loads(line)
-                            entries.append(entry)
-                    except:
-                        continue
-            
-            if entries:
-                print(f"DEBUG: Fallback parsing found {len(entries)} entries")
-                return entries
-                
-        print("DEBUG: No timeline entries could be parsed")
-        return []
+            return _safe_json_extract(response_text)
+        except Exception as err:
+            return [{"error": "ParseError", "task": "timeline", "message": str(err)}]
     
     def _parse_findings_statements(self, response_text: str) -> List[str]:
-        """Parse findings of fact statements from AI response"""
         try:
-            # Try to extract JSON array from response
-            start = response_text.find('[')
-            end = response_text.rfind(']') + 1
-            if start >= 0 and end > start:
-                json_text = response_text[start:end]
-                return json.loads(json_text)
-        except:
-            pass
-        
-        # Fallback: parse line by line
-        findings = []
-        lines = response_text.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line and ('4.1.' in line or '4.2.' in line):
-                # Remove any leading bullets or quotes
-                line = line.strip('"\'•-*')
-                findings.append(line)
-        
-        return findings if findings else ["4.1.1. Timeline data requires further development to generate findings."]
+            data = _safe_json_extract(response_text)
+            if isinstance(data, list):
+                return [str(item) for item in data]
+        except Exception as err:
+            return [f"error: ParseError findings – {err}"]
+
+        # Fallback line parse (strict 4.1.x regex)
+        return [ln.strip() for ln in response_text.splitlines() if re.match(r'^4\.1\.\d+', ln.strip())]
     
     def _parse_causal_factors(self, response_text: str) -> List[Dict[str, Any]]:
-        """Parse causal factors from AI response"""
         try:
-            start = response_text.find('[')
-            end = response_text.rfind(']') + 1
-            if start >= 0 and end > start:
-                json_text = response_text[start:end]
-                return json.loads(json_text)
-        except:
-            pass
-        return []
+            data = _safe_json_extract(response_text)
+            return data if isinstance(data, list) else []
+        except Exception as err:
+            return [{"error": "ParseError", "task": "causal", "message": str(err)}]
     
     def _parse_executive_summary(self, response_text: str) -> Dict[str, str]:
-        """Parse executive summary from AI response"""
         try:
-            start = response_text.find('{')
-            end = response_text.rfind('}') + 1
-            if start >= 0 and end > start:
-                json_text = response_text[start:end]
-                return json.loads(json_text)
-        except:
-            pass
-        return {"scene_setting": "", "outcomes": "", "causal_factors": ""}
+            return _safe_json_extract(response_text)
+        except Exception as err:
+            return {"error": f"ParseError summary – {err}"}
     
     def _parse_consistency_issues(self, response_text: str) -> List[Dict[str, str]]:
-        """Parse consistency issues from AI response"""
         try:
-            start = response_text.find('[')
-            end = response_text.rfind(']') + 1
-            if start >= 0 and end > start:
-                json_text = response_text[start:end]
-                return json.loads(json_text)
-        except:
-            pass
-        return []
+            data = _safe_json_extract(response_text)
+            return data if isinstance(data, list) else []
+        except Exception as err:
+            return [{"error": "ParseError", "task": "consistency", "message": str(err)}]

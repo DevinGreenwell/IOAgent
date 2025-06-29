@@ -72,6 +72,8 @@ class IncidentInfo(BaseModel):
         super().__init__()
         self.incident_date = None
         self.location = ""
+        self.location_detail = ""      # e.g. "near Warren Channel, AK"
+        self.time_zone = ""            # Olson tz name, e.g. "America/Juneau"
         self.incident_type = ""  # collision, allision, fire, etc.
         self.weather_conditions = {}
         self.casualties_summary = ""

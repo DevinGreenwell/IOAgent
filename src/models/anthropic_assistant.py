@@ -4,6 +4,16 @@ import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import anthropic
+import re
+
+# Short two‑sentence exemplar to anchor Claude’s style
+STYLE_SNIPPET = (
+    "COMMERCIAL FISHING VESSEL LEGACY (O.N. 530648), CREWMEMBER DEATH "
+    "NEAR WARREN CHANNEL, ALASKA ON 01 AUGUST 2023\n\n"
+    "On 01 August 2023, at approximately 0615 local time, the commercial fishing vessel "
+    "LEGACY was engaged in seine‑fishing operations near Point Warde when the seine skiff "
+    "grounded on a rock outcrop, ejecting the operator into the water."
+)
 from dotenv import load_dotenv
 
 from src.models.roi_models import (
@@ -20,6 +30,8 @@ class AnthropicAssistant:
     def __init__(self):
         self.client = None
         self._initialize_client()
+        # Use fixed Anthropic model (hard‑coded)
+        self.model_name = "claude-3-opus-20240229"
     
     def _initialize_client(self):
         """Initialize Anthropic client with API key from environment"""
@@ -39,7 +51,7 @@ class AnthropicAssistant:
         
         try:
             message = self.client.messages.create(
-                model="claude-3-opus-20240229",
+                model=self.model_name,
                 max_tokens=4000,
                 temperature=0.3,
                 system="You are an expert USCG marine casualty investigator with 20+ years experience writing Reports of Investigation. You produce professional, concise documents that match the style of actual USCG investigation reports. Your writing is clear, factual, and follows the exact format of USCG ROI documents. You avoid verbose technical language and focus on concise, professional narrative.",
@@ -68,7 +80,7 @@ class AnthropicAssistant:
         
         try:
             message = self.client.messages.create(
-                model="claude-3-opus-20240229",
+                model=self.model_name,
                 max_tokens=2000,
                 temperature=0.2,
                 system="You are a senior USCG investigator writing findings of fact for a Report of Investigation. Write concise, professional findings that establish the factual foundation. Match the style of actual USCG investigation reports - clear, factual, and properly numbered.",
@@ -175,7 +187,7 @@ Provide ONLY the improved analysis text, no other commentary.
         
         try:
             message = self.client.messages.create(
-                model="claude-3-opus-20240229",
+                model=self.model_name,
                 max_tokens=300,
                 temperature=0.2,
                 messages=[
@@ -209,6 +221,10 @@ Provide ONLY the improved analysis text, no other commentary.
             causal_factors_text.append(f"- {factor.category.upper()}: {factor.title}")
         
         return f"""
+EXEMPLAR (mirror headings, tone, and numbering):
+{STYLE_SNIPPET}
+
+---
 Generate professional USCG Report of Investigation sections based on this incident data. Match the concise, professional style of actual USCG reports.
 
 INCIDENT INFORMATION:
@@ -332,47 +348,35 @@ Provide findings as a JSON array of strings.
 """
     
     def _parse_roi_sections(self, response_text: str) -> Dict[str, Any]:
-        """Parse ROI sections from Anthropic response"""
         try:
-            # Extract JSON from response
-            start = response_text.find('{')
-            end = response_text.rfind('}') + 1
-            if start >= 0 and end > start:
-                json_text = response_text[start:end]
-                return json.loads(json_text)
-        except Exception as e:
-            print(f"Error parsing ROI sections: {e}")
-        
-        return {
-            "executive_summary": {
-                "scene_setting": "",
-                "outcomes": "",
-                "causal_factors": ""
-            },
-            "findings_of_fact": [],
-            "conclusions": [],
-            "actions_taken": [],
-            "recommendations": []
-        }
-    
+            return self._safe_json_extract(response_text)
+        except ValueError as err:
+            print(f"Error parsing ROI sections: {err}")
+            return {
+                "executive_summary": {"scene_setting": "", "outcomes": "", "causal_factors": ""},
+                "findings_of_fact": [], "conclusions": [], "actions_taken": [], "recommendations": []
+            }
+
+    def _safe_json_extract(self, text: str):
+        """
+        Return the first valid JSON object or array found in `text`.
+        Raises ValueError if none is found.
+        """
+        try:
+            candidate = re.search(r'(\{.*\}|\[.*\])', text, re.S).group(1)
+            return json.loads(candidate)
+        except Exception as exc:
+            raise ValueError("No valid JSON found") from exc
+
     def _parse_findings_statements(self, response_text: str) -> List[str]:
-        """Parse findings statements from response"""
         try:
-            # Try JSON array first
-            start = response_text.find('[')
-            end = response_text.rfind(']') + 1
-            if start >= 0 and end > start:
-                json_text = response_text[start:end]
-                return json.loads(json_text)
-        except:
+            data = self._safe_json_extract(response_text)
+            # Expecting a JSON array; coerce to list of strings
+            if isinstance(data, list):
+                return [str(item) for item in data]
+        except ValueError:
+            # fallback: extract lines containing '4.1.'
             pass
         
-        # Fallback to line parsing
-        findings = []
-        lines = response_text.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line and '4.1.' in line:
-                findings.append(line)
-        
-        return findings if findings else []
+        findings = [ln.strip() for ln in response_text.splitlines() if '4.1.' in ln]
+        return findings

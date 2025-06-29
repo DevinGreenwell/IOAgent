@@ -11,19 +11,16 @@ from datetime import datetime
 
 from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor, AnalysisSection
 from src.models.project_manager import ProjectManager, TimelineBuilder
-from src.models.roi_generator import ROIGenerator, CausalAnalysisEngine
 from src.models.roi_generator_uscg import USCGROIGenerator
 from src.models.ai_assistant import AIAssistant
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
 
-# Initialize managers (keep for legacy functionality and AI features)
+# Initialize managers 
 project_manager = ProjectManager()
 timeline_builder = TimelineBuilder()
-roi_generator = ROIGenerator()
 uscg_roi_generator = USCGROIGenerator()
-causal_engine = CausalAnalysisEngine()
 ai_assistant = AIAssistant()
 
 # Helper function to validate project ID
@@ -453,15 +450,7 @@ def run_causal_analysis(project_id):
         timeline_objects = [TimelineEntryWrapper(entry.to_dict()) for entry in timeline_entries]
         evidence_objects = [EvidenceWrapper(item.to_dict()) for item in project.evidence_items]
         
-        # Run basic causal analysis using the engine
-        causal_factors = []
-        try:
-            causal_factors = causal_engine.analyze_timeline(timeline_objects)
-            current_app.logger.info(f"Causal engine identified {len(causal_factors)} factors")
-        except Exception as engine_error:
-            current_app.logger.warning(f"Causal engine analysis failed: {engine_error}")
-        
-        # Use AI to enhance analysis if available
+        # Use AI for causal analysis
         ai_factors = []
         if ai_assistant.client:
             try:
@@ -473,32 +462,7 @@ def run_causal_analysis(project_id):
         # Create CausalFactor database records
         created_factors = []
         
-        # Process factors from basic engine (CausalFactor objects)
-        for factor_obj in causal_factors:
-            try:
-                # Convert roi_models.CausalFactor to database CausalFactor
-                factor = CausalFactor(
-                    id=str(uuid.uuid4()),
-                    title=str(factor_obj.title or 'Unknown Factor')[:200],
-                    description=str(factor_obj.description or '')[:1000],
-                    category=factor_obj.category or 'organizational',
-                    severity='medium',  # Default since roi_models doesn't have severity
-                    likelihood='medium',  # Default since roi_models doesn't have likelihood
-                    analysis_text=str(factor_obj.analysis_text or ''),
-                    project_id=project_id
-                )
-                
-                # Set evidence support if provided
-                if hasattr(factor_obj, 'evidence_support') and factor_obj.evidence_support:
-                    factor.evidence_support_list = factor_obj.evidence_support
-                
-                db.session.add(factor)
-                created_factors.append(factor)
-            except Exception as factor_error:
-                current_app.logger.error(f"Error creating causal factor from engine: {factor_error}")
-                continue
-        
-        # Process factors from AI (dictionaries)
+        # Create causal factor database records from AI analysis
         for factor_data in ai_factors:
             try:
                 factor = CausalFactor(
