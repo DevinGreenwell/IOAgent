@@ -340,9 +340,9 @@ class DatabaseToROIConverter:
         sorted_timeline = sorted(timeline, key=lambda x: x.timestamp or datetime.min)
         
         # Import AI assistant for evidence analysis
-        from src.models.ai_assistant import AIAssistant
+        from src.models.anthropic_assistant import AnthropicAssistant
         from src.models.project_manager import ProjectManager
-        ai_assistant = AIAssistant()
+        ai_assistant = AnthropicAssistant()
         pm = ProjectManager()
         
         # Generate findings from evidence, not timeline
