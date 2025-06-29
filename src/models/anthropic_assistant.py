@@ -26,7 +26,7 @@ class AnthropicAssistant:
         self.client = None
         self._initialize_client()
         # Use fixed Anthropic model (hard‑coded)
-        self.model_name = "claude-3-5-sonnet-20241022"
+        self.model_name = "claude-sonnet-4-20250514"
     
     def _initialize_client(self):
         """Initialize Anthropic client with API key from environment"""
