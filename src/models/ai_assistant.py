@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # ---------------------------------------------------------------------------
 # OpenAI model & token settings
 # ---------------------------------------------------------------------------
-TIMELINE_MODEL = "gpt-4.1-mini-2025-04-14"
+TIMELINE_MODEL = "gpt-4o-mini-2024-07-18"
 ANALYSIS_MODEL = "gpt-4.1-mini-2025-04-14"
 MAX_TOKENS_TIMELINE = 3000   # generous for long evidence
 MAX_TOKENS_GENERIC  = 1500   # causal, findings, summary, etc.
