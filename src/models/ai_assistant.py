@@ -86,9 +86,14 @@ class AIAssistant:
             raw_response = response.choices[0].message.content
             print(f"DEBUG: Raw AI response (first 500 chars): {raw_response[:500]}")
             
+            # Also log to application logger so it appears in main logs
+            import logging
+            logging.getLogger('app').info(f"AI RAW RESPONSE: {raw_response[:500]}")
+            
             # Parse response and return suggestions
             suggestions = self._parse_timeline_suggestions(raw_response)
             print(f"DEBUG: Parsed suggestions: {suggestions}")
+            logging.getLogger('app').info(f"AI PARSED SUGGESTIONS: {suggestions}")
             print(f"DEBUG: Final result: {len(suggestions)} suggestions")
             return suggestions
             
@@ -689,6 +694,12 @@ Please identify any consistency issues in JSON format:
         except Exception as err:
             print(f"DEBUG: JSON parsing failed: {err}")
             print(f"DEBUG: Response text that failed to parse: {response_text[:200]}...")
+            
+            # Also log to application logger
+            import logging
+            logging.getLogger('app').error(f"JSON PARSING FAILED: {err}")
+            logging.getLogger('app').error(f"FAILED RESPONSE TEXT: {response_text[:200]}...")
+            
             return [{"error": "ParseError", "task": "timeline", "message": str(err), "description": "Failed to parse AI response"}]
     
     def _parse_findings_statements(self, response_text: str) -> List[str]:
