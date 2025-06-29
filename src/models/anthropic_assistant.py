@@ -586,33 +586,53 @@ Provide findings as a JSON array of strings.
             if (hasattr(entry, 'timestamp') and entry.timestamp) or (isinstance(entry, dict) and entry.get('timestamp'))
         ])
         
-        return f"""Extract timeline entries from this marine casualty investigation document. Look for:
+        return f"""Extract timeline entries from this marine casualty investigation document. This document may contain structured timeline data with precise timestamps, types, and detailed descriptions.
 
-1. ACTIONS: Individual decisions, equipment operations, communications
-2. CONDITIONS: Weather, vessel status, personnel factors  
-3. EVENTS: Adverse outcomes, failures, casualties
+PRIORITY EXTRACTION PATTERNS:
+1. **Structured Timeline Entries**: Look for explicit timeline blocks with:
+   - Precise timestamps (e.g., "01Aug2023 14:15:40 Z", "08:00:00 Z") 
+   - Timeline Type/Subtype classifications (Action, Condition, Event)
+   - Detailed subject and description information
+   - Location coordinates and details
+
+2. **Narrative Timeline Elements**: Extract from prose descriptions:
+   - Time references ("at approximately 0630", "during the third set")
+   - Sequence indicators ("soon thereafter", "when", "after")
+   - Action descriptions with temporal context
+
+3. **Event Classifications**: Identify and properly categorize:
+   - ACTIONS: Crew decisions, equipment operations, communications, navigation
+   - CONDITIONS: Weather, vessel status, personnel factors, environmental state  
+   - EVENTS: Casualties, groundings, equipment failures, incidents
 
 DOCUMENT CONTENT:
-{evidence_text[:10000] if len(evidence_text) > 10000 else evidence_text}
+{evidence_text[:15000] if len(evidence_text) > 15000 else evidence_text}
 
 EXISTING TIMELINE (avoid duplicates):
 {existing_entries}
 
-Return a JSON array of timeline entries found. Each entry should have:
-- timestamp: Date/time (YYYY-MM-DD HH:MM format)
-- type: "action", "condition", or "event" 
-- description: Factual description from document
-- confidence: "high", "medium", or "low"
+EXTRACTION REQUIREMENTS:
+- Preserve precise timestamps when available (convert formats like "01Aug2023 14:15:40 Z" to "2023-08-01 14:15:40")
+- Use exact descriptions from source document when possible
+- Extract ALL timeline-relevant information, not just major events
+- Include personnel involved, locations, and technical details
+- Capture both pre-incident conditions and post-incident actions
 
-Example format:
+Return a JSON array of timeline entries with enhanced detail:
 [
   {{
-    "timestamp": "2023-08-01 05:00",
-    "type": "action", 
-    "description": "Vessel departed port for fishing operations",
-    "confidence": "high"
+    "timestamp": "2023-08-01 14:15:40",
+    "type": "event|action|condition",
+    "description": "Detailed description from source document", 
+    "confidence": "high|medium|low",
+    "personnel_involved": ["Names or roles of people involved"],
+    "location": "Specific location if mentioned",
+    "source_reference": "Page or section reference if available",
+    "assumptions": ["Any logical assumptions made about timing or details"]
   }}
 ]
+
+CRITICAL: If the document contains structured timeline sections with explicit timestamps and classifications, extract ALL entries from those sections. These are high-quality, verified timeline data points that should be prioritized over narrative extraction.
 
 Return ONLY the JSON array, no other text."""
 
