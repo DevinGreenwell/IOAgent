@@ -12,7 +12,7 @@ from datetime import datetime
 from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor, AnalysisSection
 from src.models.project_manager import ProjectManager, TimelineBuilder
 from src.models.roi_generator_uscg import USCGROIGenerator
-from src.models.ai_assistant import AIAssistant
+from src.models.anthropic_assistant import AnthropicAssistant
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
@@ -21,7 +21,7 @@ api_bp = Blueprint('api', __name__)
 project_manager = ProjectManager()
 timeline_builder = TimelineBuilder()
 uscg_roi_generator = USCGROIGenerator()
-ai_assistant = AIAssistant()
+ai_assistant = AnthropicAssistant()
 
 # Helper function to validate project ID
 def validate_project_id(project_id):
@@ -222,7 +222,7 @@ def upload_file(project_id):
         
         # Process file locally instead of using project manager
         # since we already saved it
-        from src.models.ai_assistant import AIAssistant
+        from src.models.anthropic_assistant import AnthropicAssistant
         from src.models.project_manager import ProjectManager
         
         # Extract content from saved file
@@ -681,10 +681,10 @@ def extract_timeline_from_evidence(project_id):
         current_app.logger.info(f"Extracting timeline from {len(project.evidence_items)} evidence files for project {project_id}")
         
         from src.models.project_manager import ProjectManager
-        from src.models.ai_assistant import AIAssistant
+        from src.models.anthropic_assistant import AnthropicAssistant
         
         pm = ProjectManager()
-        ai = AIAssistant()
+        ai = AnthropicAssistant()
         
         all_timeline_suggestions = []
         existing_timeline = [entry.to_dict() for entry in project.timeline_entries]

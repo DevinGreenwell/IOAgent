@@ -380,3 +380,359 @@ Provide findings as a JSON array of strings.
         
         findings = [ln.strip() for ln in response_text.splitlines() if '4.1.' in ln]
         return findings
+
+    def suggest_timeline_entries(self, evidence_text: str, existing_timeline: List[Any]) -> List[Dict[str, Any]]:
+        """Suggest timeline entries based on evidence text using Anthropic"""
+        if not self.client:
+            print("DEBUG: No Anthropic client available")
+            return []
+        
+        print(f"DEBUG: Evidence text length: {len(evidence_text)}")
+        print(f"DEBUG: Existing timeline entries: {len(existing_timeline)}")
+        
+        prompt = self._create_timeline_suggestion_prompt(evidence_text, existing_timeline)
+        
+        try:
+            print("DEBUG: Sending request to Anthropic...")
+            message = self.client.messages.create(
+                model=self.model_name,
+                max_tokens=3000,
+                temperature=0.2,
+                system="You are a senior USCG marine casualty investigator with 20+ years of experience conducting formal investigations under 46 CFR Part 4. You excel at comprehensive document analysis and timeline reconstruction from complex investigation materials. You understand that timeline entries become the foundation for Findings of Fact in Reports of Investigation, so your extraction must be meticulous, complete, and evidence-based. You have extensive knowledge of maritime operations, vessel systems, crew procedures, and emergency response protocols.",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            print("DEBUG: Received response from Anthropic")
+            
+            # Log the raw response for debugging
+            raw_response = message.content[0].text
+            print(f"DEBUG: Raw AI response (first 500 chars): {raw_response[:500]}")
+            
+            # Also log to application logger so it appears in main logs
+            import logging
+            logging.getLogger('app').info(f"AI RAW RESPONSE: {raw_response[:500]}")
+            
+            # Parse response and return suggestions
+            suggestions = self._parse_timeline_suggestions(raw_response)
+            print(f"DEBUG: Parsed suggestions: {suggestions}")
+            logging.getLogger('app').info(f"AI PARSED SUGGESTIONS: {suggestions}")
+            print(f"DEBUG: Final result: {len(suggestions)} suggestions")
+            return suggestions
+            
+        except Exception as e:
+            print(f"Error getting timeline suggestions: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+
+    def identify_causal_factors(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> List[Dict[str, Any]]:
+        """Identify potential causal factors from timeline and evidence using Anthropic"""
+        if not self.client:
+            return []
+        
+        prompt = self._create_causal_analysis_prompt(timeline, evidence)
+        
+        try:
+            message = self.client.messages.create(
+                model=self.model_name,
+                max_tokens=2000,
+                temperature=0.2,
+                system="You are an expert in USCG causal analysis methodology using the Swiss Cheese model. You have extensive experience in maritime operations, vessel safety systems, and human factors in marine casualties. When analyzing incidents, you make reasonable and probable assumptions based on standard maritime practices, typical crew behaviors, and common vessel configurations. You clearly state these assumptions in your analysis while maintaining professional objectivity.",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            factors = self._parse_causal_factors(message.content[0].text)
+            return factors
+            
+        except Exception as e:
+            print(f"Error identifying causal factors: {e}")
+            return []
+
+    def chat(self, prompt: str, model: str = None) -> str:
+        """Generate a simple chat completion using Anthropic"""
+        if not self.client:
+            raise ValueError("Anthropic client is not initialized")
+
+        try:
+            message = self.client.messages.create(
+                model=model or self.model_name,
+                max_tokens=1500,
+                temperature=0.2,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return message.content[0].text.strip()
+        except Exception as e:
+            raise RuntimeError(f"Anthropic API call failed: {e}")
+
+    def generate_findings_from_evidence_content(self, evidence_content: str, evidence_filename: str) -> List[str]:
+        """Generate findings of fact directly from evidence content using Anthropic"""
+        if not self.client:
+            return []
+        
+        prompt = self._create_evidence_findings_prompt(evidence_content, evidence_filename)
+        
+        try:
+            message = self.client.messages.create(
+                model=self.model_name,
+                max_tokens=2000,
+                temperature=0.2,
+                system="You are an expert USCG marine casualty investigator with extensive experience writing professional Reports of Investigation. You excel at analyzing evidence documents and extracting factual findings that meet USCG standards and read like expert investigative reports.",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            findings = self._parse_findings_statements(message.content[0].text)
+            return findings
+            
+        except Exception as e:
+            print(f"Error generating findings from evidence content: {e}")
+            return []
+
+    def generate_executive_summary(self, project) -> Dict[str, str]:
+        """Generate executive summary paragraphs using Anthropic"""
+        if not self.client:
+            return {"scene_setting": "", "outcomes": "", "causal_factors": ""}
+        
+        prompt = self._create_executive_summary_prompt(project)
+        
+        try:
+            message = self.client.messages.create(
+                model=self.model_name,
+                max_tokens=1500,
+                temperature=0.2,
+                system="You are an expert USCG investigator writing executive summaries.",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            summary = self._parse_executive_summary(message.content[0].text)
+            return summary
+            
+        except Exception as e:
+            print(f"Error generating executive summary: {e}")
+            return {"scene_setting": "", "outcomes": "", "causal_factors": ""}
+
+    def check_consistency(self, project) -> List[Dict[str, str]]:
+        """Check consistency across ROI sections using Anthropic"""
+        if not self.client:
+            return []
+        
+        prompt = self._create_consistency_check_prompt(project)
+        
+        try:
+            message = self.client.messages.create(
+                model=self.model_name,
+                max_tokens=1500,
+                temperature=0.2,
+                system="You are a quality assurance expert for USCG investigation reports.",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            issues = self._parse_consistency_issues(message.content[0].text)
+            return issues
+            
+        except Exception as e:
+            print(f"Error checking consistency: {e}")
+            return []
+
+    def _create_timeline_suggestion_prompt(self, evidence_text: str, existing_timeline: List[Any]) -> str:
+        """Create comprehensive timeline extraction prompt matching ROI methodology"""
+        existing_entries = "\n".join([
+            f"- {entry.get('timestamp', entry.timestamp if hasattr(entry, 'timestamp') else '')}: "
+            f"{entry.get('type', entry.type if hasattr(entry, 'type') else '').title()} - "
+            f"{entry.get('description', entry.description if hasattr(entry, 'description') else '')}"
+            for entry in existing_timeline 
+            if (hasattr(entry, 'timestamp') and entry.timestamp) or (isinstance(entry, dict) and entry.get('timestamp'))
+        ])
+        
+        return f"""
+# COMPREHENSIVE TIMELINE EXTRACTION FOR USCG MARINE CASUALTY INVESTIGATION
+
+## YOUR MISSION
+You are extracting timeline entries from investigation documentation to build the factual foundation for a Report of Investigation. These timeline entries will become "Findings of Fact" - the most critical evidence-based foundation of the entire ROI.
+
+## DOCUMENT ANALYSIS REQUIREMENTS
+SCRUTINIZE THE COMPLETE DOCUMENT for every single mention of:
+
+### 1. ACTIONS (Human/Crew Decisions & Behaviors)
+- Navigation decisions (course changes, speed adjustments)
+- Equipment operations (starting engines, activating pumps, deploying gear)
+- Communication actions (radio calls, alarms, notifications)
+- Safety actions (donning life jackets, launching boats, evacuation orders)
+- Maintenance/inspection activities
+- Watch changes and personnel movements
+- Emergency response actions
+
+### 2. CONDITIONS (Environmental, Equipment, Personnel States)
+- Weather conditions (wind, seas, visibility, precipitation)
+- Vessel condition (stability, damage, flooding, list/trim)
+- Equipment status (operational, failed, maintenance mode)
+- Personnel factors (fatigue, experience, medical conditions)
+- Environmental factors (lighting, temperature, currents)
+- Operational context (fishing operations, transit, anchored)
+- Time pressures or constraints
+
+### 3. EVENTS (Adverse Outcomes & Incidents)
+- Collisions, allisions, groundings
+- Fires, explosions, structural failures
+- Personnel injuries, fatalities, man overboard
+- Equipment failures and malfunctions
+- Loss of propulsion, steering, or navigation
+- Flooding, capsizing, sinking
+- Any deviation from normal operations
+
+## EVIDENCE TEXT TO ANALYZE:
+{evidence_text[:15000] if len(evidence_text) > 15000 else evidence_text}
+
+## EXISTING TIMELINE (avoid duplication):
+{existing_entries}
+
+## OUTPUT REQUIREMENTS
+Provide a comprehensive JSON array of ALL timeline entries found:
+
+[
+  {{
+    "timestamp": "2023-08-01 05:00",
+    "type": "action",
+    "description": "Precise, factual description using terminology from the document",
+    "confidence": "high",
+    "assumptions": ["List any logical assumptions made about timing or details"],
+    "personnel_involved": ["Specific names, roles, or positions mentioned"],
+    "location": "Where this occurred if specified",
+    "source_reference": "Page/paragraph reference if available"
+  }}
+]
+
+IMPORTANT: Return ONLY valid JSON array format. Do not include markdown code blocks or explanatory text.
+"""
+
+    def _create_causal_analysis_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
+        """Create prompt for causal factor identification"""
+        timeline_text = "\n".join([
+            f"- {entry.timestamp}: {entry.type.title()} - {entry.description}"
+            for entry in timeline if entry.timestamp
+        ])
+        
+        evidence_text = "\n".join([
+            f"- {ev.type}: {ev.description}"
+            for ev in evidence
+        ])
+        
+        return f"""
+Using USCG causal analysis methodology per MCI-O3B procedures, identify causal factors from this timeline and evidence.
+
+FULL TIMELINE:
+{timeline_text}
+
+EVIDENCE:
+{evidence_text}
+
+Please identify causal factors in JSON format following USCG methodology:
+[
+  {{
+    "category": "organization|workplace|precondition|production|defense",
+    "title": "Brief title describing the causal factor",
+    "description": "Detailed description of the causal factor",
+    "evidence_support": ["references to supporting evidence"],
+    "analysis": "In-depth analysis of how this factor contributed to the incident"
+  }}
+]
+"""
+
+    def _create_evidence_findings_prompt(self, evidence_content: str, evidence_filename: str) -> str:
+        """Create prompt for generating findings of fact directly from evidence content"""
+        return f"""
+Analyze this evidence document and extract professional USCG "Findings of Fact" statements for a Report of Investigation.
+
+EVIDENCE DOCUMENT: {evidence_filename}
+
+DOCUMENT CONTENT:
+{evidence_content[:15000] if len(evidence_content) > 15000 else evidence_content}
+
+Generate professional findings of fact as numbered statements. Focus on factual information, not analysis or conclusions.
+
+Please provide the findings of fact as a JSON array of strings:
+["4.1.1. [First finding statement]", "4.1.2. [Second finding statement]", ...]
+"""
+
+    def _create_executive_summary_prompt(self, project) -> str:
+        """Create prompt for executive summary generation"""
+        return f"""
+Generate a three-paragraph executive summary for a USCG ROI report with the following structure:
+
+Paragraph 1 (Scene Setting): Describe the maritime activity and what happened
+Paragraph 2 (Outcomes): Summarize consequences (damage, casualties, etc.)
+Paragraph 3 (Causal Factors): List events in sequence and causal factors
+
+Please provide the executive summary in JSON format:
+{{
+  "scene_setting": "Paragraph 1 text",
+  "outcomes": "Paragraph 2 text", 
+  "causal_factors": "Paragraph 3 text"
+}}
+"""
+
+    def _create_consistency_check_prompt(self, project) -> str:
+        """Create prompt for consistency checking"""
+        return f"""
+Review this USCG ROI project for consistency issues. Check that:
+- Conclusions derive from analysis
+- Analysis derives from findings of fact
+- Timeline entries are supported by evidence
+- Causal factors are properly linked
+- No contradictions exist between sections
+
+Please identify any consistency issues in JSON format:
+[
+  {{
+    "type": "error|warning|info",
+    "section": "section name",
+    "description": "description of the issue",
+    "suggestion": "suggested fix"
+  }}
+]
+"""
+
+    def _parse_timeline_suggestions(self, response_text: str) -> List[Dict[str, Any]]:
+        try:
+            result = self._safe_json_extract(response_text)
+            print(f"DEBUG: Successfully parsed JSON: {len(result) if isinstance(result, list) else 'not a list'} items")
+            return result
+        except Exception as err:
+            print(f"DEBUG: JSON parsing failed: {err}")
+            print(f"DEBUG: Response text that failed to parse: {response_text[:200]}...")
+            
+            # Also log to application logger
+            import logging
+            logging.getLogger('app').error(f"JSON PARSING FAILED: {err}")
+            logging.getLogger('app').error(f"FAILED RESPONSE TEXT: {response_text[:200]}...")
+            
+            return [{"error": "ParseError", "task": "timeline", "message": str(err), "description": "Failed to parse AI response"}]
+
+    def _parse_causal_factors(self, response_text: str) -> List[Dict[str, Any]]:
+        try:
+            data = self._safe_json_extract(response_text)
+            return data if isinstance(data, list) else []
+        except Exception as err:
+            return [{"error": "ParseError", "task": "causal", "message": str(err)}]
+
+    def _parse_executive_summary(self, response_text: str) -> Dict[str, str]:
+        try:
+            return self._safe_json_extract(response_text)
+        except Exception as err:
+            return {"error": f"ParseError summary – {err}"}
+
+    def _parse_consistency_issues(self, response_text: str) -> List[Dict[str, str]]:
+        try:
+            data = self._safe_json_extract(response_text)
+            return data if isinstance(data, list) else []
+        except Exception as err:
+            return [{"error": "ParseError", "task": "consistency", "message": str(err)}]
