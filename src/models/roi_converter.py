@@ -54,13 +54,28 @@ class DatabaseToROIConverter:
         return metadata
     
     def _convert_incident_info(self, db_project) -> IncidentInfo:
-        """Convert database project to IncidentInfo"""
+        """Convert database project to IncidentInfo, enhanced with evidence content"""
         incident_info = IncidentInfo()
+        
+        # Start with database values
         incident_info.incident_date = db_project.incident_date
         incident_info.location = db_project.incident_location or "Unknown location"
         incident_info.incident_type = db_project.incident_type or "Unknown incident type"
-        incident_info.weather_conditions = {}  # Could be enhanced with weather data
-        incident_info.casualties_summary = "Casualties to be determined"  # Could be enhanced
+        incident_info.weather_conditions = {}  
+        incident_info.casualties_summary = "Casualties to be determined"
+        
+        # Enhance with data extracted from evidence files
+        enhanced_info = self._extract_incident_info_from_evidence(db_project.evidence_items)
+        if enhanced_info:
+            if enhanced_info.get('incident_date') and not incident_info.incident_date:
+                incident_info.incident_date = enhanced_info['incident_date']
+            if enhanced_info.get('location') and incident_info.location == "Unknown location":
+                incident_info.location = enhanced_info['location']
+            if enhanced_info.get('incident_type') and incident_info.incident_type == "Unknown incident type":
+                incident_info.incident_type = enhanced_info['incident_type']
+            if enhanced_info.get('casualties_summary'):
+                incident_info.casualties_summary = enhanced_info['casualties_summary']
+        
         return incident_info
     
     def _convert_timeline_entries(self, db_timeline_entries) -> List[TimelineEntry]:
@@ -149,9 +164,12 @@ class DatabaseToROIConverter:
         return f"Failure of {title.lower()}"
     
     def _create_default_vessels(self, db_project) -> List[Vessel]:
-        """Create vessel information from project data and timeline entries"""
+        """Create vessel information from project data, timeline entries, and evidence content"""
         vessels = []
         vessel_names = set()
+        
+        # First, extract vessel info from uploaded evidence files
+        vessel_data = self._extract_vessel_info_from_evidence(db_project.evidence_items)
         
         # Extract vessel names from timeline entries
         for db_entry in db_project.timeline_entries:
@@ -174,22 +192,40 @@ class DatabaseToROIConverter:
                         if potential_name.isalpha() and len(potential_name) > 2:
                             vessel_names.add(potential_name)
         
-        # Create vessel objects from found names
-        for vessel_name in vessel_names:
-            vessel = Vessel()
-            vessel.official_name = vessel_name
-            vessel.identification_number = "O.N. [To be determined during investigation]"
-            vessel.flag = "United States"
-            vessel.vessel_class = "Commercial Fishing Vessel" if "F/V" in vessel_name else "Commercial Vessel"
-            vessel.vessel_type = "Fishing Vessel" if "F/V" in vessel_name else "Commercial Vessel"
-            vessel.vessel_subtype = "Seine Vessel" if any(word in db_project.title.lower() or any(word in entry.description.lower() for entry in db_project.timeline_entries) for word in ['seine', 'net']) else ""
-            vessel.build_year = None
-            vessel.gross_tonnage = None
-            vessel.length = None
-            vessel.beam = None
-            vessel.draft = None
-            vessel.propulsion = "Diesel Engine"
-            vessels.append(vessel)
+        # Create vessel objects, prioritizing evidence-extracted data
+        if vessel_data:
+            for vessel_info in vessel_data:
+                vessel = Vessel()
+                vessel.official_name = vessel_info.get('name', 'Unknown Vessel')
+                vessel.identification_number = vessel_info.get('official_number', 'O.N. [To be determined during investigation]')
+                vessel.flag = "United States"
+                vessel.vessel_class = vessel_info.get('vessel_class', "Commercial Fishing Vessel" if "F/V" in vessel_info.get('name', '') else "Commercial Vessel")
+                vessel.vessel_type = vessel_info.get('vessel_type', "Fishing Vessel" if "F/V" in vessel_info.get('name', '') else "Commercial Vessel")
+                vessel.vessel_subtype = vessel_info.get('vessel_subtype', "")
+                vessel.build_year = None
+                vessel.gross_tonnage = None
+                vessel.length = None
+                vessel.beam = None
+                vessel.draft = None
+                vessel.propulsion = "Diesel Engine"
+                vessels.append(vessel)
+        else:
+            # Fallback to timeline-based extraction
+            for vessel_name in vessel_names:
+                vessel = Vessel()
+                vessel.official_name = vessel_name
+                vessel.identification_number = "O.N. [To be determined during investigation]"
+                vessel.flag = "United States"
+                vessel.vessel_class = "Commercial Fishing Vessel" if "F/V" in vessel_name else "Commercial Vessel"
+                vessel.vessel_type = "Fishing Vessel" if "F/V" in vessel_name else "Commercial Vessel"
+                vessel.vessel_subtype = "Seine Vessel" if any(word in db_project.title.lower() or any(word in entry.description.lower() for entry in db_project.timeline_entries) for word in ['seine', 'net']) else ""
+                vessel.build_year = None
+                vessel.gross_tonnage = None
+                vessel.length = None
+                vessel.beam = None
+                vessel.draft = None
+                vessel.propulsion = "Diesel Engine"
+                vessels.append(vessel)
         
         # If no vessels found, create a generic one based on project context
         if not vessels:
@@ -210,6 +246,159 @@ class DatabaseToROIConverter:
         
         return vessels
     
+    def _extract_vessel_info_from_evidence(self, evidence_items) -> List[Dict[str, Any]]:
+        """Extract vessel information from uploaded evidence files"""
+        vessels = []
+        
+        for evidence in evidence_items:
+            try:
+                # Get file path
+                from flask import current_app
+                uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                file_path = os.path.join(uploads_dir, evidence.file_path)
+                
+                if os.path.exists(file_path):
+                    # Extract content from file
+                    from src.models.project_manager import ProjectManager
+                    pm = ProjectManager()
+                    content = pm._extract_file_content(file_path)
+                    
+                    if content:
+                        # Use AI to extract vessel information
+                        from src.models.anthropic_assistant import AnthropicAssistant
+                        ai_assistant = AnthropicAssistant()
+                        
+                        if ai_assistant.client:
+                            vessel_info = self._extract_vessel_data_with_ai(content, ai_assistant)
+                            if vessel_info:
+                                vessels.extend(vessel_info)
+                                
+            except Exception as e:
+                print(f"Error extracting vessel info from evidence {evidence.filename}: {e}")
+                continue
+        
+        return vessels
+    
+    def _extract_vessel_data_with_ai(self, content: str, ai_assistant) -> List[Dict[str, Any]]:
+        """Use AI to extract structured vessel data from evidence content"""
+        prompt = f"""
+Extract vessel information from this marine casualty investigation document.
+
+DOCUMENT CONTENT:
+{content[:8000] if len(content) > 8000 else content}
+
+Extract the following vessel information and return as JSON:
+{{
+  "vessels": [
+    {{
+      "name": "Full vessel name (e.g., F/V LEGACY)",
+      "official_number": "Official number if mentioned (e.g., O.N. 530648)",
+      "vessel_class": "Commercial Fishing Vessel|Commercial Vessel|Recreational Vessel",
+      "vessel_type": "Fishing Vessel|Cargo Vessel|Passenger Vessel|etc",
+      "vessel_subtype": "Seine Vessel|Trawler|Longliner|etc if mentioned"
+    }}
+  ]
+}}
+
+Look for:
+- Vessel names (F/V, M/V, etc.)
+- Official numbers (O.N. followed by numbers)
+- Vessel types and operational details
+- Coast Guard documentation numbers
+
+Return ONLY valid JSON. If no vessel information is found, return {{"vessels": []}}.
+"""
+        
+        try:
+            response = ai_assistant.chat(prompt)
+            import json
+            data = json.loads(response)
+            return data.get('vessels', [])
+        except Exception as e:
+            print(f"Error extracting vessel data with AI: {e}")
+            return []
+    
+    def _extract_incident_info_from_evidence(self, evidence_items) -> Dict[str, Any]:
+        """Extract incident information from uploaded evidence files"""
+        incident_data = {}
+        
+        for evidence in evidence_items:
+            try:
+                # Get file path
+                from flask import current_app
+                uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                file_path = os.path.join(uploads_dir, evidence.file_path)
+                
+                if os.path.exists(file_path):
+                    # Extract content from file
+                    from src.models.project_manager import ProjectManager
+                    pm = ProjectManager()
+                    content = pm._extract_file_content(file_path)
+                    
+                    if content:
+                        # Use AI to extract incident information
+                        from src.models.anthropic_assistant import AnthropicAssistant
+                        ai_assistant = AnthropicAssistant()
+                        
+                        if ai_assistant.client:
+                            extracted_info = self._extract_incident_data_with_ai(content, ai_assistant)
+                            if extracted_info:
+                                # Merge data, preferring the first valid value found
+                                for key, value in extracted_info.items():
+                                    if value and key not in incident_data:
+                                        incident_data[key] = value
+                                
+            except Exception as e:
+                print(f"Error extracting incident info from evidence {evidence.filename}: {e}")
+                continue
+        
+        return incident_data
+    
+    def _extract_incident_data_with_ai(self, content: str, ai_assistant) -> Dict[str, Any]:
+        """Use AI to extract structured incident data from evidence content"""
+        prompt = f"""
+Extract incident information from this marine casualty investigation document.
+
+DOCUMENT CONTENT:
+{content[:8000] if len(content) > 8000 else content}
+
+Extract the following incident information and return as JSON:
+{{
+  "incident_date": "YYYY-MM-DD format if date found",
+  "location": "Geographic location of incident",
+  "incident_type": "Type of incident (grounding, collision, fire, etc.)",
+  "casualties_summary": "Summary of any casualties or injuries mentioned"
+}}
+
+Look for:
+- Incident dates and times
+- Geographic locations, coordinates, or place names
+- Types of marine casualties
+- Information about casualties, injuries, or fatalities
+- Weather conditions at time of incident
+
+Return ONLY valid JSON. If information is not found, use null for that field.
+Example: {{"incident_date": "2023-08-01", "location": "Point Warde, Alaska", "incident_type": "grounding", "casualties_summary": "One fatality"}}
+"""
+        
+        try:
+            response = ai_assistant.chat(prompt)
+            import json
+            data = json.loads(response)
+            
+            # Convert date string to datetime if present
+            if data.get('incident_date'):
+                try:
+                    from datetime import datetime
+                    data['incident_date'] = datetime.strptime(data['incident_date'], '%Y-%m-%d')
+                except:
+                    data['incident_date'] = None
+            
+            return data
+        except Exception as e:
+            print(f"Error extracting incident data with AI: {e}")
+            return {}
+
     def _create_default_personnel(self, db_project) -> List[Personnel]:
         """Create default personnel information from timeline entries"""
         personnel = []
