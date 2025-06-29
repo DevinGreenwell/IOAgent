@@ -716,6 +716,12 @@ def extract_timeline_from_evidence(project_id):
                 current_app.logger.error(f"Error processing evidence file {evidence.original_filename}: {str(file_error)}")
                 continue
         
+        # Log all suggestions before deduplication
+        current_app.logger.info(f"Total timeline suggestions before deduplication: {len(all_timeline_suggestions)}")
+        for i, suggestion in enumerate(all_timeline_suggestions):
+            description = suggestion.get('description', '')
+            current_app.logger.info(f"Suggestion {i+1}: '{description[:100]}...' (source: {suggestion.get('source_file', 'unknown')})")
+        
         # Remove duplicates based on description similarity
         unique_suggestions = []
         seen_descriptions = set()
@@ -725,6 +731,8 @@ def extract_timeline_from_evidence(project_id):
             if description_lower and description_lower not in seen_descriptions:
                 seen_descriptions.add(description_lower)
                 unique_suggestions.append(suggestion)
+            else:
+                current_app.logger.info(f"Filtered duplicate: '{description_lower[:50]}...'")
         
         current_app.logger.info(f"Found {len(unique_suggestions)} unique timeline suggestions from {len(project.evidence_items)} evidence files")
         
