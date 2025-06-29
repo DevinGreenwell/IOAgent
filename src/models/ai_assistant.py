@@ -73,7 +73,7 @@ class AIAssistant:
             print("DEBUG: Sending request to OpenAI...")
             response = self.client.chat.completions.create(
                 model=TIMELINE_MODEL,
-                max_tokens=MAX_TOKENS_TIMELINE,
+                max_completion_tokens=MAX_TOKENS_TIMELINE,
                 messages=[
                     {"role": "system", "content": "You are a senior USCG marine casualty investigator with 20+ years of experience conducting formal investigations under 46 CFR Part 4. You excel at comprehensive document analysis and timeline reconstruction from complex investigation materials. You understand that timeline entries become the foundation for Findings of Fact in Reports of Investigation, so your extraction must be meticulous, complete, and evidence-based. You have extensive knowledge of maritime operations, vessel systems, crew procedures, and emergency response protocols."},
                     {"role": "user", "content": prompt}
@@ -103,7 +103,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=ANALYSIS_MODEL,
-                max_tokens=MAX_TOKENS_GENERIC,
+                max_completion_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert in USCG causal analysis methodology using the Swiss Cheese model. You have extensive experience in maritime operations, vessel safety systems, and human factors in marine casualties. When analyzing incidents, you make reasonable and probable assumptions based on standard maritime practices, typical crew behaviors, and common vessel configurations. You clearly state these assumptions in your analysis while maintaining professional objectivity."},
                     {"role": "user", "content": prompt}
@@ -137,7 +137,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=model,
-                max_tokens=MAX_TOKENS_GENERIC,
+                max_completion_tokens=MAX_TOKENS_GENERIC,
                 messages=[{"role": "user", "content": prompt}]
             )
             return response.choices[0].message.content.strip()
@@ -156,7 +156,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=ANALYSIS_MODEL,
-                max_tokens=MAX_TOKENS_GENERIC,
+                max_completion_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert USCG marine casualty investigator with extensive experience writing professional Reports of Investigation. You excel at converting timeline data into polished, professional findings of fact that meet USCG standards and read like expert investigative reports."},
                     {"role": "user", "content": prompt}
@@ -180,7 +180,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=ANALYSIS_MODEL,
-                max_tokens=MAX_TOKENS_GENERIC,
+                max_completion_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert USCG marine casualty investigator with extensive experience writing professional Reports of Investigation. You excel at analyzing evidence documents and extracting factual findings that meet USCG standards and read like expert investigative reports."},
                     {"role": "user", "content": prompt}
@@ -204,7 +204,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=ANALYSIS_MODEL,
-                max_tokens=MAX_TOKENS_GENERIC,
+                max_completion_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert technical writer specializing in USCG investigation reports."},
                     {"role": "user", "content": prompt}
@@ -227,7 +227,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=ANALYSIS_MODEL,
-                max_tokens=MAX_TOKENS_GENERIC,
+                max_completion_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are an expert USCG investigator writing executive summaries."},
                     {"role": "user", "content": prompt}
@@ -251,7 +251,7 @@ class AIAssistant:
         try:
             response = self.client.chat.completions.create(
                 model=ANALYSIS_MODEL,
-                max_tokens=MAX_TOKENS_GENERIC,
+                max_completion_tokens=MAX_TOKENS_GENERIC,
                 messages=[
                     {"role": "system", "content": "You are a quality assurance expert for USCG investigation reports."},
                     {"role": "user", "content": prompt}
