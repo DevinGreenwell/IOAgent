@@ -599,10 +599,24 @@ Example format:
 Return ONLY the JSON array, no other text."""
 
     def _create_causal_analysis_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
-        """Create prompt for causal factor identification"""
+        """Create prompt for causal factor identification with proper USCG methodology"""
+        # Separate initiating event from subsequent events
+        initiating_events = [entry for entry in timeline if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event]
+        subsequent_events = [entry for entry in timeline if entry.type == 'event' and not (hasattr(entry, 'is_initiating_event') and entry.is_initiating_event)]
+        
         timeline_text = "\n".join([
             f"- {entry.timestamp}: {entry.type.title()} - {entry.description}"
             for entry in timeline if entry.timestamp
+        ])
+        
+        initiating_event_text = "None identified" if not initiating_events else "\n".join([
+            f"- {entry.timestamp}: {entry.description}"
+            for entry in initiating_events
+        ])
+        
+        subsequent_events_text = "None" if not subsequent_events else "\n".join([
+            f"- {entry.timestamp}: {entry.description}"
+            for entry in subsequent_events
         ])
         
         evidence_text = "\n".join([
@@ -613,22 +627,67 @@ Return ONLY the JSON array, no other text."""
         return f"""
 Using USCG causal analysis methodology per MCI-O3B procedures, identify causal factors from this timeline and evidence.
 
+CRITICAL USCG REQUIREMENTS:
+1. For the INITIATING EVENT (first adverse outcome): Identify causal factors across ALL categories (organization, workplace, precondition, production, defense)
+2. For SUBSEQUENT EVENTS: Focus ONLY on DEFENSE factors that failed to prevent progression from the initiating event
+
+INITIATING EVENT (First adverse outcome):
+{initiating_event_text}
+
+SUBSEQUENT EVENTS (Events that followed the initiating event):
+{subsequent_events_text}
+
 FULL TIMELINE:
 {timeline_text}
 
 EVIDENCE:
 {evidence_text}
 
+Causal factor titles MUST be written in the negative form:
+- "Failure of..." (e.g., "Failure of crew to follow safety procedures")
+- "Inadequate..." (e.g., "Inadequate oversight by management")
+- "Lack of..." (e.g., "Lack of proper safety equipment")
+- "Absence of..." (e.g., "Absence of effective communication")
+- "Insufficient..." (e.g., "Insufficient training provided")
+
+Categories:
+- Organization: Management decisions, policies, culture
+- Workplace: Physical environment, equipment, procedures
+- Precondition: Individual factors, team factors, environmental factors
+- Production: Unsafe acts, errors, violations
+- Defense: Barriers that failed or were absent
+
 Please identify causal factors in JSON format following USCG methodology:
 [
   {{
     "category": "organization|workplace|precondition|production|defense",
-    "title": "Brief title describing the causal factor, stated in the negative (e.g., 'Lack of...', 'Failure to...', 'Inadequate...', etc.)",",
-    "description": "Detailed description of the causal factor",
+    "title": "Failure of... / Inadequate... / Lack of... / Absence of... / Insufficient...",
+    "description": "Detailed description of the causal factor (1-2 sentences describing what went wrong)",
     "evidence_support": ["references to supporting evidence"],
-    "analysis": "In-depth analysis of how this factor contributed to the incident"
+    "analysis": "In-depth analysis (3-5 paragraphs) that includes: 1) The specific conditions that led to this factor, 2) How this factor directly contributed to the incident, 3) The chain of events it caused or enabled, 4) Why existing safeguards failed to prevent it, 5) References to specific findings of fact. IMPORTANT: Make reasonable assumptions about maritime operations, crew behavior, and vessel conditions that are highly probable based on the evidence. State assumptions clearly (e.g., 'It is likely that...', 'Based on standard practice...', 'This suggests that...')",
+    "event_type": "initiating|subsequent",
+    "related_event": "description of the specific event this factor relates to"
   }}
 ]
+
+CRITICAL REQUIREMENTS:
+1. Title MUST be a short phrase (5-10 words max) in negative form
+2. Analysis MUST be comprehensive (3-5 paragraphs minimum) and reference specific evidence
+3. Each factor must clearly link cause to effect
+4. Initiating event gets ALL category types, subsequent events get ONLY defense factors
+5. Make reasonable assumptions about:
+   - Standard maritime procedures that should have been followed
+   - Typical crew training and qualifications
+   - Normal vessel maintenance practices
+   - Common safety equipment and systems
+   - Weather and sea conditions if not specified
+   - Communication protocols and chain of command
+6. State assumptions clearly using phrases like:
+   - "Based on standard maritime practice..."
+   - "It is reasonable to assume that..."
+   - "This suggests that..."
+   - "Typically in such situations..."
+   - "Industry standards would require..."
 """
 
     def _create_evidence_findings_prompt(self, evidence_content: str, evidence_filename: str) -> str:
