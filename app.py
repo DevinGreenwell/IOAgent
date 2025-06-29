@@ -6,6 +6,10 @@ from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 
+# Load environment variables FIRST, before any other imports
+from dotenv import load_dotenv
+load_dotenv()
+
 # Add the current directory to Python path to import from src
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

@@ -14,15 +14,10 @@ STYLE_SNIPPET = (
     "LEGACY was engaged in seine‑fishing operations near Point Warde when the seine skiff "
     "grounded on a rock outcrop, ejecting the operator into the water."
 )
-from dotenv import load_dotenv
-
 from src.models.roi_models import (
     InvestigationProject, TimelineEntry, CausalFactor, 
     Evidence, Finding, AnalysisSection
 )
-
-# Load environment variables
-load_dotenv()
 
 class AnthropicAssistant:
     """Anthropic AI Assistant specifically for ROI document generation"""
