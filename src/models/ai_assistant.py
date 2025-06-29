@@ -24,10 +24,30 @@ def _safe_json_extract(text: str):
     Raises ValueError if none is found.
     """
     import json
+    
+    # First try to find and parse JSON as-is
     match = re.search(r'(\{.*\}|\[.*\])', text, re.S)
     if not match:
         raise ValueError("No JSON structure found")
-    return json.loads(match.group(1))
+    
+    json_text = match.group(1)
+    
+    try:
+        return json.loads(json_text)
+    except json.JSONDecodeError as e:
+        # If parsing fails, try to fix common issues
+        # Fix line breaks in string values
+        import logging
+        logging.getLogger('app').info(f"Attempting to fix malformed JSON: {str(e)}")
+        
+        # Try to fix broken strings by removing line breaks within quotes
+        fixed_json = re.sub(r'"([^"]*)\n([^"]*)"', r'"\1 \2"', json_text)
+        
+        try:
+            return json.loads(fixed_json)
+        except json.JSONDecodeError:
+            # If still fails, raise original error
+            raise ValueError(f"JSON parsing failed: {str(e)}")
 
 def _first_n_chars(text: str, n: int = 15000) -> str:
     """Soft‑cap very long evidence strings to keep prompts within context limits."""
