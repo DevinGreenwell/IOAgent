@@ -386,13 +386,37 @@ Provide findings as a JSON array of strings.
     def _safe_json_extract(self, text: str):
         """
         Return the first valid JSON object or array found in `text`.
+        Handles markdown code blocks and other formatting.
         Raises ValueError if none is found.
         """
+        import logging
+        logger = logging.getLogger('app')
+        
+        # First, try to strip markdown code blocks if present
+        if '```json' in text:
+            # Extract content between ```json and ```
+            match = re.search(r'```json\s*\n?(.*?)\n?```', text, re.DOTALL)
+            if match:
+                text = match.group(1)
+                logger.info("🟡 JSON EXTRACT: Stripped markdown code blocks")
+        elif '```' in text:
+            # Generic code block without language specifier
+            match = re.search(r'```\s*\n?(.*?)\n?```', text, re.DOTALL)
+            if match:
+                text = match.group(1)
+                logger.info("🟡 JSON EXTRACT: Stripped generic code blocks")
+        
         try:
-            candidate = re.search(r'(\{.*\}|\[.*\])', text, re.S).group(1)
-            return json.loads(candidate)
-        except Exception as exc:
-            raise ValueError("No valid JSON found") from exc
+            # Try to parse the whole text as JSON first
+            return json.loads(text.strip())
+        except json.JSONDecodeError:
+            # If that fails, try to find JSON object/array
+            try:
+                candidate = re.search(r'(\{.*\}|\[.*\])', text, re.S).group(1)
+                return json.loads(candidate)
+            except Exception as exc:
+                logger.error(f"🔴 JSON EXTRACT: Failed to parse JSON from text: {text[:200]}...")
+                raise ValueError("No valid JSON found") from exc
 
     def _parse_findings_statements(self, response_text: str) -> List[str]:
         try:
