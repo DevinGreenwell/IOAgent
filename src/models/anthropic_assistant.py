@@ -31,11 +31,23 @@ class AnthropicAssistant:
     def _initialize_client(self):
         """Initialize Anthropic client with API key from environment"""
         api_key = os.getenv('ANTHROPIC_API_KEY')
+        import logging
+        logger = logging.getLogger('app')
+        
+        logger.info(f"ANTHROPIC INIT: API key available: {api_key is not None}")
         if api_key:
-            self.client = anthropic.Anthropic(api_key=api_key)
-            print("🟡 Anthropic Assistant initialized successfully")
+            logger.info(f"ANTHROPIC INIT: API key starts with: {api_key[:20]}...")
+        
+        if api_key:
+            try:
+                self.client = anthropic.Anthropic(api_key=api_key)
+                logger.info("🟡 Anthropic Assistant initialized successfully")
+            except Exception as e:
+                logger.error(f"ANTHROPIC INIT: Failed to initialize client: {e}")
+                self.client = None
         else:
-            print("❌ Warning: ANTHROPIC_API_KEY not found in environment variables")
+            logger.error("❌ ANTHROPIC INIT: API key not found in environment variables")
+            self.client = None
     
     def generate_complete_roi_sections(self, project: InvestigationProject) -> Dict[str, Any]:
         """Generate complete ROI sections using Anthropic Claude"""
@@ -384,7 +396,11 @@ Provide findings as a JSON array of strings.
         logger.info("ANTHROPIC: suggest_timeline_entries called")
         
         if not self.client:
-            logger.error("ANTHROPIC: No client available")
+            logger.warning("ANTHROPIC: No client available, attempting to reinitialize...")
+            self._initialize_client()
+            
+        if not self.client:
+            logger.error("ANTHROPIC: Client initialization failed, cannot proceed")
             return []
         
         logger.info(f"ANTHROPIC: Evidence text length: {len(evidence_text)}")
