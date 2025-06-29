@@ -462,27 +462,41 @@ Provide findings as a JSON array of strings.
 
     def identify_causal_factors(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> List[Dict[str, Any]]:
         """Identify potential causal factors from timeline and evidence using Anthropic"""
+        import logging
+        logger = logging.getLogger('app')
+        
         if not self.client:
+            logger.error("🔴 CAUSAL: No Anthropic client available")
             return []
         
         prompt = self._create_causal_analysis_prompt(timeline, evidence)
+        logger.info(f"🟡 CAUSAL: Sending prompt to AI (length: {len(prompt)})")
         
         try:
             message = self.client.messages.create(
                 model=self.model_name,
-                max_tokens=2000,
+                max_tokens=3000,  # Increased for multiple factors
                 temperature=0.2,
-                system="You are an expert in USCG causal analysis methodology using the Swiss Cheese model. You have extensive experience in maritime operations, vessel safety systems, and human factors in marine casualties. When analyzing incidents, you make reasonable and probable assumptions based on standard maritime practices, typical crew behaviors, and common vessel configurations. You clearly state these assumptions in your analysis while maintaining professional objectivity.",
+                system="You are an expert in USCG causal analysis methodology using the Swiss Cheese model. You have extensive experience in maritime operations, vessel safety systems, and human factors in marine casualties. When analyzing incidents, you make reasonable and probable assumptions based on standard maritime practices, typical crew behaviors, and common vessel configurations. You clearly state these assumptions in your analysis while maintaining professional objectivity. IMPORTANT: You should identify MULTIPLE causal factors across different categories - typically 3-7 factors minimum for a comprehensive analysis.",
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
             )
             
-            factors = self._parse_causal_factors(message.content[0].text)
+            raw_response = message.content[0].text
+            logger.info(f"🟡 CAUSAL: AI response length: {len(raw_response)}")
+            logger.info(f"🟡 CAUSAL: AI response preview: {raw_response[:500]}")
+            
+            factors = self._parse_causal_factors(raw_response)
+            logger.info(f"🟢 CAUSAL: Parsed {len(factors)} factors from AI response")
+            
+            if len(factors) < 2:
+                logger.warning(f"⚠️ CAUSAL: Only {len(factors)} factors identified - this may be insufficient for comprehensive analysis")
+            
             return factors
             
         except Exception as e:
-            print(f"Error identifying causal factors: {e}")
+            logger.error(f"🔴 CAUSAL: Error identifying causal factors: {e}")
             return []
 
     def chat(self, prompt: str, model: str = None) -> str:
@@ -713,19 +727,27 @@ CRITICAL REQUIREMENTS:
 2. Analysis MUST be comprehensive (3-5 paragraphs minimum) and reference specific evidence
 3. Each factor must clearly link cause to effect
 4. Initiating event gets ALL category types, subsequent events get ONLY defense factors
-5. Make reasonable assumptions about:
+5. **IDENTIFY MULTIPLE FACTORS**: A comprehensive causal analysis typically requires 3-7 causal factors minimum across different categories. Look for factors in:
+   - Organization (management decisions, policies)
+   - Workplace (equipment, procedures, environment)
+   - Precondition (crew factors, conditions)
+   - Production (unsafe acts, errors)
+   - Defense (failed barriers, absent safeguards)
+6. Make reasonable assumptions about:
    - Standard maritime procedures that should have been followed
    - Typical crew training and qualifications
    - Normal vessel maintenance practices
    - Common safety equipment and systems
    - Weather and sea conditions if not specified
    - Communication protocols and chain of command
-6. State assumptions clearly using phrases like:
+7. State assumptions clearly using phrases like:
    - "Based on standard maritime practice..."
    - "It is reasonable to assume that..."
    - "This suggests that..."
    - "Typically in such situations..."
    - "Industry standards would require..."
+
+**IMPORTANT**: Return a JSON array with MULTIPLE causal factors. A single factor is rarely sufficient for a complete USCG causal analysis.
 """
 
     def _create_evidence_findings_prompt(self, evidence_content: str, evidence_filename: str) -> str:
@@ -865,10 +887,23 @@ Please identify any consistency issues in JSON format:
             return [{"error": "ParseError", "task": "timeline", "message": str(err), "description": "Failed to parse AI response"}]
 
     def _parse_causal_factors(self, response_text: str) -> List[Dict[str, Any]]:
+        import logging
+        logger = logging.getLogger('app')
+        
         try:
             data = self._safe_json_extract(response_text)
-            return data if isinstance(data, list) else []
+            logger.info(f"🟡 CAUSAL PARSE: Extracted JSON type: {type(data)}")
+            
+            if isinstance(data, list):
+                logger.info(f"🟢 CAUSAL PARSE: Successfully parsed {len(data)} factors")
+                return data
+            else:
+                logger.warning(f"⚠️ CAUSAL PARSE: Expected list, got {type(data)}")
+                return []
+                
         except Exception as err:
+            logger.error(f"🔴 CAUSAL PARSE: JSON parsing failed: {err}")
+            logger.error(f"🔴 CAUSAL PARSE: Response text (first 1000 chars): {response_text[:1000]}")
             return [{"error": "ParseError", "task": "causal", "message": str(err)}]
 
     def _parse_executive_summary(self, response_text: str) -> Dict[str, str]:
