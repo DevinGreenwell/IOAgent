@@ -997,7 +997,7 @@ class IOAgent {
                                                 <label class="form-check-label" for="suggestion-${index}">
                                                     <div class="d-flex justify-content-between">
                                                         <strong>${new Date(suggestion.timestamp).toLocaleString()}</strong>
-                                                        <span class="badge bg-${suggestion.type === 'event' ? 'danger' : suggestion.type === 'action' ? 'success' : 'info'}">${suggestion.type.toUpperCase()}</span>
+                                                        <span class="badge bg-${(suggestion.type || 'unknown') === 'event' ? 'danger' : (suggestion.type || 'unknown') === 'action' ? 'success' : 'info'}">${(suggestion.type || 'unknown').toUpperCase()}</span>
                                                     </div>
                                                     <p class="mb-1">${this.escapeHtml(suggestion.description)}</p>
                                                     <small class="text-muted">
