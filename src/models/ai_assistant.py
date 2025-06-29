@@ -82,8 +82,13 @@ class AIAssistant:
             
             print("DEBUG: Received response from OpenAI")
             
+            # Log the raw response for debugging
+            raw_response = response.choices[0].message.content
+            print(f"DEBUG: Raw AI response (first 500 chars): {raw_response[:500]}")
+            
             # Parse response and return suggestions
-            suggestions = self._parse_timeline_suggestions(response.choices[0].message.content)
+            suggestions = self._parse_timeline_suggestions(raw_response)
+            print(f"DEBUG: Parsed suggestions: {suggestions}")
             print(f"DEBUG: Final result: {len(suggestions)} suggestions")
             return suggestions
             
@@ -678,9 +683,13 @@ Please identify any consistency issues in JSON format:
     
     def _parse_timeline_suggestions(self, response_text: str) -> List[Dict[str, Any]]:
         try:
-            return _safe_json_extract(response_text)
+            result = _safe_json_extract(response_text)
+            print(f"DEBUG: Successfully parsed JSON: {len(result) if isinstance(result, list) else 'not a list'} items")
+            return result
         except Exception as err:
-            return [{"error": "ParseError", "task": "timeline", "message": str(err)}]
+            print(f"DEBUG: JSON parsing failed: {err}")
+            print(f"DEBUG: Response text that failed to parse: {response_text[:200]}...")
+            return [{"error": "ParseError", "task": "timeline", "message": str(err), "description": "Failed to parse AI response"}]
     
     def _parse_findings_statements(self, response_text: str) -> List[str]:
         try:
