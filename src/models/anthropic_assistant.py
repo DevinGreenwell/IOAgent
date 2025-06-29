@@ -378,19 +378,24 @@ Provide findings as a JSON array of strings.
 
     def suggest_timeline_entries(self, evidence_text: str, existing_timeline: List[Any]) -> List[Dict[str, Any]]:
         """Suggest timeline entries based on evidence text using Anthropic"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        logger.info("ANTHROPIC: suggest_timeline_entries called")
+        
         if not self.client:
-            print("DEBUG: No Anthropic client available")
+            logger.error("ANTHROPIC: No client available")
             return []
         
-        print(f"DEBUG: Evidence text length: {len(evidence_text)}")
-        print(f"DEBUG: Existing timeline entries: {len(existing_timeline)}")
+        logger.info(f"ANTHROPIC: Evidence text length: {len(evidence_text)}")
+        logger.info(f"ANTHROPIC: Existing timeline entries: {len(existing_timeline)}")
         
         prompt = self._create_timeline_suggestion_prompt(evidence_text, existing_timeline)
         
         try:
-            print("DEBUG: Sending request to Anthropic...")
-            print(f"DEBUG: Using model: {self.model_name}")
-            print(f"DEBUG: Prompt length: {len(prompt)}")
+            logger.info("ANTHROPIC: Sending request to Anthropic API")
+            logger.info(f"ANTHROPIC: Using model: {self.model_name}")
+            logger.info(f"ANTHROPIC: Prompt length: {len(prompt)}")
             
             message = self.client.messages.create(
                 model=self.model_name,
@@ -402,21 +407,16 @@ Provide findings as a JSON array of strings.
                 ]
             )
             
-            print("DEBUG: Received response from Anthropic")
+            logger.info("ANTHROPIC: Received response from Anthropic API")
             
             # Log the raw response for debugging
             raw_response = message.content[0].text
-            print(f"DEBUG: Raw AI response (first 500 chars): {raw_response[:500]}")
-            
-            # Also log to application logger so it appears in main logs
-            import logging
-            logging.getLogger('app').info(f"AI RAW RESPONSE: {raw_response[:500]}")
+            logger.info(f"ANTHROPIC: Raw response (first 500 chars): {raw_response[:500]}")
             
             # Parse response and return suggestions
             suggestions = self._parse_timeline_suggestions(raw_response)
-            print(f"DEBUG: Parsed suggestions: {suggestions}")
-            logging.getLogger('app').info(f"AI PARSED SUGGESTIONS: {suggestions}")
-            print(f"DEBUG: Final result: {len(suggestions)} suggestions")
+            logger.info(f"ANTHROPIC: Parsed suggestions: {suggestions}")
+            logger.info(f"ANTHROPIC: Final result: {len(suggestions)} suggestions")
             return suggestions
             
         except Exception as e:

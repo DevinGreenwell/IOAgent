@@ -11,8 +11,17 @@ from dotenv import load_dotenv
 # Use absolute path to ensure .env file is found regardless of working directory
 env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
 load_dotenv(dotenv_path=env_path)
+
+# Check if .env file exists and warn if environment vars are missing
+if not os.path.exists(env_path):
+    print(f"WARNING: .env file not found at {env_path}")
+if 'ANTHROPIC_API_KEY' not in os.environ:
+    print("ERROR: ANTHROPIC_API_KEY not found in environment variables!")
+    print("Please set ANTHROPIC_API_KEY as an environment variable on your deployment platform.")
+
 print(f"DEBUG: Loading .env from: {env_path}")
 print(f"DEBUG: ANTHROPIC_API_KEY found: {'ANTHROPIC_API_KEY' in os.environ}")
+print(f"DEBUG: API key starts with: {os.environ.get('ANTHROPIC_API_KEY', 'NOT_FOUND')[:20]}...")
 
 # Add the current directory to Python path to import from src
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
