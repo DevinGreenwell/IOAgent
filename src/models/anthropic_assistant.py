@@ -248,10 +248,28 @@ IDENTIFIED CAUSAL FACTORS:
 
 Generate the following ROI sections in JSON format:
 
-1. EXECUTIVE SUMMARY (3 paragraphs):
-   - Paragraph 1: Scene setting - include the date/time, what activity was taking place, who was involved, where it happened, and what was happening. This should give the reader a good sense of the overall context of the incident.
-   - Paragraph 2: Outcomes - this should include immediate reactions or responses to to main casualty and other outcomes that played out. The reader should be able to follow the sequence of events and understand the overall impact of the incident.
-   - Paragraph 3: Causal factors determination - this should include the causal factors in order, beginning with the initiating event.
+1. EXECUTIVE SUMMARY (3 comprehensive paragraphs):
+   
+   PARAGRAPH 1 - SCENE SETTING AND INCIDENT NARRATIVE (4-6 sentences):
+   Create a compelling narrative that tells the complete story. Include:
+   - Date, time, and location with specific details
+   - Who was involved (vessel name, crew details, operational context)
+   - What maritime activity was taking place (fishing operations, transit, etc.)
+   - The operational environment and conditions
+   - Build up to and describe the main incident/casualty
+   - Paint a complete picture that draws the reader into the story
+   
+   PARAGRAPH 2 - RESPONSE, OUTCOMES, AND CONSEQUENCES (4-6 sentences):
+   Describe the full aftermath and response sequence:
+   - Immediate emergency response actions taken
+   - Who responded (Coast Guard, EMS, other vessels, etc.)
+   - Rescue/recovery operations conducted
+   - Medical treatment and transport details
+   - Final outcomes (casualties, injuries, vessel damage, environmental impact)
+   - Overall impact and significance of the incident
+   
+   PARAGRAPH 3 - CAUSAL ANALYSIS DETERMINATION (4-5 sentences):
+   Professional determination paragraph that includes the causal factors in order, beginning with the initiating event.
 
 2. KEY FINDINGS OF FACT (10-15 numbered statements):
    - Professional factual statements from the timeline
@@ -520,7 +538,7 @@ Provide findings as a JSON array of strings.
                 model=self.model_name,
                 max_tokens=1500,
                 temperature=0.5,
-                system="You are an expert USCG investigator writing executive summaries. You understand the details required to write a professional executive summary involve setting a clear scene, describing the outcomes, and listing the causal factors in order.",
+                system="You are an expert USCG investigator and professional writer specializing in executive summaries for marine casualty investigations. You excel at crafting compelling narratives that tell the complete story of maritime incidents. Your executive summaries are comprehensive, detailed paragraphs (4-6 sentences each) that read like professional maritime journalism - engaging, thorough, and factual. You avoid simple, telegraphic sentences and instead create flowing narratives that synthesize complex incident information into accessible prose.",
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
@@ -707,19 +725,85 @@ Please provide the findings of fact as a JSON array of strings:
 """
 
     def _create_executive_summary_prompt(self, project) -> str:
-        """Create prompt for executive summary generation"""
+        """Create comprehensive prompt for executive summary generation"""
+        # Gather detailed project information
+        vessel_info = []
+        for vessel in project.vessels:
+            vessel_info.append(f"{vessel.official_name} (O.N. {vessel.identification_number})")
+        
+        timeline_summary = []
+        for entry in sorted(project.timeline, key=lambda x: x.timestamp or datetime.min)[:15]:
+            if entry.timestamp:
+                timeline_summary.append(f"- {entry.timestamp.strftime('%B %d, %Y at %H%M')}: {entry.description}")
+        
+        causal_factors_summary = []
+        for factor in project.causal_factors:
+            causal_factors_summary.append(f"- {factor.title}: {factor.description}")
+        
+        personnel_info = []
+        for person in project.personnel:
+            if person.role and person.status:
+                personnel_info.append(f"- {person.role}: {person.status}")
+        
         return f"""
-Generate a three-paragraph executive summary for a USCG ROI report with the following structure:
+Write a professional three-paragraph executive summary for a USCG Report of Investigation. Each paragraph must be 4-6 comprehensive sentences that tell a complete story.
 
-Paragraph 1 (Scene Setting): Describe the maritime activity and what happened
-Paragraph 2 (Outcomes): Summarize consequences (damage, casualties, etc.)
-Paragraph 3 (Causal Factors): List events in sequence and causal factors
+PROJECT INFORMATION:
+- Vessels: {', '.join(vessel_info) if vessel_info else 'Not specified'}
+- Incident Type: {project.incident_info.incident_type or 'Marine casualty'}
+- Location: {project.incident_info.location or 'Not specified'}
+- Date: {project.incident_info.incident_date.strftime('%B %d, %Y') if project.incident_info.incident_date else 'Not specified'}
+- Personnel: {chr(10).join(personnel_info) if personnel_info else 'Not specified'}
+
+DETAILED TIMELINE:
+{chr(10).join(timeline_summary) if timeline_summary else 'No timeline entries available'}
+
+IDENTIFIED CAUSAL FACTORS:
+{chr(10).join(causal_factors_summary) if causal_factors_summary else 'No causal factors identified'}
+
+REQUIREMENTS FOR EACH PARAGRAPH:
+
+PARAGRAPH 1 - SCENE SETTING AND INCIDENT NARRATIVE (4-6 sentences):
+Write a compelling, detailed narrative that:
+- Sets the scene with specific date, time, and location details
+- Describes the vessel(s), crew, and operational context in detail
+- Explains what maritime activity was taking place (fishing operations, transit, maintenance, etc.)
+- Describes the environmental and operational conditions
+- Builds up to and describes the main incident/casualty with specific details
+- Creates a vivid picture that draws the reader into the complete story
+DO NOT write simple telegraphic sentences. Create flowing, detailed prose.
+
+PARAGRAPH 2 - RESPONSE, OUTCOMES, AND CONSEQUENCES (4-6 sentences):
+Write a comprehensive description of:
+- Immediate emergency response actions taken by crew and others
+- Who responded (Coast Guard units, EMS, other vessels, aircraft, etc.)
+- Details of rescue/recovery operations conducted
+- Medical treatment provided and transport arrangements
+- Final outcomes (specific casualties, injuries, vessel damage, environmental impact)
+- Overall significance and impact of the incident
+Create a complete narrative of the aftermath and response sequence.
+
+PARAGRAPH 3 - CAUSAL ANALYSIS DETERMINATION (4-5 sentences):
+Write a professional determination that:
+- States the Coast Guard's investigative findings clearly
+- Identifies the initiating event specifically
+- Lists the causal factors in order of occurrence/importance
+- Explains how these factors contributed to the casualty
+- Concludes with the overall causal determination
+
+CRITICAL REQUIREMENTS:
+- Each paragraph must be 4-6 complete, detailed sentences
+- Avoid simple, telegraphic writing
+- Create flowing, narrative prose that tells the complete story
+- Use specific details from the timeline and project information
+- Write at a professional maritime journalism level
+- Synthesize complex information into accessible prose
 
 Please provide the executive summary in JSON format:
 {{
-  "scene_setting": "Paragraph 1 text",
-  "outcomes": "Paragraph 2 text", 
-  "causal_factors": "Paragraph 3 text"
+  "scene_setting": "Write the complete 4-6 sentence scene setting narrative here",
+  "outcomes": "Write the complete 4-6 sentence outcomes and response narrative here", 
+  "causal_factors": "Write the complete 4-5 sentence causal analysis determination here"
 }}
 """
 
