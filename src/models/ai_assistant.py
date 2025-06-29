@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 # ---------------------------------------------------------------------------
 # OpenAI model & token settings
 # ---------------------------------------------------------------------------
-TIMELINE_MODEL = "o3-mini-2025-06-15"
-ANALYSIS_MODEL = "o3-2025-06-15"
+TIMELINE_MODEL = "o4-mini-2025-04-16"
+ANALYSIS_MODEL = "o4-mini-2025-04-16"
 MAX_TOKENS_TIMELINE = 3000   # generous for long evidence
 MAX_TOKENS_GENERIC  = 1500   # causal, findings, summary, etc.
 
@@ -122,7 +122,7 @@ class AIAssistant:
 
         Args:
             prompt (str): The user prompt to send to the model.
-            model (str, optional): The OpenAI model to use. Defaults to "o3-2025-04-16".
+            model (str, optional): The OpenAI model to use. Defaults to "o4-mini-2025-04-16".
 
         Returns:
             str: The model's response content.
