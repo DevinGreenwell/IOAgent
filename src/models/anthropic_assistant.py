@@ -691,9 +691,9 @@ Provide findings as a JSON array of strings.
         try:
             message = self.client.messages.create(
                 model=self.model_name,
-                max_tokens=2500,  # Increased for detailed paragraphs
-                temperature=0.3,  # Reduced for more consistent quality
-                system="You are an expert USCG investigator and professional writer specializing in executive summaries for marine casualty investigations. You excel at crafting compelling narratives that tell the complete story of maritime incidents. Your executive summaries are comprehensive, detailed paragraphs (4-6 sentences each) that read like professional maritime journalism - engaging, thorough, and factual. You avoid simple, telegraphic sentences and instead create flowing narratives that synthesize complex incident information into accessible prose. CRITICAL: You must write exactly as instructed - 4-6 complete sentences per paragraph in flowing narrative style. Do not write short, choppy sentences.",
+                max_tokens=1500,  # Reduced to ensure concise output
+                temperature=0.1,  # Much lower for factual, consistent tone
+                system="You are a USCG marine casualty investigator writing official executive summaries. Your writing must be factual, professional, and concise - matching the style of actual USCG Reports of Investigation. Avoid colorful language, dramatic descriptions, or journalistic flourishes. Write clear, direct prose using standard maritime terminology. Each paragraph should be 4-5 sentences that convey essential facts without unnecessary elaboration.",
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
@@ -943,7 +943,7 @@ Please provide the findings of fact as a JSON array of strings:
         return f"""
 You are writing a professional executive summary for a USCG Report of Investigation. This is NOT a brief summary - each paragraph must be 4-6 FULL, DETAILED sentences that create a compelling narrative.
 
-CRITICAL INSTRUCTION: Write exactly 3 paragraphs. Each paragraph must be 4-6 complete sentences. Do NOT write short, telegraphic sentences like "At 0615, the vessel departed." Instead write flowing, detailed prose like "On the morning of August 1st, 2023, the commercial fishing vessel LEGACY departed New Bedford Harbor with a crew of five experienced mariners aboard for what was planned to be a routine 10-day seine fishing operation in the productive waters southeast of Point Warde, Alaska."
+Write exactly 3 paragraphs, each 4-5 sentences. Use factual, professional language like actual USCG reports. Avoid overly detailed or colorful descriptions.
 
 PROJECT INFORMATION:
 - Vessels: {', '.join(vessel_info) if vessel_info else 'Not specified'}
@@ -960,48 +960,37 @@ IDENTIFIED CAUSAL FACTORS:
 
 REQUIREMENTS FOR EACH PARAGRAPH:
 
-PARAGRAPH 1 - SCENE SETTING AND INCIDENT NARRATIVE (4-6 sentences):
-Write a compelling, detailed narrative that:
-- Sets the scene with specific date, time, and location details
-- Describes the vessel(s), crew, and operational context in detail
-- Explains what maritime activity was taking place (fishing operations, transit, maintenance, etc.)
-- Describes the environmental and operational conditions
-- Builds up to and describes the main incident/casualty with specific details
-- Creates a vivid picture that draws the reader into the complete story
-DO NOT write simple telegraphic sentences. Create flowing, detailed prose.
+PARAGRAPH 1 - SCENE SETTING (4-5 sentences):
+- State date, time, vessel name, and location of operations
+- Describe what the vessel and crew were doing (fishing, transit, etc.)
+- Note relevant operational details and conditions
+- Describe the initiating incident clearly and factually
 
-PARAGRAPH 2 - RESPONSE, OUTCOMES, AND CONSEQUENCES (4-6 sentences):
-Write a comprehensive description of:
-- Immediate emergency response actions taken by crew and others
-- Who responded (Coast Guard units, EMS, other vessels, aircraft, etc.)
-- Details of rescue/recovery operations conducted
-- Medical treatment provided and transport arrangements
-- Final outcomes (specific casualties, injuries, vessel damage, environmental impact)
-- Overall significance and impact of the incident
-Create a complete narrative of the aftermath and response sequence.
+PARAGRAPH 2 - RESPONSE AND OUTCOMES (4-5 sentences):
+- Describe immediate crew response and rescue efforts
+- Note arrival of emergency responders or assistance
+- State medical treatment provided and transport
+- Give final casualty outcome (deceased, injured, etc.)
 
-PARAGRAPH 3 - CAUSAL ANALYSIS DETERMINATION (4-5 sentences):
-Write a professional determination that:
-- States the Coast Guard's investigative findings clearly
-- Identifies the initiating event specifically
-- Lists the causal factors in order of occurrence/importance
-- Explains how these factors contributed to the casualty
-- Concludes with the overall causal determination
+PARAGRAPH 3 - INVESTIGATION DETERMINATION (4-5 sentences):
+- Start with: "Through its investigation, the Coast Guard determined that the initiating event for this casualty was [specific event]."
+- Follow with: "Causal factors that contributed to this casualty include:"
+- List factors as: "(1) [factor], (2) [factor], (3) [factor], and (4) [factor]."
+- Use actual factor titles from the causal analysis, written concisely
 
-CRITICAL REQUIREMENTS - MANDATORY WRITING STYLE:
-- Each paragraph MUST be exactly 4-6 complete, detailed sentences (not bullet points, not short phrases)
-- FORBIDDEN: Simple telegraphic sentences like "At 0615, vessel departed" or "Crew member was injured"
-- REQUIRED: Complex, detailed narrative sentences that paint a complete picture
-- Example of GOOD writing: "On August 1st, 2023, at approximately 0615 in the early morning hours, the 42-foot commercial fishing vessel LEGACY was engaged in seine fishing operations approximately two nautical miles southeast of Point Warde in the protected waters of Southeast Alaska, where Captain Joseph Cisney and his four-person crew were conducting their third seine set of what had begun as a routine fishing day under favorable weather conditions with light winds and calm seas."
-- Example of BAD writing: "On August 1, 2023, at 0615, the LEGACY was fishing. Weather was calm. Third seine set began."
-- Write at the level of professional maritime journalism - detailed, engaging, comprehensive
-- Every sentence should advance the narrative and provide meaningful detail
+WRITING REQUIREMENTS:
+- Write in a factual, professional tone matching official USCG reports
+- Each paragraph must be 4-5 complete sentences
+- Avoid dramatic or colorful language
+- Use standard maritime terminology
+- Be concise - the entire summary must fit on one page
+- Focus on essential facts only
 
 Please provide the executive summary in JSON format:
 {{
-  "scene_setting": "Write the complete 4-6 sentence scene setting narrative here",
-  "outcomes": "Write the complete 4-6 sentence outcomes and response narrative here", 
-  "causal_factors": "Write the complete 4-5 sentence causal analysis determination here"
+  "scene_setting": "[Paragraph 1 - Scene setting and incident]",
+  "outcomes": "[Paragraph 2 - Response and outcomes]", 
+  "causal_factors": "[Paragraph 3 - Investigation determination with numbered factors]"
 }}
 """
 
