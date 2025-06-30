@@ -455,6 +455,13 @@ Provide findings as a JSON array of strings.
                         result = json.loads(json_text)
                         logger.info(f"🟢 JSON EXTRACT: Extracted JSON via bracket matching (type: {type(result)})")
                         return result
+                    else:
+                        # Handle truncated JSON by trying to repair it
+                        logger.warning("⚠️ JSON EXTRACT: Attempting to repair truncated JSON")
+                        repaired_json = self._repair_truncated_json(text[start_idx:])
+                        if repaired_json:
+                            logger.info(f"🟢 JSON EXTRACT: Successfully repaired truncated JSON")
+                            return repaired_json
                 
                 # Final fallback - regex
                 candidate = re.search(r'(\{.*\}|\[.*\])', text, re.S).group(1)
@@ -466,6 +473,61 @@ Provide findings as a JSON array of strings.
                 logger.error(f"🔴 JSON EXTRACT: Original text: {original_text[:500]}...")
                 logger.error(f"🔴 JSON EXTRACT: After stripping: {text[:500]}...")
                 raise ValueError("No valid JSON found") from exc
+    
+    def _repair_truncated_json(self, json_text: str) -> List[Dict[str, Any]]:
+        """Attempt to repair truncated JSON by finding complete entries"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        try:
+            # Find all complete JSON objects in the truncated text
+            complete_objects = []
+            current_object = ""
+            brace_count = 0
+            in_string = False
+            escape_next = False
+            
+            for char in json_text:
+                if escape_next:
+                    escape_next = False
+                    current_object += char
+                    continue
+                    
+                if char == '\\' and in_string:
+                    escape_next = True
+                    current_object += char
+                    continue
+                    
+                if char == '"' and not escape_next:
+                    in_string = not in_string
+                    
+                current_object += char
+                
+                if not in_string:
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0 and current_object.strip().startswith('{'):
+                            # We have a complete object
+                            try:
+                                obj = json.loads(current_object.strip())
+                                complete_objects.append(obj)
+                                current_object = ""
+                            except json.JSONDecodeError:
+                                # Skip malformed objects
+                                current_object = ""
+            
+            if complete_objects:
+                logger.info(f"🟢 JSON REPAIR: Recovered {len(complete_objects)} complete timeline entries")
+                return complete_objects
+            else:
+                logger.warning("⚠️ JSON REPAIR: No complete objects found")
+                return []
+                
+        except Exception as e:
+            logger.error(f"🔴 JSON REPAIR: Failed to repair JSON: {e}")
+            return []
 
     def _parse_findings_statements(self, response_text: str) -> List[str]:
         try:
@@ -507,7 +569,7 @@ Provide findings as a JSON array of strings.
             
             message = self.client.messages.create(
                 model=self.model_name,
-                max_tokens=3000,
+                max_tokens=4000,  # Increased for detailed timeline extraction
                 temperature=0.2,
                 system="You are a senior USCG marine casualty investigator with 20+ years of experience conducting formal investigations under 46 CFR Part 4. You excel at comprehensive document analysis and timeline reconstruction from complex investigation materials. You understand that timeline entries become the foundation for Findings of Fact in Reports of Investigation, so your extraction must be meticulous, complete, and evidence-based. You have extensive knowledge of maritime operations, vessel systems, crew procedures, and emergency response protocols.",
                 messages=[
