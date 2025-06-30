@@ -462,7 +462,11 @@ class USCGROIGenerator:
         heading.add_run("2. Vessels Involved in the Incident").bold = True
 
         # Get AI-enhanced vessel information
+        import logging
+        logger = logging.getLogger('app')
+        logger.info(f"🟡 ROI SECTION 2: Starting with {len(self.project.vessels)} vessels, {len(self.project.evidence_library)} evidence items")
         enhanced_vessel_info = self._enhance_vessel_information_with_ai()
+        logger.info(f"🟡 ROI SECTION 2: Enhanced info keys: {list(enhanced_vessel_info.keys())}")
 
         for vessel in self.project.vessels:
             # Add photo placeholder
@@ -473,14 +477,21 @@ class USCGROIGenerator:
 
             # Helper for placeholder handling with AI enhancement
             def _safe(val: Any, ai_field: str = None, default: str = "Not documented") -> str:
+                import logging
+                logger = logging.getLogger('app')
+                
                 # First try original value
                 if val not in [None, "", "##", "YYYY"]:
+                    logger.debug(f"🔵 VESSEL SAFE: Using original value for {ai_field}: {val}")
                     return str(val)
                 
                 # Then try AI-enhanced value
                 if ai_field and enhanced_vessel_info.get('vessel_details', {}).get(ai_field):
-                    return str(enhanced_vessel_info['vessel_details'][ai_field])
+                    ai_val = enhanced_vessel_info['vessel_details'][ai_field]
+                    logger.info(f"🟢 VESSEL SAFE: Using AI value for {ai_field}: {ai_val}")
+                    return str(ai_val)
                 
+                logger.warning(f"⚠️ VESSEL SAFE: Using default for {ai_field}: {default}")
                 return default
 
             # Create vessel information table
@@ -570,16 +581,23 @@ class USCGROIGenerator:
     def _enhance_vessel_information_with_ai(self) -> Dict[str, Any]:
         """Use AI to extract detailed vessel information from evidence files"""
         enhanced_info = {}
+        import logging
+        logger = logging.getLogger('app')
+        
+        logger.info("🟡 VESSEL AI: Starting vessel information enhancement")
         
         try:
             from src.models.anthropic_assistant import AnthropicAssistant
             ai_assistant = AnthropicAssistant()
             
             if not ai_assistant.client:
+                logger.error("🔴 VESSEL AI: No Anthropic client available")
                 return enhanced_info
             
             # Gather all evidence content by reading uploaded files
             evidence_content = ""
+            logger.info(f"🟡 VESSEL AI: Found {len(self.project.evidence_library)} evidence items")
+            
             for evidence in self.project.evidence_library:
                 try:
                     # Try to get content from file path
@@ -636,12 +654,12 @@ Look for:
 Return ONLY valid JSON. If information is not found, use null for that field.
 """
             
+            logger.info("🟡 VESSEL AI: Sending prompt to AI assistant")
             response = ai_assistant.chat(prompt)
             import json
             enhanced_info = json.loads(response)
             
-            import logging
-            logging.getLogger('app').info("🟢 Enhanced vessel information using AI")
+            logger.info(f"🟢 VESSEL AI: Successfully enhanced vessel information: {enhanced_info}")
             
         except Exception as e:
             import logging
