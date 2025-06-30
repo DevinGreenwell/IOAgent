@@ -461,6 +461,9 @@ class USCGROIGenerator:
         heading = self.document.add_paragraph()
         heading.add_run("2. Vessels Involved in the Incident").bold = True
 
+        # Get AI-enhanced vessel information
+        enhanced_vessel_info = self._enhance_vessel_information_with_ai()
+
         for vessel in self.project.vessels:
             # Add photo placeholder
             self.document.add_paragraph()
@@ -468,29 +471,37 @@ class USCGROIGenerator:
             photo_para.add_run("Figure 1. Undated Photograph of Vessel").italic = True
             self.document.add_paragraph()
 
-            # Helper for placeholder handling
-            def _safe(val: Any, default: str = "Not documented") -> str:
-                return str(val) if val not in [None, "", "##", "YYYY"] else default
+            # Helper for placeholder handling with AI enhancement
+            def _safe(val: Any, ai_field: str = None, default: str = "Not documented") -> str:
+                # First try original value
+                if val not in [None, "", "##", "YYYY"]:
+                    return str(val)
+                
+                # Then try AI-enhanced value
+                if ai_field and enhanced_vessel_info.get('vessel_details', {}).get(ai_field):
+                    return str(enhanced_vessel_info['vessel_details'][ai_field])
+                
+                return default
 
             # Create vessel information table
             table = self.document.add_table(rows=13, cols=2)
             table.style = 'Table Grid'
 
-            # Populate vessel information in table format
+            # Populate vessel information in table format with AI enhancement
             vessel_info = [
-                ("Official Name:", _safe(vessel.official_name)),
-                ("", f"({_safe(vessel.official_name.upper() if vessel.official_name else 'VESSEL NAME')})"),
-                ("Identification Number:", f"{_safe(vessel.identification_number)} - Official Number (US)"),
-                ("Flag:", _safe(vessel.flag, "United States")),
-                ("Vessel Class/Type/Sub-Type", f"{_safe(vessel.vessel_class)}/{_safe(vessel.vessel_type)}/{_safe(vessel.vessel_subtype, 'N/A')}"),
-                ("Build Year:", _safe(vessel.build_year)),
-                ("Gross Tonnage:", f"{_safe(vessel.gross_tonnage)} GT"),
-                ("Length:", f"{_safe(vessel.length)} feet"),
-                ("Beam/Width:", f"{_safe(vessel.beam)} feet"),
+                ("Official Name:", _safe(vessel.official_name, 'official_name')),
+                ("", f"({_safe(vessel.official_name.upper() if vessel.official_name else None, 'official_name', 'VESSEL NAME').upper()})"),
+                ("Identification Number:", f"{_safe(vessel.identification_number, 'official_number')} - Official Number (US)"),
+                ("Flag:", _safe(vessel.flag, default="United States")),
+                ("Vessel Class/Type/Sub-Type", f"{_safe(vessel.vessel_class)}/{_safe(vessel.vessel_type)}/{_safe(vessel.vessel_subtype, default='N/A')}"),
+                ("Build Year:", _safe(vessel.build_year, 'build_year')),
+                ("Gross Tonnage:", f"{_safe(vessel.gross_tonnage, 'gross_tonnage')} GT"),
+                ("Length:", f"{_safe(vessel.length, 'length')} feet"),
+                ("Beam/Width:", f"{_safe(vessel.beam, 'beam')} feet"),
                 ("Draft/Depth:", f"{_safe(vessel.draft)} feet"),
-                ("Main/Primary Propulsion:", _safe(vessel.propulsion, 'Configuration/System Type, Ahead Horse Power')),
-                ("Owner:", f"{_safe(vessel.owner, 'Line 1 = Official Name')}\n{_safe(vessel.owner_location, 'Line 2 = City, State/Country')}"),
-                ("Operator:", f"{_safe(vessel.operator, 'Line 1 = Official Name')}\n{_safe(vessel.operator_location, 'Line 2 = City, State/Country')}")
+                ("Main/Primary Propulsion:", _safe(vessel.propulsion, 'propulsion', 'Configuration/System Type, Ahead Horse Power')),
+                ("Owner:", f"{_safe(vessel.owner, 'owner', 'Line 1 = Official Name')}\n{_safe(vessel.owner_location, default='Line 2 = City, State/Country')}"),
+                ("Operator:", f"{_safe(vessel.operator, 'operator', 'Line 1 = Official Name')}\n{_safe(vessel.operator_location, default='Line 2 = City, State/Country')}")
             ]
 
             # Fill table with vessel information
@@ -515,8 +526,15 @@ class USCGROIGenerator:
         heading = self.document.add_paragraph()
         heading.add_run("3. Deceased, Missing, and/or Injured Persons").bold = True
         
+        # Get AI-enhanced personnel information
+        enhanced_personnel_info = self._enhance_personnel_information_with_ai()
+        
         # Create table for personnel casualties
-        if any(p.status.lower() in ['deceased', 'missing', 'injured'] for p in self.project.personnel):
+        casualties_found = any(p.status.lower() in ['deceased', 'missing', 'injured'] for p in self.project.personnel)
+        ai_casualties = enhanced_personnel_info.get('personnel', [])
+        ai_casualties_found = any(p.get('status', '').lower() in ['deceased', 'missing', 'injured'] for p in ai_casualties)
+        
+        if casualties_found or ai_casualties_found:
             table = self.document.add_table(rows=1, cols=4)
             table.style = 'Light Grid'
             
@@ -527,7 +545,7 @@ class USCGROIGenerator:
             header_cells[2].text = "Age"
             header_cells[3].text = "Status"
             
-            # Add personnel entries
+            # Add personnel entries from database
             for person in self.project.personnel:
                 if person.status.lower() in ['deceased', 'missing', 'injured']:
                     row_cells = table.add_row().cells
@@ -535,11 +553,184 @@ class USCGROIGenerator:
                     row_cells[1].text = "Unknown"  # Sex not tracked in our model
                     row_cells[2].text = "Unknown"  # Age not tracked in our model
                     row_cells[3].text = person.status.title()
+            
+            # Add AI-enhanced personnel entries
+            for ai_person in ai_casualties:
+                if ai_person.get('status', '').lower() in ['deceased', 'missing', 'injured']:
+                    row_cells = table.add_row().cells
+                    row_cells[0].text = ai_person.get('role', 'Unknown')
+                    row_cells[1].text = ai_person.get('sex', 'Unknown')
+                    row_cells[2].text = str(ai_person.get('age', 'Unknown'))
+                    row_cells[3].text = ai_person.get('status', 'Unknown').title()
         else:
             self.document.add_paragraph("No personnel casualties resulted from this incident.")
         
         self.document.add_paragraph()  # Section spacing
     
+    def _enhance_vessel_information_with_ai(self) -> Dict[str, Any]:
+        """Use AI to extract detailed vessel information from evidence files"""
+        enhanced_info = {}
+        
+        try:
+            from src.models.anthropic_assistant import AnthropicAssistant
+            ai_assistant = AnthropicAssistant()
+            
+            if not ai_assistant.client:
+                return enhanced_info
+            
+            # Gather all evidence content by reading uploaded files
+            evidence_content = ""
+            for evidence in self.project.evidence_library:
+                try:
+                    # Try to get content from file path
+                    if hasattr(evidence, 'file_path') and evidence.file_path:
+                        import os
+                        from flask import current_app
+                        uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                        file_path = os.path.join(uploads_dir, evidence.file_path)
+                        
+                        if os.path.exists(file_path):
+                            from src.models.project_manager import ProjectManager
+                            pm = ProjectManager()
+                            content = pm._extract_file_content(file_path)
+                            if content:
+                                evidence_content += content + "\n\n"
+                    elif hasattr(evidence, 'content') and evidence.content:
+                        evidence_content += evidence.content + "\n\n"
+                except Exception as e:
+                    continue
+            
+            if not evidence_content:
+                return enhanced_info
+            
+            # AI prompt for vessel details
+            prompt = f"""
+Extract detailed vessel information from this marine casualty investigation document.
+
+EVIDENCE CONTENT:
+{evidence_content[:8000] if len(evidence_content) > 8000 else evidence_content}
+
+Extract the following vessel information and return as JSON:
+{{
+  "vessel_details": {{
+    "official_name": "Full vessel name (e.g., F/V LEGACY)",
+    "official_number": "Official number (e.g., O.N. 530648)",
+    "build_year": "Year built if mentioned",
+    "length": "Length in feet if mentioned",
+    "beam": "Beam/width in feet if mentioned",
+    "gross_tonnage": "Gross tonnage if mentioned",
+    "owner": "Owner name and location if mentioned",
+    "operator": "Operator name and location if mentioned",
+    "propulsion": "Engine/propulsion details if mentioned",
+    "vessel_description": "Additional operational details about the vessel"
+  }}
+}}
+
+Look for:
+- Vessel specifications and documentation numbers
+- Physical dimensions and characteristics  
+- Ownership and operational details
+- Engine and propulsion systems
+- Any unique vessel features or modifications
+
+Return ONLY valid JSON. If information is not found, use null for that field.
+"""
+            
+            response = ai_assistant.chat(prompt)
+            import json
+            enhanced_info = json.loads(response)
+            
+            import logging
+            logging.getLogger('app').info("🟢 Enhanced vessel information using AI")
+            
+        except Exception as e:
+            import logging
+            logging.getLogger('app').error(f"Error enhancing vessel info with AI: {e}")
+        
+        return enhanced_info
+    
+    def _enhance_personnel_information_with_ai(self) -> Dict[str, Any]:
+        """Use AI to extract detailed personnel information from evidence files"""
+        enhanced_info = {}
+        
+        try:
+            from src.models.anthropic_assistant import AnthropicAssistant
+            ai_assistant = AnthropicAssistant()
+            
+            if not ai_assistant.client:
+                return enhanced_info
+            
+            # Gather all evidence content by reading uploaded files
+            evidence_content = ""
+            for evidence in self.project.evidence_library:
+                try:
+                    # Try to get content from file path
+                    if hasattr(evidence, 'file_path') and evidence.file_path:
+                        import os
+                        from flask import current_app
+                        uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                        file_path = os.path.join(uploads_dir, evidence.file_path)
+                        
+                        if os.path.exists(file_path):
+                            from src.models.project_manager import ProjectManager
+                            pm = ProjectManager()
+                            content = pm._extract_file_content(file_path)
+                            if content:
+                                evidence_content += content + "\n\n"
+                    elif hasattr(evidence, 'content') and evidence.content:
+                        evidence_content += evidence.content + "\n\n"
+                except Exception as e:
+                    continue
+            
+            if not evidence_content:
+                return enhanced_info
+            
+            # AI prompt for personnel details
+            prompt = f"""
+Extract personnel information from this marine casualty investigation document.
+
+EVIDENCE CONTENT:
+{evidence_content[:8000] if len(evidence_content) > 8000 else evidence_content}
+
+Extract information about personnel involved and return as JSON:
+{{
+  "personnel": [
+    {{
+      "name": "Person's name",
+      "role": "Captain/Crew/Operator/etc",
+      "age": "Age if mentioned",
+      "sex": "Male/Female if mentioned", 
+      "status": "Deceased/Injured/Uninjured",
+      "vessel_assignment": "Which vessel they were on",
+      "experience": "Years of experience or qualifications if mentioned",
+      "details": "Additional relevant details about this person"
+    }}
+  ]
+}}
+
+Look for:
+- Names of crew members, passengers, operators
+- Roles and positions (Captain, Engineer, Deckhand, etc.)
+- Personal details (age, experience, qualifications)
+- Casualty status (deceased, injured, missing)
+- Any relevant background information
+
+Return ONLY valid JSON. If information is not found, use null for that field.
+"""
+            
+            response = ai_assistant.chat(prompt)
+            import json
+            enhanced_info = json.loads(response)
+            
+            import logging
+            logging.getLogger('app').info("🟢 Enhanced personnel information using AI")
+            
+        except Exception as e:
+            import logging
+            logging.getLogger('app').error(f"Error enhancing personnel info with AI: {e}")
+        
+        return enhanced_info
+
     def _generate_section_4_findings_of_fact(self) -> None:
         """Section 4: Findings of Fact"""
         if not self.document or not self.project:
