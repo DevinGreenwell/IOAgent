@@ -580,7 +580,7 @@ class USCGROIGenerator:
     
     def _enhance_vessel_information_with_ai(self) -> Dict[str, Any]:
         """Use AI to extract detailed vessel information from evidence files"""
-        enhanced_info = {}
+        enhanced_info = {"vessel_details": {}}
         import logging
         logger = logging.getLogger('app')
         
@@ -656,20 +656,33 @@ Return ONLY valid JSON. If information is not found, use null for that field.
             
             logger.info("🟡 VESSEL AI: Sending prompt to AI assistant")
             response = ai_assistant.chat(prompt)
-            import json
-            enhanced_info = json.loads(response)
+            logger.info(f"🟡 VESSEL AI: Raw response length: {len(response)}")
+            logger.info(f"🟡 VESSEL AI: Raw response preview: {response[:200]}...")
             
-            logger.info(f"🟢 VESSEL AI: Successfully enhanced vessel information: {enhanced_info}")
+            # Use safe JSON extraction to handle markdown code blocks and formatting
+            raw_enhanced_info = ai_assistant._safe_json_extract(response)
+            
+            # Ensure the response has the expected structure
+            if isinstance(raw_enhanced_info, dict) and 'vessel_details' in raw_enhanced_info:
+                enhanced_info = raw_enhanced_info
+                logger.info(f"🟢 VESSEL AI: Successfully enhanced vessel information: {enhanced_info}")
+            else:
+                logger.warning(f"⚠️ VESSEL AI: Unexpected response structure: {raw_enhanced_info}")
+                logger.warning("⚠️ VESSEL AI: Using default vessel_details structure")
             
         except Exception as e:
             import logging
-            logging.getLogger('app').error(f"Error enhancing vessel info with AI: {e}")
+            logger = logging.getLogger('app')
+            logger.error(f"Error enhancing vessel info with AI: {e}")
+            logger.error(f"Raw AI response that failed to parse: {response[:500] if 'response' in locals() else 'No response received'}")
+            # Return empty structure that matches expected format
+            enhanced_info = {"vessel_details": {}}
         
         return enhanced_info
     
     def _enhance_personnel_information_with_ai(self) -> Dict[str, Any]:
         """Use AI to extract detailed personnel information from evidence files"""
-        enhanced_info = {}
+        enhanced_info = {"personnel": []}
         
         try:
             from src.models.anthropic_assistant import AnthropicAssistant
@@ -737,15 +750,28 @@ Return ONLY valid JSON. If information is not found, use null for that field.
 """
             
             response = ai_assistant.chat(prompt)
-            import json
-            enhanced_info = json.loads(response)
+            logger = logging.getLogger('app')
+            logger.info(f"🟡 PERSONNEL AI: Raw response length: {len(response)}")
+            logger.info(f"🟡 PERSONNEL AI: Raw response preview: {response[:200]}...")
             
-            import logging
-            logging.getLogger('app').info("🟢 Enhanced personnel information using AI")
+            # Use safe JSON extraction to handle markdown code blocks and formatting
+            raw_enhanced_info = ai_assistant._safe_json_extract(response)
+            
+            # Ensure the response has the expected structure
+            if isinstance(raw_enhanced_info, dict) and 'personnel' in raw_enhanced_info:
+                enhanced_info = raw_enhanced_info
+                logger.info("🟢 Enhanced personnel information using AI")
+            else:
+                logger.warning(f"⚠️ PERSONNEL AI: Unexpected response structure: {raw_enhanced_info}")
+                logger.warning("⚠️ PERSONNEL AI: Using default personnel structure")
             
         except Exception as e:
             import logging
-            logging.getLogger('app').error(f"Error enhancing personnel info with AI: {e}")
+            logger = logging.getLogger('app')
+            logger.error(f"Error enhancing personnel info with AI: {e}")
+            logger.error(f"Raw AI response that failed to parse: {response[:500] if 'response' in locals() else 'No response received'}")
+            # Return empty structure that matches expected format
+            enhanced_info = {"personnel": []}
         
         return enhanced_info
 
