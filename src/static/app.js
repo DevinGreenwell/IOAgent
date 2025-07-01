@@ -1635,17 +1635,26 @@ class IOAgent {
                 // Add download link with proper authentication
                 const generatedDocs = document.getElementById('generatedDocs');
                 if (generatedDocs) {
+                    const filename = data.filename || 'ROI_Document.docx';
                     generatedDocs.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-3 border rounded bg-light">
                             <div>
-                                <h6>ROI Document</h6>
+                                <h6 class="mb-1">ROI Document</h6>
                                 <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
+                                <br><small class="text-primary">Method: Traditional Timeline & Analysis</small>
+                                <br><small class="text-info">File: ${filename}</small>
                             </div>
                             <button class="btn btn-outline-primary btn-sm" onclick="app.downloadROI('${this.currentProject.id}')">
                                 <i class="fas fa-download me-2"></i>Download
                             </button>
                         </div>
                     `;
+                    
+                    // Make sure the section is visible
+                    generatedDocs.style.display = 'block';
+                    
+                    // Scroll to the generated docs section
+                    generatedDocs.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             } else {
                 // Handle 501 Not Implemented as informational rather than error
@@ -1682,23 +1691,36 @@ class IOAgent {
             const data = await response.json();
 
             if (response.ok && data.success) {
+                console.log('✅ Direct ROI generation successful:', data);
                 this.showAlert('ROI document generated successfully using AI!', 'success');
                 
                 // Add download link with proper authentication
                 const generatedDocs = document.getElementById('generatedDocs');
+                console.log('📄 Generated docs element:', generatedDocs);
                 if (generatedDocs) {
+                    const filename = data.filename || 'ROI_Document.docx';
                     generatedDocs.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex justify-content-between align-items-center mb-2 p-3 border rounded bg-light">
                             <div>
-                                <h6>ROI Document (AI Generated)</h6>
+                                <h6 class="mb-1">ROI Document (AI Generated)</h6>
                                 <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
                                 <br><small class="text-success">Method: Direct from Evidence using AI</small>
+                                <br><small class="text-info">File: ${filename}</small>
                             </div>
                             <button class="btn btn-outline-primary btn-sm" onclick="app.downloadROI('${this.currentProject.id}')">
                                 <i class="fas fa-download me-2"></i>Download
                             </button>
                         </div>
                     `;
+                    console.log('✅ Updated generatedDocs with AI ROI download link');
+                    
+                    // Make sure the section is visible
+                    generatedDocs.style.display = 'block';
+                    
+                    // Scroll to the generated docs section
+                    generatedDocs.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    console.error('❌ generatedDocs element not found!');
                 }
             } else {
                 throw new Error(data.error || 'Failed to generate ROI directly');
