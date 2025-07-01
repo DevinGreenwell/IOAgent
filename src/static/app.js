@@ -1636,19 +1636,40 @@ class IOAgent {
                 const generatedDocs = document.getElementById('generatedDocs');
                 if (generatedDocs) {
                     const filename = data.filename || 'ROI_Document.docx';
-                    generatedDocs.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-3 border rounded bg-light">
-                            <div>
-                                <h6 class="mb-1">ROI Document</h6>
-                                <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
-                                <br><small class="text-primary">Method: Traditional Timeline & Analysis</small>
-                                <br><small class="text-info">File: ${filename}</small>
-                            </div>
-                            <button class="btn btn-outline-primary btn-sm" onclick="app.downloadROI('${this.currentProject.id}')">
-                                <i class="fas fa-download me-2"></i>Download
-                            </button>
+                    
+                    // Check if we already have a traditional ROI entry and remove it
+                    const existingTraditional = generatedDocs.querySelector('[data-roi-type="traditional"]');
+                    if (existingTraditional) {
+                        existingTraditional.remove();
+                    }
+                    
+                    // Create new traditional ROI entry
+                    const traditionalROIElement = document.createElement('div');
+                    traditionalROIElement.setAttribute('data-roi-type', 'traditional');
+                    traditionalROIElement.className = 'd-flex justify-content-between align-items-center mb-2 p-3 border rounded bg-light';
+                    traditionalROIElement.innerHTML = `
+                        <div>
+                            <h6 class="mb-1">ROI Document</h6>
+                            <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
+                            <br><small class="text-primary">Method: Traditional Timeline & Analysis</small>
+                            <br><small class="text-info">File: ${filename}</small>
                         </div>
+                        <button class="btn btn-outline-primary btn-sm" onclick="app.downloadROI('${this.currentProject.id}')">
+                            <i class="fas fa-download me-2"></i>Download
+                        </button>
                     `;
+                    
+                    generatedDocs.appendChild(traditionalROIElement);
+                    
+                    // Mark any direct ROI as outdated
+                    const directROI = generatedDocs.querySelector('[data-roi-type="direct"]');
+                    if (directROI) {
+                        directROI.style.opacity = '0.6';
+                        const downloadBtn = directROI.querySelector('button');
+                        downloadBtn.disabled = true;
+                        downloadBtn.innerHTML = '<i class="fas fa-clock me-2"></i>Outdated';
+                        downloadBtn.title = 'This ROI has been superseded by a newer generation';
+                    }
                     
                     // Make sure the section is visible
                     generatedDocs.style.display = 'block';
@@ -1699,20 +1720,41 @@ class IOAgent {
                 console.log('📄 Generated docs element:', generatedDocs);
                 if (generatedDocs) {
                     const filename = data.filename || 'ROI_Document.docx';
-                    generatedDocs.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-3 border rounded bg-light">
-                            <div>
-                                <h6 class="mb-1">ROI Document (AI Generated)</h6>
-                                <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
-                                <br><small class="text-success">Method: Direct from Evidence using AI</small>
-                                <br><small class="text-info">File: ${filename}</small>
-                            </div>
-                            <button class="btn btn-outline-primary btn-sm" onclick="app.downloadROI('${this.currentProject.id}')">
-                                <i class="fas fa-download me-2"></i>Download
-                            </button>
+                    
+                    // Check if we already have a direct ROI entry and remove it
+                    const existingDirect = generatedDocs.querySelector('[data-roi-type="direct"]');
+                    if (existingDirect) {
+                        existingDirect.remove();
+                    }
+                    
+                    // Create new direct ROI entry
+                    const directROIElement = document.createElement('div');
+                    directROIElement.setAttribute('data-roi-type', 'direct');
+                    directROIElement.className = 'd-flex justify-content-between align-items-center mb-2 p-3 border rounded bg-light';
+                    directROIElement.innerHTML = `
+                        <div>
+                            <h6 class="mb-1">ROI Document (AI Generated)</h6>
+                            <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
+                            <br><small class="text-success">Method: Direct from Evidence using AI</small>
+                            <br><small class="text-info">File: ${filename}</small>
                         </div>
+                        <button class="btn btn-outline-success btn-sm" onclick="app.downloadROI('${this.currentProject.id}')">
+                            <i class="fas fa-download me-2"></i>Download
+                        </button>
                     `;
-                    console.log('✅ Updated generatedDocs with AI ROI download link');
+                    
+                    generatedDocs.appendChild(directROIElement);
+                    console.log('✅ Added AI ROI download link to generatedDocs');
+                    
+                    // Mark any traditional ROI as outdated
+                    const traditionalROI = generatedDocs.querySelector('[data-roi-type="traditional"]');
+                    if (traditionalROI) {
+                        traditionalROI.style.opacity = '0.6';
+                        const downloadBtn = traditionalROI.querySelector('button');
+                        downloadBtn.disabled = true;
+                        downloadBtn.innerHTML = '<i class="fas fa-clock me-2"></i>Outdated';
+                        downloadBtn.title = 'This ROI has been superseded by a newer generation';
+                    }
                     
                     // Make sure the section is visible
                     generatedDocs.style.display = 'block';
