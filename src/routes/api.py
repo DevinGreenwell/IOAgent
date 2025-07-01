@@ -816,6 +816,74 @@ def generate_roi(project_id):
         current_app.logger.error(f"Full traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': f'Failed to generate ROI document: {str(e)}'}), 500
 
+@api_bp.route('/projects/<project_id>/generate-roi-direct', methods=['POST'])
+@jwt_required()
+def generate_roi_direct(project_id):
+    """Generate ROI document directly from uploaded evidence files using AI - bypasses timeline/analysis workflow"""
+    try:
+        # Validate project ID
+        if not validate_project_id(project_id):
+            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
+        
+        project = Project.query.filter_by(id=project_id).first()
+        if not project:
+            return jsonify({'success': False, 'error': 'Project not found'}), 404
+        
+        # Check if project has evidence files
+        if not project.evidence_items:
+            return jsonify({
+                'success': False, 
+                'error': 'Project must have evidence files uploaded to generate ROI directly'
+            }), 400
+        
+        current_app.logger.info(f"Starting DIRECT ROI generation for project {project_id} from {len(project.evidence_items)} evidence files")
+        
+        # Convert database models to InvestigationProject format
+        from src.models.roi_converter import DatabaseToROIConverter
+        converter = DatabaseToROIConverter()
+        investigation_project = converter.convert_project(project)
+        
+        # Create exports directory
+        uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        exports_dir = os.path.join(uploads_dir, f'project_{project_id}', 'exports')
+        os.makedirs(exports_dir, exist_ok=True)
+        
+        # Generate output filename
+        safe_title = "".join(c for c in project.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_title = safe_title.replace(' ', '_')[:50]  # Limit length
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        output_filename = f"ROI_Direct_{safe_title}_{timestamp}.docx"
+        output_path = os.path.join(exports_dir, output_filename)
+        
+        current_app.logger.info(f"Generating DIRECT ROI document at: {output_path}")
+        
+        # Generate ROI directly from evidence using AI
+        uscg_roi_generator.generate_roi_from_evidence_only(investigation_project, output_path)
+        
+        current_app.logger.info(f"DIRECT ROI document generated successfully: {output_path}")
+        
+        # Generate download URL
+        download_url = f'/api/projects/{project_id}/download-roi'
+        
+        return jsonify({
+            'success': True,
+            'message': 'ROI document generated directly from evidence files using AI',
+            'file_path': output_path,
+            'filename': output_filename,
+            'download_url': download_url,
+            'generation_method': 'direct_from_evidence',
+            'project_details': {
+                'evidence_items': len(project.evidence_items),
+                'ai_powered': True
+            }
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating DIRECT ROI for project {project_id}: {str(e)}")
+        import traceback
+        current_app.logger.error(f"Full traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': f'Failed to generate ROI document: {str(e)}'}), 500
+
 @api_bp.route('/projects/<project_id>/download-roi', methods=['GET'])
 @jwt_required()
 def download_roi(project_id):

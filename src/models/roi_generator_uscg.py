@@ -37,6 +37,50 @@ class USCGROIGenerator:
         self.document.save(output_path)
         return output_path
     
+    def generate_roi_from_evidence_only(self, project: InvestigationProject, output_path: str) -> str:
+        """Generate ROI directly from uploaded evidence files using AI - bypasses timeline/analysis workflow"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        logger.info("🟡 DIRECT ROI: Starting AI-powered ROI generation from evidence files only")
+        
+        self.project = project
+        self.document = Document()
+        
+        # Set up USCG document formatting
+        self._setup_uscg_formatting()
+        
+        # Check if we have evidence to work with
+        if not project.evidence_library or len(project.evidence_library) == 0:
+            logger.error("🔴 DIRECT ROI: No evidence files available")
+            raise ValueError("Cannot generate ROI: No evidence files uploaded")
+        
+        logger.info(f"🟡 DIRECT ROI: Processing {len(project.evidence_library)} evidence files")
+        
+        # Use AI to generate all content directly from evidence
+        from src.models.anthropic_assistant import AnthropicAssistant
+        ai_assistant = AnthropicAssistant()
+        
+        if not ai_assistant.client:
+            logger.error("🔴 DIRECT ROI: No AI assistant available")
+            raise ValueError("Cannot generate ROI: AI assistant not configured")
+        
+        # Generate comprehensive ROI sections using AI
+        roi_content = self._generate_complete_roi_from_evidence(ai_assistant)
+        
+        if not roi_content:
+            logger.error("🔴 DIRECT ROI: Failed to generate ROI content from evidence")
+            raise ValueError("Failed to extract sufficient information from evidence files")
+        
+        # Generate document sections
+        self._generate_ai_executive_summary(roi_content)
+        self._generate_ai_investigating_officers_report(roi_content)
+        
+        # Save document
+        self.document.save(output_path)
+        logger.info(f"🟢 DIRECT ROI: Successfully generated ROI document at {output_path}")
+        return output_path
+    
     def _setup_uscg_formatting(self) -> None:
         """Set up USCG-required document formatting"""
         if not self.document:
@@ -494,25 +538,28 @@ class USCGROIGenerator:
                 logger.warning(f"⚠️ VESSEL SAFE: Using default for {ai_field}: {default}")
                 return default
 
-            # Create vessel information table
+            # Create vessel information table with comprehensive AI data
             table = self.document.add_table(rows=13, cols=2)
             table.style = 'Table Grid'
+            
+            # Get AI vessel details
+            ai_details = enhanced_vessel_info.get('vessel_details', {})
 
-            # Populate vessel information in table format with AI enhancement
+            # Populate vessel information with all available AI data
             vessel_info = [
                 ("Official Name:", _safe(vessel.official_name, 'official_name')),
                 ("", f"({_safe(vessel.official_name.upper() if vessel.official_name else None, 'official_name', 'VESSEL NAME').upper()})"),
-                ("Identification Number:", f"{_safe(vessel.identification_number, 'official_number')} - Official Number (US)"),
-                ("Flag:", _safe(vessel.flag, default="United States")),
-                ("Vessel Class/Type/Sub-Type", f"{_safe(vessel.vessel_class)}/{_safe(vessel.vessel_type)}/{_safe(vessel.vessel_subtype, default='N/A')}"),
-                ("Build Year:", _safe(vessel.build_year, 'build_year')),
-                ("Gross Tonnage:", f"{_safe(vessel.gross_tonnage, 'gross_tonnage')} GT"),
-                ("Length:", f"{_safe(vessel.length, 'length')} feet"),
-                ("Beam/Width:", f"{_safe(vessel.beam, 'beam')} feet"),
-                ("Draft/Depth:", f"{_safe(vessel.draft)} feet"),
-                ("Main/Primary Propulsion:", _safe(vessel.propulsion, 'propulsion', 'Configuration/System Type, Ahead Horse Power')),
-                ("Owner:", f"{_safe(vessel.owner, 'owner', 'Line 1 = Official Name')}\n{_safe(vessel.owner_location, default='Line 2 = City, State/Country')}"),
-                ("Operator:", f"{_safe(vessel.operator, 'operator', 'Line 1 = Official Name')}\n{_safe(vessel.operator_location, default='Line 2 = City, State/Country')}")
+                ("Identification Number:", self._format_vessel_id(vessel, ai_details)),
+                ("Flag:", _safe(ai_details.get('flag') or vessel.flag, default="United States")),
+                ("Vessel Class/Type/Sub-Type", self._format_vessel_type(vessel, ai_details)),
+                ("Build Year:", _safe(ai_details.get('build_year') or vessel.build_year, 'build_year')),
+                ("Gross Tonnage:", self._format_tonnage(vessel, ai_details)),
+                ("Length:", self._format_dimensions(vessel, ai_details, 'length')),
+                ("Beam/Width:", self._format_dimensions(vessel, ai_details, 'beam')),
+                ("Draft/Depth:", self._format_dimensions(vessel, ai_details, 'draft')),
+                ("Main/Primary Propulsion:", self._format_propulsion(vessel, ai_details)),
+                ("Owner:", self._format_owner_info(vessel, ai_details, 'owner')),
+                ("Operator:", self._format_owner_info(vessel, ai_details, 'operator'))
             ]
 
             # Fill table with vessel information
@@ -579,12 +626,12 @@ class USCGROIGenerator:
         self.document.add_paragraph()  # Section spacing
     
     def _enhance_vessel_information_with_ai(self) -> Dict[str, Any]:
-        """Use AI to extract detailed vessel information from evidence files"""
+        """Use AI to extract comprehensive vessel information from evidence files"""
         enhanced_info = {"vessel_details": {}}
         import logging
         logger = logging.getLogger('app')
         
-        logger.info("🟡 VESSEL AI: Starting vessel information enhancement")
+        logger.info("🟡 VESSEL AI: Starting comprehensive vessel information extraction")
         
         try:
             from src.models.anthropic_assistant import AnthropicAssistant
@@ -594,95 +641,159 @@ class USCGROIGenerator:
                 logger.error("🔴 VESSEL AI: No Anthropic client available")
                 return enhanced_info
             
-            # Gather all evidence content by reading uploaded files
-            evidence_content = ""
-            logger.info(f"🟡 VESSEL AI: Found {len(self.project.evidence_library)} evidence items")
-            
-            for evidence in self.project.evidence_library:
-                try:
-                    # Try to get content from file path
-                    if hasattr(evidence, 'file_path') and evidence.file_path:
-                        import os
-                        from flask import current_app
-                        uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-                        file_path = os.path.join(uploads_dir, evidence.file_path)
-                        
-                        if os.path.exists(file_path):
-                            from src.models.project_manager import ProjectManager
-                            pm = ProjectManager()
-                            content = pm._extract_file_content(file_path)
-                            if content:
-                                evidence_content += content + "\n\n"
-                    elif hasattr(evidence, 'content') and evidence.content:
-                        evidence_content += evidence.content + "\n\n"
-                except Exception as e:
-                    continue
+            # Use the common evidence gathering method
+            evidence_content = self._gather_all_evidence_content()
             
             if not evidence_content:
                 return enhanced_info
             
-            # AI prompt for vessel details
+            # Comprehensive AI prompt for vessel details
             prompt = f"""
-Extract detailed vessel information from this marine casualty investigation document.
+Extract ALL vessel information from this marine casualty investigation evidence. Be extremely thorough.
 
 EVIDENCE CONTENT:
-{evidence_content[:8000] if len(evidence_content) > 8000 else evidence_content}
+{evidence_content[:25000] if len(evidence_content) > 25000 else evidence_content}
 
-Extract the following vessel information and return as JSON:
+Extract EVERY piece of vessel information mentioned, including:
+
+VESSEL IDENTIFICATION:
+- Official name (exactly as written)
+- Official number (O.N.)
+- Call sign
+- IMO number
+- State/Federal documentation number
+- Port of registry
+- Flag state
+
+VESSEL SPECIFICATIONS:
+- Type/Class/Sub-type
+- Build year
+- Builder/Shipyard
+- Length (overall, registered, waterline)
+- Beam/Width
+- Draft/Depth
+- Gross tonnage (GT)
+- Net tonnage
+- Deadweight tonnage
+- Passenger capacity
+- Crew capacity
+
+PROPULSION & MACHINERY:
+- Main engine(s) type, make, model
+- Horsepower (total and per engine)
+- Propeller configuration
+- Auxiliary engines
+- Generator specifications
+- Steering system
+- Fuel capacity and type
+
+OWNERSHIP & OPERATION:
+- Owner name and full address
+- Operator name and full address
+- Managing company
+- Charter arrangements
+- Insurance company
+
+EQUIPMENT & SYSTEMS:
+- Navigation equipment
+- Communication equipment
+- Safety equipment (life rafts, EPIRBs, etc.)
+- Fishing gear (if applicable)
+- Cargo handling equipment
+- Stability systems
+
+VESSEL HISTORY:
+- Previous names
+- Previous owners
+- Major modifications
+- Recent repairs or drydockings
+- Inspection history
+- Previous incidents
+
+REGULATORY COMPLIANCE:
+- Certificate of Inspection status
+- Certificate of Documentation
+- Safety Management Certificate
+- Load line certificate
+- Other certificates
+
+Return as comprehensive JSON:
 {{
   "vessel_details": {{
-    "official_name": "Full vessel name (e.g., F/V LEGACY)",
-    "official_number": "Official number (e.g., O.N. 530648)",
-    "build_year": "Year built if mentioned",
-    "length": "Length in feet if mentioned",
-    "beam": "Beam/width in feet if mentioned",
-    "gross_tonnage": "Gross tonnage if mentioned",
-    "owner": "Owner name and location if mentioned",
-    "operator": "Operator name and location if mentioned",
-    "propulsion": "Engine/propulsion details if mentioned",
-    "vessel_description": "Additional operational details about the vessel"
+    "official_name": "vessel name",
+    "official_number": "O.N. number",
+    "call_sign": "call sign if found",
+    "imo_number": "IMO number if found",
+    "documentation_number": "state/federal doc number",
+    "port_of_registry": "home port",
+    "flag": "flag state",
+    "vessel_class": "vessel classification",
+    "vessel_type": "specific type",
+    "vessel_subtype": "sub-type if applicable",
+    "build_year": "year built",
+    "builder": "shipyard/builder name",
+    "length": "length in feet",
+    "length_type": "overall/registered/waterline",
+    "beam": "beam in feet",
+    "draft": "draft in feet",
+    "gross_tonnage": "GT value",
+    "net_tonnage": "NT value",
+    "deadweight_tonnage": "DWT if applicable",
+    "passenger_capacity": "number if applicable",
+    "crew_capacity": "number",
+    "propulsion": "detailed engine description",
+    "main_engine_make": "manufacturer",
+    "main_engine_model": "model",
+    "horsepower": "total HP",
+    "propellers": "number and type",
+    "auxiliary_engines": "description",
+    "generators": "description",
+    "fuel_capacity": "gallons/liters",
+    "fuel_type": "diesel/gasoline/other",
+    "owner": "full owner name",
+    "owner_address": "complete address",
+    "operator": "full operator name",
+    "operator_address": "complete address",
+    "managing_company": "if different from owner/operator",
+    "navigation_equipment": "list of nav equipment",
+    "communication_equipment": "list of comm equipment",
+    "safety_equipment": "list of safety gear",
+    "certificates": "list of certificates and expiration dates",
+    "previous_names": "if mentioned",
+    "modifications": "major modifications",
+    "last_drydock": "date and location",
+    "inspection_history": "recent inspections"
   }}
 }}
 
-Look for:
-- Vessel specifications and documentation numbers
-- Physical dimensions and characteristics  
-- Ownership and operational details
-- Engine and propulsion systems
-- Any unique vessel features or modifications
-
-Return ONLY valid JSON. If information is not found, use null for that field.
+Extract EVERYTHING mentioned. Use null for fields not found in the evidence.
 """
             
-            logger.info("🟡 VESSEL AI: Sending prompt to AI assistant")
+            logger.info("🟡 VESSEL AI: Sending comprehensive prompt to AI assistant")
             response = ai_assistant.chat(prompt)
-            logger.info(f"🟡 VESSEL AI: Raw response length: {len(response)}")
-            logger.info(f"🟡 VESSEL AI: Raw response preview: {response[:200]}...")
             
-            # Use safe JSON extraction to handle markdown code blocks and formatting
+            # Use safe JSON extraction
             raw_enhanced_info = ai_assistant._safe_json_extract(response)
             
-            # Ensure the response has the expected structure
             if isinstance(raw_enhanced_info, dict) and 'vessel_details' in raw_enhanced_info:
                 enhanced_info = raw_enhanced_info
-                logger.info(f"🟢 VESSEL AI: Successfully enhanced vessel information: {enhanced_info}")
+                logger.info(f"🟢 VESSEL AI: Successfully extracted comprehensive vessel information")
             else:
-                logger.warning(f"⚠️ VESSEL AI: Unexpected response structure: {raw_enhanced_info}")
-                logger.warning("⚠️ VESSEL AI: Using default vessel_details structure")
+                logger.warning(f"⚠️ VESSEL AI: Unexpected response structure")
             
         except Exception as e:
-            import logging
-            logger = logging.getLogger('app')
-            logger.error(f"Error enhancing vessel info with AI: {e}")
-            logger.error(f"Raw AI response that failed to parse: {response[:500] if 'response' in locals() else 'No response received'}")
-            # Return empty structure that matches expected format
+            logger.error(f"🔴 VESSEL AI: Error extracting vessel info: {e}")
             enhanced_info = {"vessel_details": {}}
         
         return enhanced_info
     
     def _enhance_personnel_information_with_ai(self) -> Dict[str, Any]:
-        """Use AI to extract detailed personnel information from evidence files"""
+        """Use AI to extract comprehensive personnel information from evidence files"""
         enhanced_info = {"personnel": []}
+        import logging
+        logger = logging.getLogger('app')
+        
+        logger.info("🟡 PERSONNEL AI: Starting comprehensive personnel extraction")
         
         try:
             from src.models.anthropic_assistant import AnthropicAssistant
@@ -691,86 +802,122 @@ Return ONLY valid JSON. If information is not found, use null for that field.
             if not ai_assistant.client:
                 return enhanced_info
             
-            # Gather all evidence content by reading uploaded files
-            evidence_content = ""
-            for evidence in self.project.evidence_library:
-                try:
-                    # Try to get content from file path
-                    if hasattr(evidence, 'file_path') and evidence.file_path:
-                        import os
-                        from flask import current_app
-                        uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-                        file_path = os.path.join(uploads_dir, evidence.file_path)
-                        
-                        if os.path.exists(file_path):
-                            from src.models.project_manager import ProjectManager
-                            pm = ProjectManager()
-                            content = pm._extract_file_content(file_path)
-                            if content:
-                                evidence_content += content + "\n\n"
-                    elif hasattr(evidence, 'content') and evidence.content:
-                        evidence_content += evidence.content + "\n\n"
-                except Exception as e:
-                    continue
+            # Use the common evidence gathering method
+            evidence_content = self._gather_all_evidence_content()
             
             if not evidence_content:
                 return enhanced_info
             
-            # AI prompt for personnel details
+            # Comprehensive AI prompt for personnel details
             prompt = f"""
-Extract personnel information from this marine casualty investigation document.
+Extract ALL personnel information from this marine casualty investigation evidence. Be extremely thorough.
 
 EVIDENCE CONTENT:
-{evidence_content[:8000] if len(evidence_content) > 8000 else evidence_content}
+{evidence_content[:25000] if len(evidence_content) > 25000 else evidence_content}
 
-Extract information about personnel involved and return as JSON:
+Extract information about EVERY person mentioned, including:
+
+IDENTIFICATION:
+- Full name (exactly as written)
+- Alternative names/nicknames
+- Date of birth
+- Age at time of incident
+- Sex/Gender
+- Nationality
+- Home address
+
+PROFESSIONAL DETAILS:
+- Current role/position
+- Vessel assignment
+- Employment status (permanent/temporary/contract)
+- Years of experience (total and in current role)
+- Previous positions
+- Employer/Company
+
+CREDENTIALS & QUALIFICATIONS:
+- License type and number
+- License issuing authority
+- License expiration date
+- Endorsements
+- Training certificates
+- Medical certificates
+- Drug test results
+
+INCIDENT INVOLVEMENT:
+- Location during incident
+- Actions taken
+- Injuries sustained (detailed)
+- Medical treatment received
+- Hospital/medical facility
+- Time of death (if applicable)
+- Cause of death (if applicable)
+
+BACKGROUND:
+- Previous incidents/violations
+- Performance history
+- Recent work schedule
+- Rest periods before incident
+- Physical/mental condition
+
+For EACH person mentioned, create an entry:
 {{
   "personnel": [
     {{
-      "name": "Person's name",
-      "role": "Captain/Crew/Operator/etc",
-      "age": "Age if mentioned",
-      "sex": "Male/Female if mentioned", 
-      "status": "Deceased/Injured/Uninjured",
-      "vessel_assignment": "Which vessel they were on",
-      "experience": "Years of experience or qualifications if mentioned",
-      "details": "Additional relevant details about this person"
+      "name": "Full name as written",
+      "alternative_names": "Other names/nicknames",
+      "date_of_birth": "DOB if mentioned",
+      "age": "Age at incident",
+      "sex": "Male/Female/Unknown",
+      "nationality": "Country",
+      "home_address": "Full address if available",
+      "role": "Specific position/title",
+      "vessel_assignment": "Vessel name",
+      "employment_status": "Permanent/Temporary/Contract",
+      "employer": "Company name",
+      "years_experience_total": "Total maritime experience",
+      "years_experience_role": "Experience in current position",
+      "license_type": "Master/Mate/Engineer/etc",
+      "license_number": "License number",
+      "license_authority": "USCG/Other",
+      "license_expiration": "Expiration date",
+      "endorsements": "List of endorsements",
+      "certificates": "Training/medical certificates",
+      "status": "Deceased/Injured/Missing/Uninjured",
+      "injuries": "Detailed injury description",
+      "medical_treatment": "Treatment received",
+      "hospital": "Medical facility name",
+      "time_of_death": "If applicable",
+      "cause_of_death": "If applicable",
+      "location_during_incident": "Where they were",
+      "actions_during_incident": "What they did",
+      "drug_test_results": "Positive/Negative/Pending",
+      "alcohol_test_results": "BAC level if tested",
+      "previous_incidents": "Any prior violations/incidents",
+      "work_schedule": "Recent duty hours",
+      "rest_period": "Hours of rest before incident",
+      "additional_details": "Any other relevant information"
     }}
   ]
 }}
 
-Look for:
-- Names of crew members, passengers, operators
-- Roles and positions (Captain, Engineer, Deckhand, etc.)
-- Personal details (age, experience, qualifications)
-- Casualty status (deceased, injured, missing)
-- Any relevant background information
-
-Return ONLY valid JSON. If information is not found, use null for that field.
+Include EVERYONE mentioned: crew, passengers, responders, medical personnel, investigators, witnesses.
+Extract ALL available information. Use null for fields not found in evidence.
 """
             
+            logger.info("🟡 PERSONNEL AI: Sending comprehensive prompt to AI assistant")
             response = ai_assistant.chat(prompt)
-            logger = logging.getLogger('app')
-            logger.info(f"🟡 PERSONNEL AI: Raw response length: {len(response)}")
-            logger.info(f"🟡 PERSONNEL AI: Raw response preview: {response[:200]}...")
             
-            # Use safe JSON extraction to handle markdown code blocks and formatting
+            # Use safe JSON extraction
             raw_enhanced_info = ai_assistant._safe_json_extract(response)
             
-            # Ensure the response has the expected structure
             if isinstance(raw_enhanced_info, dict) and 'personnel' in raw_enhanced_info:
                 enhanced_info = raw_enhanced_info
-                logger.info("🟢 Enhanced personnel information using AI")
+                logger.info(f"🟢 PERSONNEL AI: Extracted {len(enhanced_info['personnel'])} personnel records")
             else:
-                logger.warning(f"⚠️ PERSONNEL AI: Unexpected response structure: {raw_enhanced_info}")
-                logger.warning("⚠️ PERSONNEL AI: Using default personnel structure")
+                logger.warning(f"⚠️ PERSONNEL AI: Unexpected response structure")
             
         except Exception as e:
-            import logging
-            logger = logging.getLogger('app')
-            logger.error(f"Error enhancing personnel info with AI: {e}")
-            logger.error(f"Raw AI response that failed to parse: {response[:500] if 'response' in locals() else 'No response received'}")
-            # Return empty structure that matches expected format
+            logger.error(f"🔴 PERSONNEL AI: Error extracting personnel info: {e}")
             enhanced_info = {"personnel": []}
         
         return enhanced_info
@@ -1058,18 +1205,74 @@ Return ONLY valid JSON. If information is not found, use null for that field.
         self.document.add_paragraph()  # Section spacing
     
     def _generate_section_6_conclusions(self) -> None:
-        """Section 6: Conclusions – formatted per updated unit guidance"""
+        """Section 6: Conclusions – using AI to extract from evidence"""
         if not self.document or not self.project:
             return
             
         heading = self.document.add_paragraph()
         heading.add_run("6. Conclusions").bold = True
+        
+        # Use AI to generate comprehensive conclusions from evidence
+        import logging
+        logger = logging.getLogger('app')
+        logger.info("🟡 CONCLUSIONS: Generating AI-based conclusions from evidence")
+        
+        from src.models.anthropic_assistant import AnthropicAssistant
+        ai_assistant = AnthropicAssistant()
+        
+        if ai_assistant.client:
+            conclusions_data = self._generate_conclusions_with_ai()
+            
+            if conclusions_data:
+                # 6.1 Determination of Cause
+                subheading = self.document.add_paragraph()
+                subheading.add_run("6.1. Determination of Cause:").bold = True
+                
+                # Add initiating event conclusion
+                if conclusions_data.get('initiating_event'):
+                    self.document.add_paragraph(f"6.1.1. {conclusions_data['initiating_event']}")
+                else:
+                    self.document.add_paragraph(
+                        "6.1.1. The initiating event for this casualty could not be conclusively determined; "
+                        "however, the following scenario is considered most probable based on available evidence."
+                    )
+                
+                # Add causal factor conclusions
+                if conclusions_data.get('causal_determinations'):
+                    for i, determination in enumerate(conclusions_data['causal_determinations'], 1):
+                        self.document.add_paragraph(f"6.1.1.{i}. {determination}")
+                
+                # Add other conclusion sections from AI analysis
+                for section_num in ['6.2', '6.3', '6.4', '6.5', '6.6']:
+                    if conclusions_data.get(f'section_{section_num}'):
+                        self.document.add_paragraph(conclusions_data[f'section_{section_num}'])
+                    else:
+                        # Use default if AI didn't provide specific content
+                        if section_num == '6.2':
+                            self.document.add_paragraph("6.2. Evidence of Act(s) or Violation(s) of Law by Credentialed Mariners: None identified.")
+                        elif section_num == '6.3':
+                            self.document.add_paragraph("6.3. Evidence of Act(s) or Violation(s) of Law by U.S. Coast Guard personnel or others: None identified.")
+                        elif section_num == '6.4':
+                            self.document.add_paragraph("6.4. Evidence of Act(s) Subject to Civil Penalty: None identified.")
+                        elif section_num == '6.5':
+                            self.document.add_paragraph("6.5. Evidence of Criminal Act(s): None identified.")
+                        elif section_num == '6.6':
+                            self.document.add_paragraph("6.6. Need for New or Amended U.S. Law or Regulation: None identified.")
+            else:
+                # Fallback to original logic if AI fails
+                self._generate_conclusions_fallback()
+        else:
+            # Fallback to original logic if no AI
+            self._generate_conclusions_fallback()
 
-        # --- 6.1 Determination of Cause ---
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_conclusions_fallback(self) -> None:
+        """Fallback method for conclusions if AI is unavailable"""
+        # Original logic preserved as fallback
         subheading = self.document.add_paragraph()
         subheading.add_run("6.1. Determination of Cause:").bold = True
 
-        # Identify the initiating event
         initiating_event = next(
             (e for e in self.project.timeline if getattr(e, "is_initiating_event", False)), None
         )
@@ -1086,11 +1289,9 @@ Return ONLY valid JSON. If information is not found, use null for that field.
             )
         self.document.add_paragraph(init_text)
 
-        # List every causal factor as sub‑paragraphs 6.1.1.1, 6.1.1.2, etc.
         if self.project.causal_factors:
             sub_index = 1
             for factor in self.project.causal_factors:
-                # Prefer the descriptive text, fall back to title
                 text = factor.description or factor.title
                 para_num = f"6.1.1.{sub_index}"
                 self.document.add_paragraph(f"{para_num}. {text.rstrip('.')}." )
@@ -1100,96 +1301,110 @@ Return ONLY valid JSON. If information is not found, use null for that field.
                 "6.1.1.1. No specific causal factors were identified during the investigation."
             )
 
-        # Brief placeholders for 6.2 – 6.7 to satisfy USCG numbering without duplicating analysis
         skip_lines = [
-            "6.2. Evidence of Act(s) or Violation(s) of Law by Credentialed Mariners: See 6.1.",
-            "6.3. Evidence of Act(s) or Violation(s) of Law by U.S. Coast Guard personnel or others: See 6.1.",
-            "6.4. Evidence of Act(s) Subject to Civil Penalty: See 6.1.",
-            "6.5. Evidence of Criminal Act(s): See 6.1.",
-            "6.6. Need for New or Amended U.S. Law or Regulation: See 6.1.",
+            "6.2. Evidence of Act(s) or Violation(s) of Law by Credentialed Mariners: None identified.",
+            "6.3. Evidence of Act(s) or Violation(s) of Law by U.S. Coast Guard personnel or others: None identified.",
+            "6.4. Evidence of Act(s) Subject to Civil Penalty: None identified.",
+            "6.5. Evidence of Criminal Act(s): None identified.",
+            "6.6. Need for New or Amended U.S. Law or Regulation: None identified.",
         ]
         for line in skip_lines:
             self.document.add_paragraph(line)
-
-        self.document.add_paragraph()  # Section spacing
     
     def _generate_section_7_actions_taken(self) -> None:
-        """Section 7: Actions Taken Since the Incident"""
+        """Section 7: Actions Taken Since the Incident - using AI to extract from evidence"""
         if not self.document or not self.project:
             return
             
         heading = self.document.add_paragraph()
         heading.add_run("7. Actions Taken Since the Incident").bold = True
         
-        if hasattr(self.project, 'roi_document') and self.project.roi_document.actions_taken:
-            self.document.add_paragraph(self.project.roi_document.actions_taken)
+        # Use AI to extract actions taken from evidence documents
+        import logging
+        logger = logging.getLogger('app')
+        logger.info("🟡 ACTIONS: Generating AI-based actions taken from evidence")
+        
+        from src.models.anthropic_assistant import AnthropicAssistant
+        ai_assistant = AnthropicAssistant()
+        
+        if ai_assistant.client:
+            actions_taken = self._generate_actions_taken_with_ai()
+            
+            if actions_taken and len(actions_taken) > 0:
+                for i, action in enumerate(actions_taken, 1):
+                    self.document.add_paragraph(f"7.{i}. {action}")
+            else:
+                # If AI doesn't find specific actions, add minimal default
+                self.document.add_paragraph(
+                    "7.1. The Coast Guard initiated a formal investigation under 46 CFR Part 4."
+                )
         else:
-            # More specific actions based on investigation type
+            # Fallback if no AI available
             self.document.add_paragraph(
-                "7.1. The Coast Guard conducted post-casualty drug and alcohol testing in accordance with 46 CFR 4.06."
-            )
-            self.document.add_paragraph(
-                "7.2. The vessel operator was issued a Captain of the Port order requiring safety equipment inspections."
-            )
-            self.document.add_paragraph(
-                "7.3. Safety awareness information was distributed to local fishing fleets regarding similar hazards."
+                "7.1. The Coast Guard initiated a formal investigation under 46 CFR Part 4."
             )
         
         self.document.add_paragraph()  # Section spacing
     
     def _generate_section_8_recommendations(self) -> None:
-        """Section 8: Recommendations"""
+        """Section 8: Recommendations - using AI to generate from evidence and analysis"""
         if not self.document or not self.project:
             return
             
         heading = self.document.add_paragraph()
         heading.add_run("8. Recommendations").bold = True
         
-        # 8.1 Safety Recommendations
+        # Use AI to generate comprehensive recommendations
+        import logging
+        logger = logging.getLogger('app')
+        logger.info("🟡 RECOMMENDATIONS: Generating AI-based recommendations from evidence and analysis")
+        
+        from src.models.anthropic_assistant import AnthropicAssistant
+        ai_assistant = AnthropicAssistant()
+        
+        if ai_assistant.client:
+            recommendations_data = self._generate_recommendations_with_ai()
+            
+            if recommendations_data:
+                # 8.1 Safety Recommendations
+                if recommendations_data.get('safety_recommendations'):
+                    subheading = self.document.add_paragraph()
+                    subheading.add_run("8.1. Safety Recommendations:").bold = True
+                    
+                    for i, rec in enumerate(recommendations_data['safety_recommendations'], 1):
+                        self.document.add_paragraph(f"8.1.{i}. {rec}")
+                
+                # 8.2 Administrative Recommendations
+                self.document.add_paragraph()
+                subheading = self.document.add_paragraph()
+                subheading.add_run("8.2. Administrative Recommendations:").bold = True
+                
+                if recommendations_data.get('administrative_recommendations'):
+                    for i, rec in enumerate(recommendations_data['administrative_recommendations'], 1):
+                        self.document.add_paragraph(f"8.2.{i}. {rec}")
+                else:
+                    self.document.add_paragraph("None at this time.")
+            else:
+                # Minimal fallback if AI fails
+                self._generate_recommendations_fallback()
+        else:
+            # Fallback if no AI available
+            self._generate_recommendations_fallback()
+        
+        self.document.add_paragraph()  # Section spacing
+    
+    def _generate_recommendations_fallback(self) -> None:
+        """Fallback recommendations if AI is unavailable"""
         subheading = self.document.add_paragraph()
         subheading.add_run("8.1. Safety Recommendations:").bold = True
+        self.document.add_paragraph(
+            "8.1.1. Conduct a comprehensive review of vessel safety procedures and emergency response protocols."
+        )
         
-        if hasattr(self.project, 'roi_document') and self.project.roi_document.recommendations:
-            self.document.add_paragraph(self.project.roi_document.recommendations)
-        else:
-            # Generate comprehensive recommendations based on causal factors
-            if self.project.causal_factors:
-                rec_number = 1
-                for factor in self.project.causal_factors:
-                    if factor.category == 'organization':
-                        self.document.add_paragraph(
-                            f"8.1.{rec_number}. Review and strengthen vessel safety management policies and crew training programs."
-                        )
-                    elif factor.category == 'workplace':
-                        self.document.add_paragraph(
-                            f"8.1.{rec_number}. Implement enhanced safety equipment inspections and maintenance procedures."
-                        )
-                    elif factor.category == 'precondition':
-                        self.document.add_paragraph(
-                            f"8.1.{rec_number}. Develop comprehensive crew training programs addressing local operational hazards."
-                        )
-                    elif factor.category == 'production':
-                        self.document.add_paragraph(
-                            f"8.1.{rec_number}. Establish standardized operational procedures and emergency response protocols."
-                        )
-                    elif factor.category == 'defense':
-                        self.document.add_paragraph(
-                            f"8.1.{rec_number}. Install additional safety equipment and backup communication systems."
-                        )
-                    rec_number += 1
-            else:
-                # Default recommendation when no specific factors identified
-                self.document.add_paragraph(
-                    "8.1.1. Review vessel safety management systems and ensure regulatory compliance."
-                )
-        
-        # 8.2 Administrative Recommendations
         self.document.add_paragraph()
         subheading = self.document.add_paragraph()
         subheading.add_run("8.2. Administrative Recommendations:").bold = True
         self.document.add_paragraph("None at this time.")
-        
-        self.document.add_paragraph()  # Section spacing
     
     def _generate_signature_block(self) -> None:
         """Generate signature block"""
@@ -1208,3 +1423,647 @@ Return ONLY valid JSON. If information is not found, use null for that field.
         self.document.add_paragraph(officer_name.upper())
         self.document.add_paragraph("Lieutenant, U.S. Coast Guard")
         self.document.add_paragraph("Investigating Officer")
+    
+    def _generate_conclusions_with_ai(self) -> Dict[str, Any]:
+        """Use AI to extract conclusions from all evidence"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        try:
+            from src.models.anthropic_assistant import AnthropicAssistant
+            ai_assistant = AnthropicAssistant()
+            
+            if not ai_assistant.client:
+                return {}
+            
+            # Gather all evidence content
+            evidence_content = self._gather_all_evidence_content()
+            
+            prompt = f"""
+Analyze this marine casualty investigation evidence to generate USCG Section 6 Conclusions.
+
+EVIDENCE CONTENT:
+{evidence_content[:20000] if len(evidence_content) > 20000 else evidence_content}
+
+Generate professional conclusions following USCG format:
+
+1. INITIATING EVENT (6.1.1): Identify the first adverse outcome that started the casualty sequence
+2. CAUSAL DETERMINATIONS (6.1.1.1, 6.1.1.2, etc.): List specific causal factors that contributed
+3. VIOLATIONS BY MARINERS (6.2): Any evidence of violations by credentialed mariners
+4. VIOLATIONS BY USCG/OTHERS (6.3): Any evidence of violations by Coast Guard or other personnel
+5. CIVIL PENALTY EVIDENCE (6.4): Any acts subject to civil penalties
+6. CRIMINAL ACTS (6.5): Any evidence of criminal activity
+7. REGULATORY NEEDS (6.6): Any need for new or amended regulations
+
+Return as JSON:
+{{
+  "initiating_event": "The initiating event for this casualty was...",
+  "causal_determinations": [
+    "Factor 1 description",
+    "Factor 2 description"
+  ],
+  "section_6.2": "6.2. Evidence of Act(s) or Violation(s)...: [Specific findings or 'None identified']",
+  "section_6.3": "6.3. Evidence of Act(s) or Violation(s)...: [Specific findings or 'None identified']",
+  "section_6.4": "6.4. Evidence of Act(s) Subject to Civil Penalty: [Specific findings or 'None identified']",
+  "section_6.5": "6.5. Evidence of Criminal Act(s): [Specific findings or 'None identified']",
+  "section_6.6": "6.6. Need for New or Amended U.S. Law or Regulation: [Specific findings or 'None identified']"
+}}
+"""
+            
+            response = ai_assistant.chat(prompt)
+            conclusions_data = ai_assistant._safe_json_extract(response)
+            
+            logger.info(f"🟢 CONCLUSIONS AI: Successfully extracted conclusions from evidence")
+            return conclusions_data
+            
+        except Exception as e:
+            logger.error(f"🔴 CONCLUSIONS AI: Error generating conclusions: {e}")
+            return {}
+    
+    def _generate_actions_taken_with_ai(self) -> List[str]:
+        """Use AI to extract actions taken from evidence"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        try:
+            from src.models.anthropic_assistant import AnthropicAssistant
+            ai_assistant = AnthropicAssistant()
+            
+            if not ai_assistant.client:
+                return []
+            
+            # Gather all evidence content
+            evidence_content = self._gather_all_evidence_content()
+            
+            prompt = f"""
+Analyze this marine casualty investigation evidence to identify all actions taken since the incident.
+
+EVIDENCE CONTENT:
+{evidence_content[:20000] if len(evidence_content) > 20000 else evidence_content}
+
+Extract ALL actions taken by:
+- Coast Guard (investigations, testing, orders, notifications)
+- Vessel operators/owners (repairs, policy changes, training)
+- Other agencies (medical response, environmental cleanup)
+- Industry organizations (safety bulletins, guidance)
+
+Focus on POST-INCIDENT actions only. Include:
+- Drug/alcohol testing conducted
+- Captain of the Port orders issued
+- Safety notifications distributed
+- Vessel inspections performed
+- Policy or procedure changes
+- Training conducted
+- Equipment repairs or replacements
+- Regulatory enforcement actions
+
+Return as JSON array of action statements:
+[
+  "The Coast Guard conducted post-casualty drug and alcohol testing...",
+  "A Captain of the Port order was issued requiring...",
+  "The vessel operator implemented new safety procedures..."
+]
+
+Each action should be a complete, professional statement.
+"""
+            
+            response = ai_assistant.chat(prompt)
+            actions = ai_assistant._safe_json_extract(response)
+            
+            if isinstance(actions, list):
+                logger.info(f"🟢 ACTIONS AI: Extracted {len(actions)} actions from evidence")
+                return actions
+            else:
+                logger.warning("⚠️ ACTIONS AI: Response was not a list")
+                return []
+                
+        except Exception as e:
+            logger.error(f"🔴 ACTIONS AI: Error extracting actions: {e}")
+            return []
+    
+    def _generate_recommendations_with_ai(self) -> Dict[str, Any]:
+        """Use AI to generate recommendations based on entire investigation"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        try:
+            from src.models.anthropic_assistant import AnthropicAssistant
+            ai_assistant = AnthropicAssistant()
+            
+            if not ai_assistant.client:
+                return {}
+            
+            # Gather all evidence content and causal factors
+            evidence_content = self._gather_all_evidence_content()
+            causal_summary = self._summarize_causal_factors()
+            
+            prompt = f"""
+Based on this marine casualty investigation, generate comprehensive recommendations to prevent similar incidents.
+
+INCIDENT SUMMARY:
+{self.project.incident_info.incident_type} at {self.project.incident_info.location}
+
+CAUSAL FACTORS IDENTIFIED:
+{causal_summary}
+
+EVIDENCE REVIEWED:
+{evidence_content[:15000] if len(evidence_content) > 15000 else evidence_content}
+
+Generate recommendations in two categories:
+
+SAFETY RECOMMENDATIONS (8.1):
+- Vessel-specific improvements (equipment, procedures, training)
+- Industry-wide safety enhancements
+- Regulatory compliance improvements
+- Emergency response enhancements
+- Communication and coordination improvements
+
+ADMINISTRATIVE RECOMMENDATIONS (8.2):
+- Policy changes
+- Documentation requirements
+- Inspection or audit programs
+- Enforcement actions
+- Inter-agency coordination
+
+Each recommendation should:
+- Address specific causal factors identified
+- Be actionable and specific
+- Follow USCG professional format
+- Include who should implement it
+
+Return as JSON:
+{{
+  "safety_recommendations": [
+    "Vessel operators should implement...",
+    "The maritime industry should develop...",
+    "Training programs should include..."
+  ],
+  "administrative_recommendations": [
+    "The Coast Guard should consider...",
+    "Marine inspectors should verify...",
+    "Policy guidance should be updated..."
+  ]
+}}
+
+If no administrative recommendations are warranted, return empty array.
+"""
+            
+            response = ai_assistant.chat(prompt)
+            recommendations = ai_assistant._safe_json_extract(response)
+            
+            logger.info(f"🟢 RECOMMENDATIONS AI: Generated recommendations from investigation")
+            return recommendations
+            
+        except Exception as e:
+            logger.error(f"🔴 RECOMMENDATIONS AI: Error generating recommendations: {e}")
+            return {}
+    
+    def _gather_all_evidence_content(self) -> str:
+        """Gather all evidence content from uploaded files"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        evidence_content = ""
+        evidence_count = 0
+        
+        logger.info(f"🟡 EVIDENCE GATHER: Processing {len(self.project.evidence_library)} evidence items")
+        
+        for evidence in self.project.evidence_library:
+            try:
+                if hasattr(evidence, 'file_path') and evidence.file_path:
+                    import os
+                    from flask import current_app
+                    uploads_dir = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+                    file_path = os.path.join(uploads_dir, evidence.file_path)
+                    
+                    if os.path.exists(file_path):
+                        from src.models.project_manager import ProjectManager
+                        pm = ProjectManager()
+                        content = pm._extract_file_content(file_path)
+                        if content:
+                            evidence_content += f"\n\n--- DOCUMENT: {evidence.filename} ---\n"
+                            evidence_content += content
+                            evidence_count += 1
+                elif hasattr(evidence, 'content') and evidence.content:
+                    evidence_content += f"\n\n--- EVIDENCE: {evidence.type} ---\n"
+                    evidence_content += evidence.content
+                    evidence_count += 1
+            except Exception as e:
+                logger.warning(f"⚠️ EVIDENCE GATHER: Error processing {evidence.filename}: {e}")
+                continue
+        
+        logger.info(f"🟢 EVIDENCE GATHER: Collected content from {evidence_count} evidence items")
+        return evidence_content
+    
+    def _summarize_causal_factors(self) -> str:
+        """Summarize causal factors for recommendation generation"""
+        if not self.project.causal_factors:
+            return "No specific causal factors were identified."
+        
+        summary = []
+        for factor in self.project.causal_factors:
+            summary.append(f"- {factor.category.upper()}: {factor.title}")
+            if factor.description:
+                summary.append(f"  Description: {factor.description}")
+        
+        return "\n".join(summary)
+    
+    def _format_vessel_id(self, vessel, ai_details: Dict[str, Any]) -> str:
+        """Format vessel identification with all available numbers"""
+        parts = []
+        
+        # Official number
+        if ai_details.get('official_number'):
+            parts.append(f"{ai_details['official_number']} - Official Number (US)")
+        elif vessel.identification_number:
+            parts.append(f"{vessel.identification_number} - Official Number (US)")
+        
+        # Call sign
+        if ai_details.get('call_sign'):
+            parts.append(f"Call Sign: {ai_details['call_sign']}")
+        
+        # IMO number
+        if ai_details.get('imo_number'):
+            parts.append(f"IMO: {ai_details['imo_number']}")
+        
+        # Documentation number
+        if ai_details.get('documentation_number'):
+            parts.append(f"Doc: {ai_details['documentation_number']}")
+        
+        return "; ".join(parts) if parts else "Not documented"
+    
+    def _format_vessel_type(self, vessel, ai_details: Dict[str, Any]) -> str:
+        """Format vessel type information"""
+        vessel_class = ai_details.get('vessel_class') or vessel.vessel_class or "Unknown"
+        vessel_type = ai_details.get('vessel_type') or vessel.vessel_type or "Unknown"
+        vessel_subtype = ai_details.get('vessel_subtype') or vessel.vessel_subtype or "N/A"
+        
+        return f"{vessel_class}/{vessel_type}/{vessel_subtype}"
+    
+    def _format_tonnage(self, vessel, ai_details: Dict[str, Any]) -> str:
+        """Format tonnage information"""
+        parts = []
+        
+        # Gross tonnage
+        gt = ai_details.get('gross_tonnage') or vessel.gross_tonnage
+        if gt:
+            parts.append(f"{gt} GT")
+        
+        # Net tonnage
+        if ai_details.get('net_tonnage'):
+            parts.append(f"{ai_details['net_tonnage']} NT")
+        
+        # Deadweight
+        if ai_details.get('deadweight_tonnage'):
+            parts.append(f"{ai_details['deadweight_tonnage']} DWT")
+        
+        return "; ".join(parts) if parts else "Not documented"
+    
+    def _format_dimensions(self, vessel, ai_details: Dict[str, Any], dimension: str) -> str:
+        """Format vessel dimensions with type information"""
+        value = ai_details.get(dimension) or getattr(vessel, dimension, None)
+        
+        if not value:
+            return "Not documented"
+        
+        # Add dimension type if available
+        if dimension == 'length' and ai_details.get('length_type'):
+            return f"{value} feet ({ai_details['length_type']})"
+        else:
+            return f"{value} feet"
+    
+    def _format_propulsion(self, vessel, ai_details: Dict[str, Any]) -> str:
+        """Format comprehensive propulsion information"""
+        parts = []
+        
+        # Main engine details
+        if ai_details.get('main_engine_make') and ai_details.get('main_engine_model'):
+            engine = f"{ai_details['main_engine_make']} {ai_details['main_engine_model']}"
+            if ai_details.get('horsepower'):
+                engine += f", {ai_details['horsepower']} HP"
+            parts.append(engine)
+        elif ai_details.get('propulsion'):
+            parts.append(ai_details['propulsion'])
+        elif vessel.propulsion:
+            parts.append(vessel.propulsion)
+        
+        # Propellers
+        if ai_details.get('propellers'):
+            parts.append(f"Propellers: {ai_details['propellers']}")
+        
+        # Fuel type
+        if ai_details.get('fuel_type'):
+            parts.append(f"Fuel: {ai_details['fuel_type']}")
+        
+        return "; ".join(parts) if parts else "Configuration/System Type, Ahead Horse Power"
+    
+    def _format_owner_info(self, vessel, ai_details: Dict[str, Any], info_type: str) -> str:
+        """Format owner or operator information"""
+        name = ai_details.get(info_type) or getattr(vessel, info_type, None) or f"Line 1 = Official Name"
+        address = ai_details.get(f'{info_type}_address') or getattr(vessel, f'{info_type}_location', None) or "Line 2 = City, State/Country"
+        
+        return f"{name}\n{address}"
+    
+    def _generate_complete_roi_from_evidence(self, ai_assistant) -> Dict[str, Any]:
+        """Generate all ROI content directly from evidence using comprehensive AI analysis"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        try:
+            # Gather all evidence content
+            evidence_content = self._gather_all_evidence_content()
+            
+            if not evidence_content:
+                logger.error("🔴 DIRECT ROI AI: No evidence content available")
+                return {}
+            
+            logger.info(f"🟡 DIRECT ROI AI: Analyzing {len(evidence_content)} characters of evidence")
+            
+            # Comprehensive prompt to extract ALL ROI information
+            prompt = f"""
+You are an expert USCG marine casualty investigator analyzing evidence to create a complete Report of Investigation.
+
+EVIDENCE CONTENT:
+{evidence_content[:50000] if len(evidence_content) > 50000 else evidence_content}
+
+Extract ALL information needed for a complete USCG ROI document. Analyze every detail and create professional content for each section.
+
+Generate a comprehensive JSON response with the following sections:
+
+1. INCIDENT SUMMARY:
+- Extract basic incident information (date, time, location, vessel(s), type of casualty)
+- Identify what happened and when
+
+2. EXECUTIVE SUMMARY:
+- Scene setting paragraph (4-6 sentences describing the operational context and incident)
+- Outcomes paragraph (4-6 sentences describing response, casualties, and consequences)
+- Causal factors paragraph (4-5 sentences identifying the cause and contributing factors)
+
+3. VESSEL INFORMATION:
+- Extract ALL vessel details for Section 2
+- Official name, numbers, specifications, ownership, equipment
+
+4. PERSONNEL CASUALTIES:
+- All people involved, their status, injuries, and details
+
+5. FINDINGS OF FACT:
+- Convert all evidence into numbered factual statements
+- Organize chronologically and by topic
+- 15-25 professional findings
+
+6. ANALYSIS:
+- Identify causal factors using USCG Swiss Cheese methodology
+- Generate professional analysis for each factor
+
+7. CONCLUSIONS:
+- Determine initiating event and causal factors
+- Address regulatory violations and recommendations
+
+8. ACTIONS TAKEN:
+- Post-incident actions by all parties
+
+9. RECOMMENDATIONS:
+- Safety and administrative recommendations
+
+Return as comprehensive JSON:
+{{
+  "incident_summary": {{
+    "date": "incident date",
+    "time": "incident time", 
+    "location": "specific location",
+    "vessel_name": "primary vessel",
+    "incident_type": "type of casualty",
+    "description": "brief description"
+  }},
+  "executive_summary": {{
+    "scene_setting": "4-6 sentence paragraph setting scene and describing incident",
+    "outcomes": "4-6 sentence paragraph describing response and outcomes",
+    "causal_factors": "4-5 sentence paragraph identifying cause and factors"
+  }},
+  "vessel_information": {{
+    "official_name": "vessel name",
+    "official_number": "O.N. number",
+    "specifications": "comprehensive vessel details",
+    "ownership": "owner and operator information",
+    "equipment": "safety and operational equipment"
+  }},
+  "personnel_casualties": [
+    {{
+      "name": "person name",
+      "role": "position",
+      "status": "injured/deceased/uninjured",
+      "details": "injury details and treatment"
+    }}
+  ],
+  "findings_of_fact": [
+    "4.1.1. Professional finding statement",
+    "4.1.2. Second finding statement",
+    "...continue with all findings"
+  ],
+  "causal_factors": [
+    {{
+      "title": "Failure of/Inadequate/Lack of [factor title]",
+      "category": "organization/workplace/precondition/production/defense",
+      "description": "detailed description",
+      "analysis": "comprehensive analysis of how this factor contributed"
+    }}
+  ],
+  "conclusions": {{
+    "initiating_event": "The initiating event was...",
+    "causal_determinations": ["Factor 1", "Factor 2", "Factor 3"],
+    "violations": "Any regulatory violations identified",
+    "other_conclusions": "Additional conclusions"
+  }},
+  "actions_taken": [
+    "7.1. Action taken by Coast Guard/parties",
+    "7.2. Additional actions taken",
+    "...continue with all actions"
+  ],
+  "recommendations": {{
+    "safety_recommendations": [
+      "8.1.1. Specific safety recommendation",
+      "8.1.2. Additional safety recommendation"
+    ],
+    "administrative_recommendations": [
+      "8.2.1. Administrative recommendation",
+      "...or empty array if none"
+    ]
+  }}
+}}
+
+CRITICAL REQUIREMENTS:
+- Extract EVERYTHING mentioned in the evidence
+- Make reasonable assumptions about standard maritime practices
+- Generate 15-25 professional findings of fact
+- Identify multiple causal factors (typically 3-7)
+- Create specific, actionable recommendations
+- Use professional USCG language and format
+- Ensure all sections are comprehensive and complete
+
+This ROI will be generated entirely from this evidence analysis, so be thorough and extract every relevant detail.
+"""
+            
+            logger.info("🟡 DIRECT ROI AI: Sending comprehensive analysis request to AI")
+            response = ai_assistant.chat(prompt)
+            
+            # Parse the comprehensive response
+            roi_content = ai_assistant._safe_json_extract(response)
+            
+            if roi_content and isinstance(roi_content, dict):
+                logger.info("🟢 DIRECT ROI AI: Successfully extracted comprehensive ROI content")
+                logger.info(f"🟢 DIRECT ROI AI: Sections generated: {list(roi_content.keys())}")
+                
+                # Log content summaries
+                if roi_content.get('findings_of_fact'):
+                    logger.info(f"🟢 DIRECT ROI AI: Generated {len(roi_content['findings_of_fact'])} findings")
+                if roi_content.get('causal_factors'):
+                    logger.info(f"🟢 DIRECT ROI AI: Identified {len(roi_content['causal_factors'])} causal factors")
+                if roi_content.get('actions_taken'):
+                    logger.info(f"🟢 DIRECT ROI AI: Found {len(roi_content['actions_taken'])} actions taken")
+                
+                return roi_content
+            else:
+                logger.error("🔴 DIRECT ROI AI: Invalid response structure from AI")
+                return {}
+                
+        except Exception as e:
+            logger.error(f"🔴 DIRECT ROI AI: Error generating ROI content: {e}")
+            return {}
+    
+    def _generate_ai_executive_summary(self, roi_content: Dict[str, Any]) -> None:
+        """Generate executive summary using AI-extracted content"""
+        if not self.document:
+            return
+        
+        # Generate title from AI content
+        title = self._generate_ai_title(roi_content)
+        
+        # Title paragraph
+        title_para = self.document.add_paragraph()
+        title_para.add_run(title).bold = True
+        title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        # Add spacing
+        self.document.add_paragraph()
+        
+        # Executive Summary heading
+        summary_heading = self.document.add_paragraph()
+        summary_heading.add_run("EXECUTIVE SUMMARY").bold = True
+        summary_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        self.document.add_paragraph()
+        
+        # Add AI-generated executive summary paragraphs
+        exec_summary = roi_content.get('executive_summary', {})
+        
+        if exec_summary.get('scene_setting'):
+            self.document.add_paragraph(exec_summary['scene_setting'])
+            self.document.add_paragraph()
+        
+        if exec_summary.get('outcomes'):
+            self.document.add_paragraph(exec_summary['outcomes'])
+            self.document.add_paragraph()
+        
+        if exec_summary.get('causal_factors'):
+            self.document.add_paragraph(exec_summary['causal_factors'])
+        
+        self.document.add_page_break()
+    
+    def _generate_ai_investigating_officers_report(self, roi_content: Dict[str, Any]) -> None:
+        """Generate the investigating officer's report using AI-extracted content"""
+        if not self.document:
+            return
+        
+        # Header block
+        self.document.add_paragraph()
+        self.document.add_paragraph()
+
+        # Add date and control number
+        p = self.document.add_paragraph()
+        p.add_run("16732\n")
+        p.add_run(self._format_date(datetime.now()))
+
+        # Add spacing
+        self.document.add_paragraph()
+        self.document.add_paragraph()
+
+        # Title
+        title = self._generate_ai_title(roi_content)
+        title_para = self.document.add_paragraph()
+        title_para.add_run(title).bold = True
+        title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        self.document.add_paragraph()
+
+        # INVESTIGATING OFFICER'S REPORT heading
+        report_heading = self.document.add_paragraph()
+        report_heading.add_run("INVESTIGATING OFFICER'S REPORT").bold = True
+        report_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+        self.document.add_paragraph()
+
+        # Add AI section methods to this instance
+        from src.models.roi_ai_sections import add_ai_section_methods
+        add_ai_section_methods(self)
+        
+        # Generate all sections using AI content
+        self._generate_ai_section_1_preliminary_statement(roi_content)
+        self._generate_ai_section_2_vessels_involved(roi_content)
+        self._generate_ai_section_3_personnel_casualties(roi_content)
+        self._generate_ai_section_4_findings_of_fact(roi_content)
+        self._generate_ai_section_5_analysis(roi_content)
+        self._generate_ai_section_6_conclusions(roi_content)
+        self._generate_ai_section_7_actions_taken(roi_content)
+        self._generate_ai_section_8_recommendations(roi_content)
+
+        # Add signature block
+        self._generate_signature_block()
+    
+    def _generate_ai_title(self, roi_content: Dict[str, Any]) -> str:
+        """Generate USCG-format title from AI content"""
+        incident = roi_content.get('incident_summary', {})
+        vessel_info = roi_content.get('vessel_information', {})
+        
+        # Vessel name and official number
+        vessel_name = vessel_info.get('official_name', 'VESSEL')
+        official_number = vessel_info.get('official_number', '')
+        
+        if official_number:
+            vessel_text = f"{vessel_name.upper()} ({official_number})"
+        else:
+            vessel_text = vessel_name.upper()
+        
+        # Incident type with casualties
+        incident_type = incident.get('incident_type', 'MARINE CASUALTY').upper()
+        
+        # Check for casualties in personnel section
+        personnel = roi_content.get('personnel_casualties', [])
+        has_fatalities = any(p.get('status', '').lower() in ['deceased', 'death'] for p in personnel)
+        has_injuries = any(p.get('status', '').lower() in ['injured', 'injury'] for p in personnel)
+        
+        if has_fatalities:
+            casualty_desc = f"{incident_type} WITH LOSS OF LIFE"
+        elif has_injuries:
+            casualty_desc = f"{incident_type} WITH INJURIES"
+        else:
+            casualty_desc = incident_type
+        
+        # Location
+        location = incident.get('location', 'LOCATION').upper()
+        if "near" not in location.lower() and "on" not in location.lower():
+            location = f"ON {location}"
+        
+        # Date
+        incident_date = incident.get('date', 'DATE')
+        if incident_date != 'DATE':
+            try:
+                # Try to parse and format the date
+                from datetime import datetime
+                parsed_date = datetime.strptime(incident_date, '%Y-%m-%d')
+                date_str = parsed_date.strftime('%B %d, %Y').upper()
+            except:
+                date_str = incident_date.upper()
+        else:
+            date_str = 'DATE'
+        
+        return f"{vessel_text}, {casualty_desc} {location} ON {date_str}"
