@@ -1666,6 +1666,53 @@ class IOAgent {
         }
     }
 
+    async generateROIDirect() {
+        if (!this.currentProject) {
+            this.showAlert('Please select a project first', 'warning');
+            return;
+        }
+
+        try {
+            this.showLoading('Generating ROI document directly from evidence files using AI...');
+            
+            const response = await this.makeAuthenticatedRequest(`${this.apiBase}/projects/${this.currentProject.id}/generate-roi-direct`, {
+                method: 'POST'
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                this.showAlert('ROI document generated successfully using AI!', 'success');
+                
+                // Add download link with proper authentication
+                const generatedDocs = document.getElementById('generatedDocs');
+                if (generatedDocs) {
+                    generatedDocs.innerHTML = `
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6>ROI Document (AI Generated)</h6>
+                                <small class="text-muted">Generated: ${new Date().toLocaleString()}</small>
+                                <br><small class="text-success">Method: Direct from Evidence using AI</small>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm" onclick="app.downloadROI('${this.currentProject.id}')">
+                                <i class="fas fa-download me-2"></i>Download
+                            </button>
+                        </div>
+                    `;
+                }
+            } else {
+                throw new Error(data.error || 'Failed to generate ROI directly');
+            }
+        } catch (error) {
+            console.error('Error generating ROI direct:', error);
+            if (error.message !== 'Authentication required') {
+                this.showAlert('Error generating ROI direct: ' + error.message, 'danger');
+            }
+        } finally {
+            this.hideLoading();
+        }
+    }
+
     checkReadiness() {
         if (!this.currentProject) return;
 
@@ -2062,6 +2109,14 @@ function runCausalAnalysis() {
 function generateROI() {
     if (window.app) {
         app.generateROI();
+    } else {
+        console.error('App not initialized yet');
+    }
+}
+
+function generateROIDirect() {
+    if (window.app) {
+        app.generateROIDirect();
     } else {
         console.error('App not initialized yet');
     }

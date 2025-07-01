@@ -671,14 +671,21 @@
                     <div id="roi-generator-section" class="content-section" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2><i class="fas fa-file-alt me-2"></i>ROI Generator</h2>
-                            <button class="btn btn-primary" onclick="generateROI()">
-                                <i class="fas fa-file-download me-2"></i>Generate ROI
-                            </button>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-success" onclick="generateROIDirect()" title="Generate ROI directly from uploaded evidence files using AI">
+                                    <i class="fas fa-magic me-2"></i>Generate ROI Direct
+                                </button>
+                                <button class="btn btn-primary" onclick="generateROI()" title="Generate ROI using traditional timeline and analysis workflow">
+                                    <i class="fas fa-file-download me-2"></i>Generate ROI
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Before generating ROI:</strong> Ensure you have completed project information, built timeline entries, and performed causal analysis.
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Two Generation Options:</strong>
+                            <br><strong>Generate ROI Direct</strong> - AI analyzes uploaded evidence files and creates a complete ROI document automatically
+                            <br><strong>Generate ROI</strong> - Traditional workflow requiring completed timeline entries and causal analysis
                         </div>
 
                         <div class="row">
