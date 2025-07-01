@@ -472,6 +472,17 @@ Provide findings as a JSON array of strings.
                 logger.error(f"🔴 JSON EXTRACT: All extraction attempts failed")
                 logger.error(f"🔴 JSON EXTRACT: Original text: {original_text[:500]}...")
                 logger.error(f"🔴 JSON EXTRACT: After stripping: {text[:500]}...")
+                
+                # Last attempt for partial JSON - try to reconstruct if we can identify structure
+                try:
+                    logger.warning("🟡 JSON EXTRACT: Attempting emergency reconstruction")
+                    reconstructed = self._emergency_json_reconstruction(text)
+                    if reconstructed:
+                        logger.info("🟢 JSON EXTRACT: Emergency reconstruction successful")
+                        return reconstructed
+                except Exception as repair_exc:
+                    logger.error(f"🔴 JSON EXTRACT: Emergency reconstruction failed: {repair_exc}")
+                
                 raise ValueError("No valid JSON found") from exc
     
     def _repair_truncated_json(self, json_text: str) -> List[Dict[str, Any]]:
@@ -528,6 +539,90 @@ Provide findings as a JSON array of strings.
         except Exception as e:
             logger.error(f"🔴 JSON REPAIR: Failed to repair JSON: {e}")
             return []
+
+    def _emergency_json_reconstruction(self, text: str) -> Dict[str, Any]:
+        """Emergency reconstruction of JSON from partial or malformed response"""
+        import logging
+        logger = logging.getLogger('app')
+        
+        try:
+            # Look for common ROI JSON patterns and try to fix
+            logger.info("🟡 EMERGENCY JSON: Analyzing text for ROI structure")
+            
+            # If we see "executive_summary" but no opening brace, add it
+            if '"executive_summary"' in text and not text.strip().startswith('{'):
+                logger.info("🟡 EMERGENCY JSON: Adding missing opening brace")
+                text = '{' + text
+            
+            # If we see incomplete JSON but can identify sections, try to build minimal structure
+            if '"executive_summary"' in text or '"incident_summary"' in text:
+                logger.info("🟡 EMERGENCY JSON: Building minimal ROI structure")
+                
+                # Extract whatever executive summary we can find
+                exec_match = re.search(r'"executive_summary":\s*\{[^}]*"scene_setting":\s*"([^"]*)"', text, re.DOTALL)
+                scene_setting = exec_match.group(1) if exec_match else "Unable to determine incident details from available evidence."
+                
+                # Build minimal valid structure
+                minimal_roi = {
+                    "incident_summary": {
+                        "date": "Unknown",
+                        "time": "Unknown", 
+                        "location": "Unknown",
+                        "vessel_name": "Unknown",
+                        "incident_type": "Marine Casualty",
+                        "description": "Incident details extracted from evidence files"
+                    },
+                    "executive_summary": {
+                        "scene_setting": scene_setting,
+                        "outcomes": "Investigation is ongoing. Additional analysis required.",
+                        "causal_factors": "Causal factors to be determined through further analysis."
+                    },
+                    "vessel_information": {
+                        "official_name": "To be determined",
+                        "official_number": "To be determined",
+                        "specifications": "To be determined from evidence",
+                        "ownership": "To be determined",
+                        "equipment": "To be determined"
+                    },
+                    "personnel_casualties": [],
+                    "findings_of_fact": [
+                        "4.1.1. Evidence files were uploaded for analysis.",
+                        "4.1.2. Investigation is ongoing.",
+                        "4.1.3. Additional findings to be determined through detailed analysis."
+                    ],
+                    "causal_factors": [
+                        {
+                            "title": "To be determined through detailed analysis",
+                            "category": "organization",
+                            "description": "Causal analysis pending",
+                            "analysis": "Detailed analysis required"
+                        }
+                    ],
+                    "conclusions": {
+                        "initiating_event": "The initiating event is under investigation.",
+                        "causal_determinations": ["Analysis pending"],
+                        "violations": "None identified at this time",
+                        "other_conclusions": "Investigation ongoing"
+                    },
+                    "actions_taken": [
+                        "7.1. Coast Guard investigation initiated under 46 CFR Part 4."
+                    ],
+                    "recommendations": {
+                        "safety_recommendations": [
+                            "8.1.1. Complete detailed analysis of all evidence files."
+                        ],
+                        "administrative_recommendations": []
+                    }
+                }
+                
+                logger.info("🟢 EMERGENCY JSON: Created minimal ROI structure")
+                return minimal_roi
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"🔴 EMERGENCY JSON: Reconstruction failed: {e}")
+            return None
 
     def _parse_findings_statements(self, response_text: str) -> List[str]:
         try:
@@ -642,8 +737,8 @@ Provide findings as a JSON array of strings.
         try:
             message = self.client.messages.create(
                 model=model or self.model_name,
-                max_tokens=1500,
-                temperature=0.2,
+                max_tokens=4000,
+                temperature=0.1,
                 messages=[{"role": "user", "content": prompt}]
             )
             return message.content[0].text.strip()

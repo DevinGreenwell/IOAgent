@@ -1784,123 +1784,98 @@ If no administrative recommendations are warranted, return empty array.
 You are an expert USCG marine casualty investigator analyzing evidence to create a complete Report of Investigation.
 
 EVIDENCE CONTENT:
-{evidence_content[:50000] if len(evidence_content) > 50000 else evidence_content}
+{evidence_content[:30000] if len(evidence_content) > 30000 else evidence_content}
 
-Extract ALL information needed for a complete USCG ROI document. Analyze every detail and create professional content for each section.
+Extract information needed for a USCG ROI document. Be concise but complete.
 
-Generate a comprehensive JSON response with the following sections:
+Generate a JSON response with the following sections:
 
 1. INCIDENT SUMMARY:
 - Extract basic incident information (date, time, location, vessel(s), type of casualty)
 - Identify what happened and when
 
 2. EXECUTIVE SUMMARY:
-- Scene setting paragraph (4-6 sentences describing the operational context and incident)
-- Outcomes paragraph (4-6 sentences describing response, casualties, and consequences)
-- Causal factors paragraph (4-5 sentences identifying the cause and contributing factors)
+- Scene setting (3-4 sentences describing incident)
+- Outcomes (3-4 sentences describing response and casualties)
+- Causal factors (2-3 sentences identifying cause)
 
 3. VESSEL INFORMATION:
-- Extract ALL vessel details for Section 2
-- Official name, numbers, specifications, ownership, equipment
+- Basic vessel details (name, numbers, type, owner)
 
 4. PERSONNEL CASUALTIES:
-- All people involved, their status, injuries, and details
+- People involved and their status
 
 5. FINDINGS OF FACT:
-- Convert all evidence into numbered factual statements
-- Organize chronologically and by topic
-- 15-25 professional findings
+- 8-12 key factual statements from evidence
 
 6. ANALYSIS:
-- Identify causal factors using USCG Swiss Cheese methodology
-- Generate professional analysis for each factor
+- 2-4 causal factors with brief analysis
 
 7. CONCLUSIONS:
-- Determine initiating event and causal factors
-- Address regulatory violations and recommendations
+- Initiating event and determinations
 
 8. ACTIONS TAKEN:
-- Post-incident actions by all parties
+- Key post-incident actions
 
 9. RECOMMENDATIONS:
-- Safety and administrative recommendations
+- 2-4 safety recommendations
 
-Return as comprehensive JSON:
+Return valid JSON only:
 {{
   "incident_summary": {{
     "date": "incident date",
     "time": "incident time", 
-    "location": "specific location",
-    "vessel_name": "primary vessel",
-    "incident_type": "type of casualty",
-    "description": "brief description"
+    "location": "location",
+    "vessel_name": "vessel name",
+    "incident_type": "casualty type"
   }},
   "executive_summary": {{
-    "scene_setting": "4-6 sentence paragraph setting scene and describing incident",
-    "outcomes": "4-6 sentence paragraph describing response and outcomes",
-    "causal_factors": "4-5 sentence paragraph identifying cause and factors"
+    "scene_setting": "3-4 sentences describing incident",
+    "outcomes": "3-4 sentences on response and casualties",
+    "causal_factors": "2-3 sentences on cause"
   }},
   "vessel_information": {{
     "official_name": "vessel name",
-    "official_number": "O.N. number",
-    "specifications": "comprehensive vessel details",
-    "ownership": "owner and operator information",
-    "equipment": "safety and operational equipment"
+    "official_number": "number if available",
+    "specifications": "basic vessel details"
   }},
   "personnel_casualties": [
     {{
-      "name": "person name",
       "role": "position",
-      "status": "injured/deceased/uninjured",
-      "details": "injury details and treatment"
+      "status": "injured/deceased/uninjured"
     }}
   ],
   "findings_of_fact": [
-    "4.1.1. Professional finding statement",
-    "4.1.2. Second finding statement",
-    "...continue with all findings"
+    "4.1.1. Key finding from evidence",
+    "4.1.2. Second finding",
+    "4.1.3. Third finding"
   ],
   "causal_factors": [
     {{
-      "title": "Failure of/Inadequate/Lack of [factor title]",
-      "category": "organization/workplace/precondition/production/defense",
-      "description": "detailed description",
-      "analysis": "comprehensive analysis of how this factor contributed"
+      "title": "Primary causal factor",
+      "analysis": "Brief analysis"
     }}
   ],
   "conclusions": {{
-    "initiating_event": "The initiating event was...",
-    "causal_determinations": ["Factor 1", "Factor 2", "Factor 3"],
-    "violations": "Any regulatory violations identified",
-    "other_conclusions": "Additional conclusions"
+    "initiating_event": "The initiating event was..."
   }},
   "actions_taken": [
-    "7.1. Action taken by Coast Guard/parties",
-    "7.2. Additional actions taken",
-    "...continue with all actions"
+    "7.1. Coast Guard investigation initiated"
   ],
   "recommendations": {{
     "safety_recommendations": [
-      "8.1.1. Specific safety recommendation",
-      "8.1.2. Additional safety recommendation"
-    ],
-    "administrative_recommendations": [
-      "8.2.1. Administrative recommendation",
-      "...or empty array if none"
+      "8.1.1. Safety recommendation"
     ]
   }}
 }}
 
-CRITICAL REQUIREMENTS:
-- Extract EVERYTHING mentioned in the evidence
-- Make reasonable assumptions about standard maritime practices
-- Generate 15-25 professional findings of fact
-- Identify multiple causal factors (typically 3-7)
-- Create specific, actionable recommendations
-- Use professional USCG language and format
-- Ensure all sections are comprehensive and complete
+REQUIREMENTS:
+- Extract key information from evidence
+- Use professional USCG language
+- Keep JSON valid and complete
+- Focus on essential facts and findings
 
-This ROI will be generated entirely from this evidence analysis, so be thorough and extract every relevant detail.
+Return only valid JSON - no explanation text.
 """
             
             logger.info("🟡 DIRECT ROI AI: Sending comprehensive analysis request to AI")
