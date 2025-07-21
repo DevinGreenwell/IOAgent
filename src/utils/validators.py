@@ -6,6 +6,25 @@ from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 from typing import Optional, List, Dict, Any, Callable
 from src.utils.security import sanitize_html, escape_html
 
+def validate_project_id(project_id: str) -> bool:
+    """Validate a project ID to prevent injection attacks."""
+    if not project_id or not isinstance(project_id, str):
+        return False
+    # Allow alphanumeric characters, hyphens, and underscores
+    # Limit length to prevent buffer overflow
+    if len(project_id) > 100:
+        return False
+    # Check for common injection patterns
+    dangerous_patterns = ['..', '/', '\\', '\x00', '%00', '\n', '\r', '\t']
+    for pattern in dangerous_patterns:
+        if pattern in project_id:
+            return False
+    # Ensure it's a valid identifier format
+    import re
+    if not re.match(r'^[a-zA-Z0-9_-]+$', project_id):
+        return False
+    return True
+
 def validate_project_access(f: Callable) -> Callable:
     """Decorator to validate project_id parameter and check access."""
     @wraps(f)

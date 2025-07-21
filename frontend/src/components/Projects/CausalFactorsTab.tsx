@@ -7,6 +7,10 @@ interface CausalFactorsTabProps {
 }
 
 const CausalFactorsTab: React.FC<CausalFactorsTabProps> = ({ projectId }) => {
+  // TODO: Implement causal factors functionality for project: {projectId}
+  // eslint-disable-next-line no-console
+  console.log('Loading causal factors for project:', projectId);
+  
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
@@ -18,7 +22,7 @@ const CausalFactorsTab: React.FC<CausalFactorsTabProps> = ({ projectId }) => {
       
       <Paper sx={{ p: 3 }}>
         <Alert severity="info">
-          Causal factors analysis functionality coming soon.
+          Causal factors analysis functionality coming soon for project {projectId}.
         </Alert>
       </Paper>
     </Box>

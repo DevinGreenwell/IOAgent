@@ -123,7 +123,7 @@ const Projects: React.FC = () => {
               {renderProjectSkeleton()}
             </React.Fragment>
           ))
-        ) : projectsData?.data.length === 0 ? (
+        ) : projectsData?.items.length === 0 ? (
           <Grid item xs={12}>
             <Card>
               <CardContent sx={{ textAlign: 'center', py: 8 }}>
@@ -145,7 +145,7 @@ const Projects: React.FC = () => {
             </Card>
           </Grid>
         ) : (
-          projectsData?.data.map((project) => (
+          projectsData?.items.map((project) => (
             <Grid item xs={12} sm={6} md={4} key={project.id}>
               <Card
                 sx={{

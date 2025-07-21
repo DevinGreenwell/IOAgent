@@ -13,7 +13,7 @@ from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFa
 from src.models.project_manager import ProjectManager, TimelineBuilder
 from src.models.roi_generator_uscg import USCGROIGenerator
 # from src.models.anthropic_assistant import AnthropicAssistant
-from src.utils.validators import validate_project_access, validate_json_body, validate_file_upload, validate_pagination, sanitize_output
+from src.utils.validators import validate_project_id, validate_project_access, validate_json_body, validate_file_upload, validate_pagination, sanitize_output
 from src.utils.validation_helpers import validate_project_id_format
 from src.utils.security import sanitize_html, sanitize_filename
 from src.utils.rate_limit import rate_limit, API_RATE_LIMIT, UPLOAD_RATE_LIMIT
@@ -152,8 +152,8 @@ def update_project(project_id, project=None, validated_data=None, **kwargs):
                 return jsonify({'success': False, 'error': 'Invalid project status'}), 400
         
         # Update incident info
-        if 'incident_info' in data:
-            incident_data = data['incident_info']
+        if 'incident_info' in validated_data:
+            incident_data = validated_data['incident_info']
             if 'incident_date' in incident_data:
                 try:
                     if incident_data['incident_date']:

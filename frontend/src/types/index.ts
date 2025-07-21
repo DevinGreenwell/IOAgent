@@ -3,9 +3,12 @@ export interface User {
   id: number;
   username: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   role: 'user' | 'admin';
   created_at: string;
   is_active: boolean;
+  avatar_url?: string;
 }
 
 // Auth types
@@ -33,25 +36,30 @@ export interface Project {
   created_at: string;
   updated_at?: string;
   owner_id: number;
+  status?: 'active' | 'inactive' | 'completed';
   vessel_info?: VesselInfo;
   incident_info?: IncidentInfo;
   metadata?: Record<string, any>;
 }
 
 export interface VesselInfo {
-  name?: string;
-  type?: string;
-  imo?: string;
-  flag?: string;
+  vessel_name?: string;
+  vessel_type?: string;
+  imo_number?: string;
+  flag_state?: string;
   gross_tonnage?: number;
 }
 
 export interface IncidentInfo {
-  date?: string;
+  incident_date?: string;
+  incident_type?: string;
   location?: string;
-  type?: string;
+  description?: string;
   weather?: string;
   sea_state?: string;
+  severity?: 'catastrophic' | 'major' | 'minor' | 'unknown';
+  injuries?: number;
+  fatalities?: number;
 }
 
 // Evidence types
@@ -169,6 +177,8 @@ export interface ProjectFilters {
   date_to?: string;
   sort_by?: 'created_at' | 'updated_at' | 'name';
   sort_order?: 'asc' | 'desc';
+  page?: number;
+  per_page?: number;
 }
 
 // Statistics types

@@ -43,14 +43,14 @@ const Dashboard: React.FC = () => {
   const stats: StatCard[] = [
     {
       title: 'Total Projects',
-      value: projectsData?.pagination.total || 0,
+      value: projectsData?.total || 0,
       icon: <FolderIcon />,
       color: '#1976d2',
       trend: 12,
     },
     {
       title: 'Active Investigations',
-      value: projectsData?.data.filter(p => p.status === 'active').length || 0,
+      value: projectsData?.items.filter(p => p.status === 'active').length || 0,
       icon: <AssessmentIcon />,
       color: '#388e3c',
     },
@@ -147,7 +147,7 @@ const Dashboard: React.FC = () => {
               <LinearProgress />
             ) : (
               <List>
-                {projectsData?.data.map((project) => (
+                {projectsData?.items.map((project) => (
                   <ListItem
                     key={project.id}
                     button

@@ -136,7 +136,8 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ project }) => {
                 />
               </Grid>
               
-              {(project.incident_info.injuries > 0 || project.incident_info.fatalities > 0) && (
+              {((project.incident_info.injuries && project.incident_info.injuries > 0) || 
+                (project.incident_info.fatalities && project.incident_info.fatalities > 0)) && (
                 <>
                   <Grid item xs={12} sm={6} md={3}>
                     <Typography variant="body2" color="text.secondary">

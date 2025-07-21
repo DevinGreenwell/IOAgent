@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, Tuple
 from flask import jsonify, current_app
 from werkzeug.exceptions import HTTPException
 import traceback
+from src.models.user import db
 
 class IOAgentError(Exception):
     """Base exception for IOAgent application."""

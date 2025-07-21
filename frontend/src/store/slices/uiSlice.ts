@@ -11,6 +11,7 @@ interface Notification {
   type: 'success' | 'error' | 'warning' | 'info';
   message: string;
   timestamp: number;
+  read?: boolean;
 }
 
 const initialState: UIState = {
