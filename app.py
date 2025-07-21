@@ -132,20 +132,35 @@ def configure_database():
     """Configure database with proper error handling"""
     global db_path
     
-    # Create database directory
-    db_dir = os.path.join(os.path.dirname(__file__), 'src', 'database')
-    os.makedirs(db_dir, exist_ok=True)
+    # Check for DATABASE_URL (used by Render and other cloud platforms)
+    database_url = os.environ.get('DATABASE_URL')
     
-    # Use SQLite for all environments temporarily
-    db_path = os.path.join(db_dir, 'app.db')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-    }
-    
-    logger.info(f"Using SQLite database: {db_path}")
-    logger.warning("PostgreSQL temporarily disabled - using SQLite for all environments")
+    if database_url:
+        # Production with PostgreSQL
+        # Fix for SQLAlchemy - replace postgres:// with postgresql://
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_size': 10,
+            'max_overflow': 20,
+        }
+        logger.info("Using PostgreSQL database from DATABASE_URL")
+    else:
+        # Development with SQLite
+        db_dir = os.path.join(os.path.dirname(__file__), 'src', 'database')
+        os.makedirs(db_dir, exist_ok=True)
+        
+        db_path = os.path.join(db_dir, 'app.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+        }
+        logger.info(f"Using SQLite database for development: {db_path}")
     
     return True
 
