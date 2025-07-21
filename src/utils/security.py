@@ -183,7 +183,7 @@ def get_security_headers() -> Dict[str, str]:
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
         'Content-Security-Policy': (
             "default-src 'self'; "
-            "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "font-src 'self' https://cdnjs.cloudflare.com; "
             "img-src 'self' data: https:; "
