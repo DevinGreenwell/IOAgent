@@ -12,7 +12,11 @@ from datetime import datetime
 from src.models.user import db, User, Project, Evidence, TimelineEntry, CausalFactor, AnalysisSection
 from src.models.project_manager import ProjectManager, TimelineBuilder
 from src.models.roi_generator_uscg import USCGROIGenerator
-from src.models.anthropic_assistant import AnthropicAssistant
+# from src.models.anthropic_assistant import AnthropicAssistant
+from src.utils.validators import validate_project_access, validate_json_body, validate_file_upload, validate_pagination, sanitize_output
+from src.utils.validation_helpers import validate_project_id_format
+from src.utils.security import sanitize_html, sanitize_filename
+from src.utils.rate_limit import rate_limit, API_RATE_LIMIT, UPLOAD_RATE_LIMIT
 
 # Create blueprint
 api_bp = Blueprint('api', __name__)
@@ -21,64 +25,87 @@ api_bp = Blueprint('api', __name__)
 project_manager = ProjectManager()
 timeline_builder = TimelineBuilder()
 uscg_roi_generator = USCGROIGenerator()
-ai_assistant = AnthropicAssistant()
+# ai_assistant = AnthropicAssistant()
+ai_assistant = None
 
-# Helper function to validate project ID
-def validate_project_id(project_id):
-    """Validate project ID format"""
-    import re
-    if not project_id or not isinstance(project_id, str):
-        return False
-    if len(project_id) > 100:
-        return False
-    if not re.match(r'^[a-zA-Z0-9_-]+$', project_id):
-        return False
-    if '..' in project_id or '/' in project_id or '\\' in project_id:
-        return False
-    return True
+# Note: validate_project_id decorator is now imported from utils.validators
 
 @api_bp.route('/projects', methods=['GET'])
 @jwt_required()
-def list_projects():
-    """List all projects"""
+@rate_limit(*API_RATE_LIMIT)
+@validate_pagination(max_per_page=50)
+@sanitize_output(fields_to_escape=['title', 'case_number', 'incident_location'])
+def list_projects(page=1, per_page=20, **kwargs):
+    """List all projects with pagination"""
     try:
-        projects = Project.query.all()
-        projects_data = [project.to_dict(include_relationships=False) for project in projects]
-        return jsonify({'success': True, 'projects': projects_data})
+        user_id = get_jwt_identity()
+        projects_query = Project.query.filter_by(user_id=int(user_id))
+        
+        # Apply pagination
+        pagination = projects_query.paginate(page=page, per_page=per_page, error_out=False)
+        projects_data = [project.to_dict(include_relationships=False) for project in pagination.items]
+        
+        return {
+            'success': True,
+            'projects': projects_data,
+            'pagination': {
+                'page': pagination.page,
+                'per_page': pagination.per_page,
+                'total': pagination.total,
+                'pages': pagination.pages
+            }
+        }
     except Exception as e:
         current_app.logger.error(f"Error listing projects: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve projects'}), 500
 
 @api_bp.route('/projects', methods=['POST'])
 @jwt_required()
-def create_project():
+@rate_limit(*API_RATE_LIMIT)
+@validate_json_body(
+    required_fields=['title'],
+    optional_fields=['investigating_officer', 'case_number', 'incident_date', 'incident_location'],
+    sanitize_fields=['title', 'investigating_officer', 'case_number', 'incident_location']
+)
+@sanitize_output(fields_to_escape=['title', 'case_number', 'incident_location'])
+def create_project(validated_data=None, **kwargs):
     """Create a new project"""
     try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        user_id = get_jwt_identity()
         
-        title = data.get('title', '').strip()
-        if not title:
-            return jsonify({'success': False, 'error': 'Project title is required'}), 400
+        # Extract and validate data
+        title = validated_data.get('title', '').strip()[:200]
+        investigating_officer = validated_data.get('investigating_officer', '').strip()[:100]
+        case_number = validated_data.get('case_number', '').strip()[:50] if 'case_number' in validated_data else None
+        incident_location = validated_data.get('incident_location', '').strip()[:200] if 'incident_location' in validated_data else None
         
-        investigating_officer = data.get('investigating_officer', '').strip()
+        # Parse incident date if provided
+        incident_date = None
+        if 'incident_date' in validated_data:
+            try:
+                incident_date = datetime.fromisoformat(validated_data['incident_date'].replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                return jsonify({'success': False, 'error': 'Invalid incident date format'}), 400
         
         # Create new project
         project = Project(
             id=str(uuid.uuid4()),
-            title=title[:200],  # Limit length
-            investigating_officer=investigating_officer[:100] if investigating_officer else None,
+            user_id=int(user_id),
+            title=title,
+            investigating_officer=investigating_officer if investigating_officer else None,
+            case_number=case_number,
+            incident_date=incident_date,
+            incident_location=incident_location,
             status='draft'
         )
         
         db.session.add(project)
         db.session.commit()
         
-        return jsonify({
+        return {
             'success': True,
             'project': project.to_dict(include_relationships=True)
-        })
+        }
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creating project: {str(e)}")
@@ -86,46 +113,43 @@ def create_project():
 
 @api_bp.route('/projects/<project_id>', methods=['GET'])
 @jwt_required()
-def get_project(project_id):
+@rate_limit(*API_RATE_LIMIT)
+@validate_project_access
+@sanitize_output(fields_to_escape=['title', 'case_number', 'incident_location'])
+def get_project(project_id, project=None, **kwargs):
     """Get project details"""
     try:
-        # Validate project ID
-        if not validate_project_id(project_id):
-            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
-        
-        project = Project.query.filter_by(id=project_id).first()
-        if not project:
-            return jsonify({'success': False, 'error': 'Project not found'}), 404
-        
-        return jsonify({'success': True, 'project': project.to_dict(include_relationships=True)})
+        return {
+            'success': True,
+            'project': project.to_dict(include_relationships=True)
+        }
     except Exception as e:
         current_app.logger.error(f"Error getting project {project_id}: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to retrieve project'}), 500
 
 @api_bp.route('/projects/<project_id>', methods=['PUT'])
 @jwt_required()
-def update_project(project_id):
+@rate_limit(*API_RATE_LIMIT)
+@validate_project_access
+@validate_json_body(
+    optional_fields=['title', 'investigating_officer', 'status', 'incident_info'],
+    sanitize_fields=['title', 'investigating_officer', 'incident_location', 'incident_type']
+)
+@sanitize_output(fields_to_escape=['title', 'case_number', 'incident_location'])
+def update_project(project_id, project=None, validated_data=None, **kwargs):
     """Update project"""
     try:
-        # Validate project ID
-        if not validate_project_id(project_id):
-            return jsonify({'success': False, 'error': 'Invalid project identifier'}), 400
-        
-        project = Project.query.filter_by(id=project_id).first()
-        if not project:
-            return jsonify({'success': False, 'error': 'Project not found'}), 404
-        
-        data = request.get_json()
-        if not data:
-            return jsonify({'success': False, 'error': 'No data provided'}), 400
-        
         # Update basic fields
-        if 'title' in data and data['title']:
-            project.title = str(data['title'])[:200]
-        if 'investigating_officer' in data:
-            project.investigating_officer = str(data['investigating_officer'])[:100] if data['investigating_officer'] else None
-        if 'status' in data and data['status'] in ['draft', 'in_progress', 'complete']:
-            project.status = data['status']
+        if 'title' in validated_data and validated_data['title']:
+            project.title = sanitize_html(str(validated_data['title'])[:200])
+        if 'investigating_officer' in validated_data:
+            project.investigating_officer = sanitize_html(str(validated_data['investigating_officer'])[:100]) if validated_data['investigating_officer'] else None
+        if 'status' in validated_data:
+            from src.utils.validation_helpers import validate_project_status
+            if validate_project_status(validated_data['status']):
+                project.status = validated_data['status']
+            else:
+                return jsonify({'success': False, 'error': 'Invalid project status'}), 400
         
         # Update incident info
         if 'incident_info' in data:
@@ -222,7 +246,7 @@ def upload_file(project_id):
         
         # Process file locally instead of using project manager
         # since we already saved it
-        from src.models.anthropic_assistant import AnthropicAssistant
+        # from src.models.anthropic_assistant import AnthropicAssistant
         from src.models.project_manager import ProjectManager
         
         # Extract content from saved file
@@ -681,10 +705,11 @@ def extract_timeline_from_evidence(project_id):
         current_app.logger.info(f"Extracting timeline from {len(project.evidence_items)} evidence files for project {project_id}")
         
         from src.models.project_manager import ProjectManager
-        from src.models.anthropic_assistant import AnthropicAssistant
+        # from src.models.anthropic_assistant import AnthropicAssistant
         
         pm = ProjectManager()
-        ai = AnthropicAssistant()
+        # ai = AnthropicAssistant()
+        ai = None
         
         all_timeline_suggestions = []
         existing_timeline = [entry.to_dict() for entry in project.timeline_entries]

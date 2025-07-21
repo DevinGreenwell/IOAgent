@@ -157,3 +157,25 @@ IOAgent-backend/uploads/
 .vscode/
 .idea/
 
+# Frontend
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.env.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+src/models/anthropic_assistant.py.bak
+
+# Redis
+dump.rdb
+
+# Test files that shouldn't be committed
+test_syntax.py
+temp_*.py

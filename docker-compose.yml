@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  # Redis for Celery broker and result backend
+  redis:
+    image: redis:7-alpine
+    container_name: ioagent_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # PostgreSQL database (optional, for production)
+  postgres:
+    image: postgres:15-alpine
+    container_name: ioagent_postgres
+    environment:
+      POSTGRES_USER: ioagent
+      POSTGRES_PASSWORD: ioagent_password
+      POSTGRES_DB: ioagent_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ioagent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Main Flask application
+  web:
+    build: .
+    container_name: ioagent_web
+    command: python manage.py run_server --host 0.0.0.0 --port 5001
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://ioagent:ioagent_password@postgres:5432/ioagent_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - JWT_SECRET_KEY=dev-jwt-secret-change-in-production
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./src:/app/src
+      - ./static:/app/static
+      - ./uploads:/app/uploads
+      - ./projects:/app/projects
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # Celery worker for async tasks
+  celery_worker:
+    build: .
+    container_name: ioagent_celery_worker
+    command: celery -A src.celery_app.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://ioagent:ioagent_password@postgres:5432/ioagent_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./src:/app/src
+      - ./uploads:/app/uploads
+      - ./projects:/app/projects
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # Celery beat for scheduled tasks
+  celery_beat:
+    build: .
+    container_name: ioagent_celery_beat
+    command: celery -A src.celery_app.celery_app beat --loglevel=info
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=postgresql://ioagent:ioagent_password@postgres:5432/ioagent_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Flower for Celery monitoring (optional)
+  flower:
+    build: .
+    container_name: ioagent_flower
+    command: celery -A src.celery_app.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+      - celery_worker
+
+volumes:
+  redis_data:
+  postgres_data:

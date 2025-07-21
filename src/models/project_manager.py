@@ -12,14 +12,15 @@ import PyPDF2
 from docx import Document as DocxDocument
 
 from src.models.roi_models import InvestigationProject, Evidence, TimelineEntry
-from src.models.anthropic_assistant import AnthropicAssistant
+# from src.models.anthropic_assistant import AnthropicAssistant
 
 class ProjectManager:
     """Manages investigation projects and file operations"""
     
     def __init__(self, projects_dir: str = "projects"):
         self.projects_dir = projects_dir
-        self.ai_assistant = AnthropicAssistant()
+        # self.ai_assistant = AnthropicAssistant()
+        self.ai_assistant = None
         self._ensure_projects_dir()
     
     def _ensure_projects_dir(self):
@@ -234,7 +235,8 @@ class TimelineBuilder:
     """Utilities for building and managing timeline"""
     
     def __init__(self):
-        self.ai_assistant = AnthropicAssistant()
+        # self.ai_assistant = AnthropicAssistant()
+        self.ai_assistant = None
     
     def add_entry(self, project: InvestigationProject, entry_data: Dict[str, Any]) -> TimelineEntry:
         """Add a new timeline entry"""

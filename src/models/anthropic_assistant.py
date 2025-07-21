@@ -212,33 +212,9 @@ Provide ONLY the improved analysis text, no other commentary.
             return factor.analysis_text or factor.description
     
     def _create_complete_roi_prompt(self, project: InvestigationProject) -> str:
-        """Create comprehensive prompt for full ROI generation"""
-        # Gather project data
-        vessel_info = []
-        for vessel in project.vessels:
-            vessel_info.append(f"- {vessel.official_name} (O.N. {vessel.identification_number})")
-        
-        timeline_text = []
-        for entry in sorted(project.timeline, key=lambda x: x.timestamp or datetime.min)[:20]:
-            if entry.timestamp:
-                timeline_text.append(f"- {entry.timestamp.strftime('%B %d, %Y at %H%M')}: {entry.description}")
-        
-        causal_factors_text = []
-        for factor in project.causal_factors:
-            causal_factors_text.append(f"- {factor.category.upper()}: {factor.title}")
-        
-        return f"""
-EXEMPLAR (mirror headings, tone, and numbering):
-{STYLE_SNIPPET}
-
----
-Generate professional USCG Report of Investigation sections based on this incident data. Match the professional style of actual USCG reports.
-
-INCIDENT INFORMATION:
-Type: {project.incident_info.incident_type}
-Location: {project.incident_info.location}
-Date: {project.incident_info.incident_date.strftime('%B %d, %Y') if project.incident_info.incident_date else 'Unknown'}
-Vessels: {', '.join(vessel_info)}
+        """Create comprehensive prompt for full ROI generation."""
+        from src.models.ai_prompt_builder import AIPromptBuilder
+        return AIPromptBuilder.build_complete_roi_prompt(project)
 
 KEY TIMELINE EVENTS:
 {chr(10).join(timeline_text)}
@@ -343,8 +319,13 @@ Provide response as JSON:
             time_str = entry.timestamp.strftime('%B %d, %Y')
             background_text.append(f"- {time_str}: {entry.description}")
         
-        return f"""
-Convert this timeline into professional USCG Findings of Fact for Section 4.1 of a Report of Investigation.
+        style_example = ("STYLE EXAMPLE for 4.1 (Incident Focus):\n"
+                        "* On August 1, 2023, at 05:00, the commercial fishing vessel LEGACY departed Morehead City, North Carolina, for routine fishing operations.\n"
+                        "* At 14:30, while operating in 6-foot seas, the vessel experienced a sudden loss of propulsion.\n"
+                        "* The engineer reported flooding in the engine room through a failed shaft seal at 14:35.\n"
+                        "* The captain issued a distress call on VHF Channel 16 at 14:42.")
+        
+        prompt_text = f"""Convert this timeline into professional USCG Findings of Fact for Section 4.1 of a Report of Investigation.
 
 FOCUS: Section 4.1 should focus on the INCIDENT DAY events - it should tell the story ofthe actual casualty sequence and immediate circumstances.
 Background information, pre-incident conditions, and vessel or personnel history will be handled separately in Section 4.2.
@@ -364,14 +345,10 @@ Write 8-12 numbered findings (4.1.1, 4.1.2, etc.) focusing on:
 
 DO NOT include background information, vessel history, crew qualifications, or pre-incident conditions in 4.1.
 
-STYLE EXAMPLE for 4.1 (Incident Focus):
-4.1.1. On August 1, 2023, at 0500, the commercial fishing vessel LEGACY departed Morehead City, North Carolina, for routine fishing operations.
-4.1.2. At 1430, while operating in 6-foot seas, the vessel experienced a sudden loss of propulsion.
-4.1.3. The engineer reported flooding in the engine room through a failed shaft seal at 1435.
-4.1.4. The captain issued a distress call on VHF Channel 16 at 1442.
+{style_example}
 
-Provide findings as a JSON array of strings.
-"""
+Provide findings as a JSON array of strings."""
+        return prompt_text
     
     def _parse_roi_sections(self, response_text: str) -> Dict[str, Any]:
         try:
@@ -838,165 +815,15 @@ Provide findings as a JSON array of strings.
             print(f"Error checking consistency: {e}")
             return []
 
-    def _create_timeline_suggestion_prompt(self, evidence_text: str, existing_timeline: List[Any]) -> str:
-        """Create comprehensive timeline extraction prompt matching ROI methodology"""
-        existing_entries = "\n".join([
-            f"- {entry.get('timestamp', entry.timestamp if hasattr(entry, 'timestamp') else '')}: "
-            f"{entry.get('type', entry.type if hasattr(entry, 'type') else '').title()} - "
-            f"{entry.get('description', entry.description if hasattr(entry, 'description') else '')}"
-            for entry in existing_timeline 
-            if (hasattr(entry, 'timestamp') and entry.timestamp) or (isinstance(entry, dict) and entry.get('timestamp'))
-        ])
-        
-        return f"""Extract timeline entries from this marine casualty investigation document. This document may contain structured timeline data with precise timestamps, types, and detailed descriptions.
-
-PRIORITY EXTRACTION PATTERNS:
-1. **Structured Timeline Entries**: Look for explicit timeline blocks with:
-   - Precise timestamps (e.g., "01Aug2023 14:15:40 Z", "08:00:00 Z") 
-   - Timeline Type/Subtype classifications (Action, Condition, Event)
-   - Detailed subject and description information
-   - Location coordinates and details
-
-2. **Narrative Timeline Elements**: Extract from prose descriptions:
-   - Time references ("at approximately 0630", "during the third set")
-   - Sequence indicators ("soon thereafter", "when", "after")
-   - Action descriptions with temporal context
-
-3. **Event Classifications**: Identify and properly categorize:
-   - ACTIONS: Crew decisions, equipment operations, communications, navigation
-   - CONDITIONS: Weather, vessel status, personnel factors, environmental state  
-   - EVENTS: Casualties, groundings, equipment failures, incidents
-
-DOCUMENT CONTENT:
-{evidence_text[:15000] if len(evidence_text) > 15000 else evidence_text}
-
-EXISTING TIMELINE (avoid duplicates):
-{existing_entries}
-
-EXTRACTION REQUIREMENTS:
-- Preserve precise timestamps when available (convert formats like "01Aug2023 14:15:40 Z" to "2023-08-01 14:15:40")
-- Use exact descriptions from source document when possible
-- Extract ALL timeline-relevant information, not just major events
-- Include personnel involved, locations, and technical details
-- Capture both pre-incident conditions and post-incident actions
-
-Return a JSON array of timeline entries with enhanced detail:
-[
-  {{
-    "timestamp": "2023-08-01 14:15:40",
-    "type": "event|action|condition",
-    "description": "Detailed description from source document", 
-    "confidence": "high|medium|low",
-    "personnel_involved": ["Names or roles of people involved"],
-    "location": "Specific location if mentioned",
-    "source_reference": "Page or section reference if available",
-    "assumptions": ["Any logical assumptions made about timing or details"]
-  }}
-]
-
-CRITICAL: If the document contains structured timeline sections with explicit timestamps and classifications, extract ALL entries from those sections. These are high-quality, verified timeline data points that should be prioritized over narrative extraction.
-
-Return ONLY the JSON array, no other text."""
+    def _create_timeline_suggestion_prompt(self, evidence_text: str, existing_timeline: List[Any], filename: str = "") -> str:
+        """Create comprehensive timeline extraction prompt matching ROI methodology."""
+        from src.models.ai_prompt_builder import AIPromptBuilder
+        return AIPromptBuilder.build_timeline_suggestion_prompt(evidence_text, filename, existing_timeline)
 
     def _create_causal_analysis_prompt(self, timeline: List[TimelineEntry], evidence: List[Evidence]) -> str:
-        """Create prompt for causal factor identification with proper USCG methodology"""
-        # Separate initiating event from subsequent events
-        initiating_events = [entry for entry in timeline if hasattr(entry, 'is_initiating_event') and entry.is_initiating_event]
-        subsequent_events = [entry for entry in timeline if entry.type == 'event' and not (hasattr(entry, 'is_initiating_event') and entry.is_initiating_event)]
-        
-        timeline_text = "\n".join([
-            f"- {entry.timestamp}: {entry.type.title()} - {entry.description}"
-            for entry in timeline if entry.timestamp
-        ])
-        
-        initiating_event_text = "None identified" if not initiating_events else "\n".join([
-            f"- {entry.timestamp}: {entry.description}"
-            for entry in initiating_events
-        ])
-        
-        subsequent_events_text = "None" if not subsequent_events else "\n".join([
-            f"- {entry.timestamp}: {entry.description}"
-            for entry in subsequent_events
-        ])
-        
-        evidence_text = "\n".join([
-            f"- {ev.type}: {ev.description}"
-            for ev in evidence
-        ])
-        
-        return f"""
-Using USCG causal analysis methodology per MCI-O3B procedures, identify causal factors from this timeline and evidence.
-
-CRITICAL USCG REQUIREMENTS:
-1. For the INITIATING EVENT (first adverse outcome): Identify causal factors across ALL categories (organization, workplace, precondition, production, defense)
-2. For SUBSEQUENT EVENTS: Focus ONLY on DEFENSE factors that failed to prevent progression from the initiating event
-
-INITIATING EVENT (First adverse outcome):
-{initiating_event_text}
-
-SUBSEQUENT EVENTS (Events that followed the initiating event):
-{subsequent_events_text}
-
-FULL TIMELINE:
-{timeline_text}
-
-EVIDENCE:
-{evidence_text}
-
-Causal factor titles MUST be written in the negative form:
-- "Failure of..." (e.g., "Failure of crew to follow safety procedures")
-- "Inadequate..." (e.g., "Inadequate oversight by management")
-- "Lack of..." (e.g., "Lack of proper safety equipment")
-- "Absence of..." (e.g., "Absence of effective communication")
-- "Insufficient..." (e.g., "Insufficient training provided")
-
-Categories:
-- Organization: Management decisions, policies, culture
-- Workplace: Physical environment, equipment, procedures
-- Precondition: Individual factors, team factors, environmental factors
-- Production: Unsafe acts, errors, violations
-- Defense: Barriers that failed or were absent
-
-Please identify causal factors in JSON format following USCG methodology:
-[
-  {{
-    "category": "organization|workplace|precondition|production|defense",
-    "title": "Failure of... / Inadequate... / Lack of... / Absence of... / Insufficient...",
-    "description": "Detailed description of the causal factor (1-2 sentences describing what went wrong)",
-    "evidence_support": ["references to supporting evidence"],
-    "analysis": "In-depth analysis (3-5 paragraphs) that includes: 1) The specific conditions that led to this factor, 2) How this factor directly contributed to the incident, 3) The chain of events it caused or enabled, 4) Why existing safeguards failed to prevent it, 5) References to specific findings of fact. IMPORTANT: Make reasonable assumptions about maritime operations, crew behavior, and vessel conditions that are highly probable based on the evidence. State assumptions clearly (e.g., 'It is likely that...', 'Based on standard practice...', 'This suggests that...')",
-    "event_type": "initiating|subsequent",
-    "related_event": "description of the specific event this factor relates to"
-  }}
-]
-
-CRITICAL REQUIREMENTS:
-1. Title MUST be a short phrase (5-10 words max) in negative form
-2. Analysis MUST be comprehensive (3-5 paragraphs minimum) and reference specific evidence
-3. Each factor must clearly link cause to effect
-4. Initiating event gets ALL category types, subsequent events get ONLY defense factors
-5. **IDENTIFY MULTIPLE FACTORS**: A comprehensive causal analysis typically requires 3-7 causal factors minimum across different categories. Look for factors in:
-   - Organization (management decisions, policies)
-   - Workplace (equipment, procedures, environment)
-   - Precondition (crew factors, conditions)
-   - Production (unsafe acts, errors)
-   - Defense (failed barriers, absent safeguards)
-6. Make reasonable assumptions about:
-   - Standard maritime procedures that should have been followed
-   - Typical crew training and qualifications
-   - Normal vessel maintenance practices
-   - Common safety equipment and systems
-   - Weather and sea conditions if not specified
-   - Communication protocols and chain of command
-7. State assumptions clearly using phrases like:
-   - "Based on standard maritime practice..."
-   - "It is reasonable to assume that..."
-   - "This suggests that..."
-   - "Typically in such situations..."
-   - "Industry standards would require..."
-
-**IMPORTANT**: Return a JSON array with MULTIPLE causal factors. A single factor is rarely sufficient for a complete USCG causal analysis.
-"""
+        """Create prompt for causal factor identification with proper USCG methodology."""
+        from src.models.ai_prompt_builder import AIPromptBuilder
+        return AIPromptBuilder.build_causal_analysis_prompt(timeline, evidence)
 
     def _create_evidence_findings_prompt(self, evidence_content: str, evidence_filename: str) -> str:
         """Create prompt for generating findings of fact directly from evidence content"""

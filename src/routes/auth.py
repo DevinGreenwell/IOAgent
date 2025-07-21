@@ -1,11 +1,15 @@
 # Authentication routes for IOAgent
 
-from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask import Blueprint, request, jsonify, current_app, session
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token
 from datetime import timedelta
 import re
+import os
+import secrets
 
 from src.models.user import db, User
+from src.utils.security import validate_password_strength, generate_csrf_token, validate_csrf_token
+from src.utils.rate_limit import rate_limit, AUTH_RATE_LIMIT
 
 # Create blueprint
 auth_bp = Blueprint('auth', __name__)
@@ -16,18 +20,15 @@ def validate_email(email):
     return re.match(pattern, email) is not None
 
 def validate_password(password):
-    """Validate password strength"""
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
-    if not re.search(r'[A-Z]', password):
-        return False, "Password must contain at least one uppercase letter"
-    if not re.search(r'[a-z]', password):
-        return False, "Password must contain at least one lowercase letter"
-    if not re.search(r'\d', password):
-        return False, "Password must contain at least one number"
-    return True, "Password is valid"
+    """Validate password strength - wrapper for backward compatibility"""
+    result = validate_password_strength(password)
+    if result['valid']:
+        return True, "Password is valid"
+    else:
+        return False, "; ".join(result['errors'])
 
 @auth_bp.route('/register', methods=['POST'])
+@rate_limit(*AUTH_RATE_LIMIT)
 def register():
     """Register a new user"""
     try:
@@ -75,16 +76,23 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        # Create access token
+        # Create access token with shorter expiry
         access_token = create_access_token(
             identity=str(user.id),
-            expires_delta=timedelta(hours=24)
+            expires_delta=timedelta(minutes=15)
+        )
+        
+        # Create refresh token
+        refresh_token = create_refresh_token(
+            identity=str(user.id),
+            expires_delta=timedelta(days=7)
         )
         
         return jsonify({
             'success': True,
             'message': 'User registered successfully',
             'access_token': access_token,
+            'refresh_token': refresh_token,
             'user': user.to_dict()
         }), 201
         
@@ -94,6 +102,7 @@ def register():
         return jsonify({'success': False, 'error': 'Failed to register user'}), 500
 
 @auth_bp.route('/login', methods=['POST'])
+@rate_limit(*AUTH_RATE_LIMIT)
 def login():
     """Authenticate user and return JWT token"""
     try:
@@ -123,16 +132,23 @@ def login():
         if not user.is_active:
             return jsonify({'success': False, 'error': 'Account is deactivated'}), 401
         
-        # Create access token
+        # Create access token with shorter expiry
         access_token = create_access_token(
             identity=str(user.id),
-            expires_delta=timedelta(hours=24)
+            expires_delta=timedelta(minutes=15)
+        )
+        
+        # Create refresh token
+        refresh_token = create_refresh_token(
+            identity=str(user.id),
+            expires_delta=timedelta(days=7)
         )
         
         return jsonify({
             'success': True,
             'message': 'Login successful',
             'access_token': access_token,
+            'refresh_token': refresh_token,
             'user': user.to_dict()
         }), 200
         
@@ -234,6 +250,7 @@ def refresh_token():
         return jsonify({'success': False, 'error': 'Failed to refresh token'}), 500
 
 @auth_bp.route('/bootstrap', methods=['POST'])
+@rate_limit(1, 3600)  # Only 1 attempt per hour
 def bootstrap_admin():
     """Create admin user if no users exist"""
     try:
@@ -242,13 +259,33 @@ def bootstrap_admin():
         if user_count > 0:
             return jsonify({'success': False, 'error': 'Users already exist'}), 409
         
+        # Get admin credentials from environment or generate secure ones
+        admin_username = os.environ.get('ADMIN_USERNAME', 'admin')
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@ioagent.local')
+        admin_password = os.environ.get('ADMIN_PASSWORD')
+        
+        if not admin_password:
+            # Generate a secure random password if not provided
+            admin_password = secrets.token_urlsafe(16)
+            current_app.logger.warning(f"Generated admin password: {admin_password}")
+            current_app.logger.warning("Please save this password securely and set ADMIN_PASSWORD in your environment!")
+        
+        # Validate admin password strength
+        password_validation = validate_password_strength(admin_password)
+        if not password_validation['valid']:
+            return jsonify({
+                'success': False,
+                'error': 'Admin password does not meet security requirements',
+                'requirements': password_validation['errors']
+            }), 400
+        
         # Create admin user
         admin = User(
-            username='admin',
-            email='admin@ioagent.onrender.com',
+            username=admin_username,
+            email=admin_email,
             role='admin'
         )
-        admin.set_password('AdminPass123!')
+        admin.set_password(admin_password)
         
         db.session.add(admin)
         db.session.commit()
@@ -263,3 +300,30 @@ def bootstrap_admin():
         db.session.rollback()
         current_app.logger.error(f"Error creating admin user: {str(e)}")
         return jsonify({'success': False, 'error': 'Failed to create admin user'}), 500
+
+@auth_bp.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    """Refresh access token using refresh token"""
+    try:
+        user_id = get_jwt_identity()
+        
+        # Verify user still exists and is active
+        user = User.query.get(int(user_id))
+        if not user or not user.is_active:
+            return jsonify({'success': False, 'error': 'Invalid user'}), 401
+        
+        # Create new access token
+        access_token = create_access_token(
+            identity=str(user.id),
+            expires_delta=timedelta(minutes=15)
+        )
+        
+        return jsonify({
+            'success': True,
+            'access_token': access_token
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error refreshing token: {str(e)}")
+        return jsonify({'success': False, 'error': 'Failed to refresh token'}), 500

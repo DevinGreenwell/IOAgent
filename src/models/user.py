@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from typing import Dict, Any, Optional, List
 import json
 import bcrypt
 
@@ -7,6 +8,11 @@ db = SQLAlchemy()
 
 class User(db.Model):
     __tablename__ = 'users'
+    __table_args__ = (
+        db.Index('idx_users_username', 'username'),
+        db.Index('idx_users_email', 'email'),
+        db.Index('idx_users_created_at', 'created_at'),
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -20,22 +26,23 @@ class User(db.Model):
     # Relationships
     projects = db.relationship('Project', backref='user', lazy=True, cascade='all, delete-orphan')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<User {self.username}>'
 
-    def set_password(self, password):
-        """Hash and set the user's password"""
-        password_bytes = password.encode('utf-8')
-        salt = bcrypt.gensalt()
+    def set_password(self, password: str) -> None:
+        """Hash and set the user's password."""
+        password_bytes: bytes = password.encode('utf-8')
+        salt: bytes = bcrypt.gensalt()
         self.password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
 
-    def check_password(self, password):
-        """Check if the provided password matches the user's password"""
-        password_bytes = password.encode('utf-8')
-        hash_bytes = self.password_hash.encode('utf-8')
+    def check_password(self, password: str) -> bool:
+        """Check if the provided password matches the user's password."""
+        password_bytes: bytes = password.encode('utf-8')
+        hash_bytes: bytes = self.password_hash.encode('utf-8')
         return bcrypt.checkpw(password_bytes, hash_bytes)
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert user to dictionary representation."""
         return {
             'id': self.id,
             'username': self.username,
@@ -48,6 +55,11 @@ class User(db.Model):
 
 class Project(db.Model):
     __tablename__ = 'projects'
+    __table_args__ = (
+        db.Index('idx_projects_user_id', 'user_id'),
+        db.Index('idx_projects_status', 'status'),
+        db.Index('idx_projects_created_at', 'created_at'),
+    )
     
     id = db.Column(db.String(100), primary_key=True)  # UUID string
     title = db.Column(db.String(200), nullable=False)
@@ -108,6 +120,10 @@ class Project(db.Model):
 
 class Evidence(db.Model):
     __tablename__ = 'evidence'
+    __table_args__ = (
+        db.Index('idx_evidence_project_id', 'project_id'),
+        db.Index('idx_evidence_upload_date', 'uploaded_at'),
+    )
     
     id = db.Column(db.String(100), primary_key=True)  # UUID string
     filename = db.Column(db.String(255), nullable=False)
@@ -157,6 +173,12 @@ class Evidence(db.Model):
 
 class TimelineEntry(db.Model):
     __tablename__ = 'timeline_entries'
+    __table_args__ = (
+        db.Index('idx_timeline_project_id', 'project_id'),
+        db.Index('idx_timeline_timestamp', 'timestamp'),
+        db.Index('idx_timeline_type', 'entry_type'),
+        db.Index('idx_timeline_project_timestamp', 'project_id', 'timestamp'),
+    )
     
     id = db.Column(db.String(100), primary_key=True)  # UUID string
     timestamp = db.Column(db.DateTime, nullable=False)
@@ -232,6 +254,10 @@ class TimelineEntry(db.Model):
 
 class CausalFactor(db.Model):
     __tablename__ = 'causal_factors'
+    __table_args__ = (
+        db.Index('idx_causal_project_id', 'project_id'),
+        db.Index('idx_causal_category', 'category'),
+    )
     
     id = db.Column(db.String(100), primary_key=True)  # UUID string
     title = db.Column(db.String(200), nullable=False)
@@ -303,6 +329,10 @@ class CausalFactor(db.Model):
 
 class AnalysisSection(db.Model):
     __tablename__ = 'analysis_sections'
+    __table_args__ = (
+        db.Index('idx_analysis_project_id', 'project_id'),
+        db.Index('idx_analysis_type', 'category'),
+    )
     
     id = db.Column(db.String(100), primary_key=True)  # UUID string
     title = db.Column(db.String(200), nullable=False)

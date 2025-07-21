@@ -67,16 +67,17 @@ if os.environ.get('FLASK_ENV') == 'production':
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key-only')
 app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-jwt-key-only')
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(minutes=15)
+app.config['JWT_REFRESH_TOKEN_EXPIRES'] = timedelta(days=7)
 app.config['JWT_ALGORITHM'] = 'HS256'
-app.config['JWT_TOKEN_LOCATION'] = ['headers']
+app.config['JWT_TOKEN_LOCATION'] = ['headers', 'cookies']
 app.config['JWT_HEADER_NAME'] = 'Authorization'
 app.config['JWT_HEADER_TYPE'] = 'Bearer'
-app.config['JWT_CSRF_IN_COOKIES'] = False
-app.config['JWT_CSRF_CHECK_FORM'] = False
-app.config['JWT_ACCESS_CSRF_HEADER_NAME'] = None
-app.config['JWT_REFRESH_CSRF_HEADER_NAME'] = None
-app.config['JWT_CSRF_METHODS'] = []
+app.config['JWT_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+app.config['JWT_COOKIE_CSRF_PROTECT'] = True
+app.config['JWT_CSRF_IN_COOKIES'] = True
+app.config['JWT_ACCESS_CSRF_HEADER_NAME'] = 'X-CSRF-TOKEN'
+app.config['JWT_REFRESH_CSRF_HEADER_NAME'] = 'X-CSRF-TOKEN'
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
@@ -107,7 +108,7 @@ def get_cors_origins():
         return [
             'https://ioagent.onrender.com',
             'https://ioagent-*.onrender.com',  # For preview deployments
-            '*'  # Allow all for now to debug issues
+            # Remove wildcard - specify exact domains only
         ]
     else:
         # Development: Allow localhost and specified domains
@@ -157,6 +158,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 jwt = JWTManager(app)
 migrate = Migrate(app, db)
+
+# Register error handlers
+from src.utils.errors import register_error_handlers
+register_error_handlers(app)
 
 # Helper functions
 def allowed_file(filename):
@@ -606,24 +611,16 @@ def delete_timeline_entry(project_id, entry_id):
 @app.after_request
 def add_security_headers(response):
     """Add security headers to all responses"""
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    # Import security headers from utils
+    from src.utils.security import get_security_headers
+    
+    # Apply all security headers
+    for header, value in get_security_headers().items():
+        response.headers[header] = value
     
     # Only add HSTS in production
     if os.environ.get('FLASK_ENV') == 'production':
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    
-    # Apply CSP for all environments to allow required resources
-    response.headers['Content-Security-Policy'] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-        "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
-        "img-src 'self' data: https:; "
-        "connect-src 'self';"
-    )
     
     return response
 
