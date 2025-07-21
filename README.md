@@ -1,211 +1,188 @@
-# IOAgent - USCG Report of Investigation Generator
+# IOAgent - Marine Casualty Investigation System
 
-A Python-based web application that generates perfectly formatted USCG Reports of Investigation (ROI) from user-provided information, with upload functionality and AI assistance.
+IOAgent is a comprehensive web application designed for the U.S. Coast Guard to streamline marine casualty investigations. It provides tools for evidence management, timeline construction, causal analysis using the Swiss Cheese model, and automated Report of Investigation (ROI) generation.
 
 ## Features
 
-- **Project-based Workspace**: Each investigation is its own work environment
-- **File Upload & Processing**: Support for PDF, DOCX, images, videos, and audio files
-- **Timeline Builder**: Create chronological entries for Actions, Conditions, and Events
-- **Causal Analysis**: Automated analysis using USCG methodology and Swiss Cheese model
-- **AI Integration**: OpenAI-powered suggestions and content improvement
-- **ROI Generation**: Automatically generate properly formatted ROI documents
-- **Evidence Management**: Link evidence to timeline entries and analysis
+- 📁 **Project Management**: Create and manage investigation projects
+- 📄 **Evidence Management**: Upload and organize investigation documents
+- 📅 **Timeline Builder**: Create chronological event sequences
+- 🧀 **Swiss Cheese Model**: Analyze causal factors systematically
+- 🤖 **AI-Powered Analysis**: Generate insights using Claude AI
+- 📊 **ROI Generation**: Automated report creation
+- 🔐 **Secure Authentication**: JWT-based user authentication
+- 🚀 **Async Processing**: Background tasks for heavy operations
+- 💾 **Caching**: Redis-based caching for performance
+
+## Tech Stack
+
+### Backend
+- Python 3.8+
+- Flask (Web Framework)
+- SQLAlchemy (ORM)
+- PostgreSQL/SQLite (Database)
+- Celery (Async Tasks)
+- Redis (Caching & Message Broker)
+- JWT (Authentication)
+
+### Frontend
+- React 18
+- TypeScript
+- Material-UI
+- Redux Toolkit
+- React Query
+- React Router
 
 ## Quick Start
 
-### Local Development
+### Prerequisites
+- Python 3.8+
+- Node.js 16+
+- Redis (optional, for full features)
+- PostgreSQL (optional, SQLite works for development)
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd ioagent
-   ```
+### Installation
 
-2. **Set up virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Set up environment variables**
-   Create a `.env` file in the root directory:
-   ```
-   OPENAI_API_KEY=your_openai_api_key_here
-   FLASK_ENV=development
-   ```
-
-5. **Run the application**
-   ```bash
-   cd src
-   python main.py
-   ```
-
-6. **Access the application**
-   Open your browser and go to `http://localhost:5000`
-
-### Environment Variables
-
-- `OPENAI_API_KEY`: Your OpenAI API key for AI assistance features
-- `FLASK_ENV`: Set to 'development' for local development, 'production' for deployment
-
-## Application Structure
-
-```
-ioagent/
-├── src/
-│   ├── models/
-│   │   ├── roi_models.py          # Data models for ROI components
-│   │   ├── roi_generator.py       # ROI document generation logic
-│   │   ├── ai_assistant.py        # AI integration for suggestions
-│   │   └── project_manager.py     # Project and file management
-│   ├── routes/
-│   │   ├── api.py                 # API endpoints
-│   │   └── user.py                # User management (template)
-│   ├── static/
-│   │   ├── index.html             # Main application interface
-│   │   └── app.js                 # Frontend JavaScript
-│   └── main.py                    # Flask application entry point
-├── projects/                      # Project data storage
-├── requirements.txt               # Python dependencies
-└── README.md                      # This file
+1. Clone the repository:
+```bash
+git clone https://github.com/DevinGreenwell/IOAgent.git
+cd IOAgent
 ```
 
-## Usage Guide
+2. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env and add your Anthropic API key
+```
 
-### 1. Create a New Investigation
-- Click "New Investigation" on the dashboard
-- Enter investigation title and investigating officer name
-- The project workspace will open automatically
+3. Run the application:
 
-### 2. Set Up Project Information
-- Navigate to "Project Info" tab
-- Fill in incident details (date, location, type, etc.)
-- Save the project information
+**Option A: Full Stack (Recommended)**
+```bash
+./run_full_stack.sh
+```
 
-### 3. Upload Evidence
-- Go to "Evidence" tab
-- Drag and drop files or click to upload
-- Supported formats: PDF, DOCX, images, videos, audio
-- AI will automatically analyze uploaded documents for timeline suggestions
+**Option B: Backend only**
+```bash
+./run_backend_only.sh
+```
 
-### 4. Build Timeline
-- Navigate to "Timeline" tab
-- Add entries for Actions, Conditions, and Events
-- Link evidence to timeline entries
-- Mark the initiating event
+**Option C: Frontend only**
+```bash
+./run_frontend_only.sh
+```
 
-### 5. Perform Causal Analysis
-- Go to "Analysis" tab
-- Click "Run Analysis" to identify causal factors
-- AI will suggest factors based on timeline and evidence
-- Review and refine the analysis
+4. Access the application:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5001
 
-### 6. Generate ROI Document
-- Navigate to "ROI Generator" tab
-- Check readiness status
-- Click "Generate ROI" to create the document
-- Download the generated DOCX file
+## Development
 
-## ROI Document Structure
+### Backend Development
+```bash
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
 
-The generated ROI follows USCG standards and includes:
+# Install dependencies
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
-1. **Executive Summary**
-   - Scene setting paragraph
-   - Outcomes paragraph
-   - Causal factors paragraph
+# Run tests
+pytest
 
-2. **Investigating Officer's Report**
-   - Preliminary Statement
-   - Vessels Involved
-   - Record of Casualties (if applicable)
-   - Findings of Fact
-   - Analysis
-   - Conclusions
-   - Actions Taken (if applicable)
-   - Recommendations (if applicable)
+# Run with hot reload
+python app.py
+```
 
-## Causal Analysis Methodology
+### Frontend Development
+```bash
+cd frontend
+npm install --legacy-peer-deps
+npm start
+```
 
-The application implements the USCG Swiss Cheese model with five factor categories:
+### Running Tests
+```bash
+# Backend tests
+./run_tests.sh
 
-- **Organization**: Management decisions, policies, culture
-- **Workplace**: Physical environment, equipment, procedures
-- **Precondition**: Individual factors, team factors, environmental factors
-- **Production**: Unsafe acts, errors, violations
-- **Defense**: Barriers that failed or were absent
+# Frontend tests
+cd frontend && npm test
+```
 
-## AI Features
+## Docker Deployment
 
-When an OpenAI API key is provided, the application offers:
+```bash
+# Build and run with Docker Compose
+docker-compose up --build
 
-- **Timeline Suggestions**: Automatically suggest timeline entries from uploaded documents
-- **Causal Factor Identification**: AI-powered analysis of contributing factors
-- **Content Improvement**: Enhance analysis text for clarity and professionalism
-- **Executive Summary Generation**: Automatically generate summary paragraphs
-- **Consistency Checking**: Identify inconsistencies across ROI sections
+# Run in detached mode
+docker-compose up -d
+```
 
-## Deployment
+## Project Structure
 
-### GitHub Pages (Static Frontend)
+```
+IOAgent/
+├── frontend/              # React TypeScript frontend
+│   ├── src/
+│   │   ├── components/   # Reusable components
+│   │   ├── pages/        # Page components
+│   │   ├── services/     # API services
+│   │   ├── store/        # Redux store
+│   │   └── types/        # TypeScript types
+├── src/                   # Flask backend
+│   ├── config/           # Configuration
+│   ├── models/           # Database models
+│   ├── routes/           # API endpoints
+│   ├── services/         # Business logic
+│   ├── tasks/            # Celery tasks
+│   └── utils/            # Utilities
+├── tests/                 # Test files
+├── docs/                  # Documentation
+└── docker-compose.yml     # Docker configuration
+```
 
-1. **Build static files**
-   ```bash
-   python build_static.py
-   ```
+## API Documentation
 
-2. **Deploy to GitHub Pages**
-   - Push to main branch
-   - GitHub Actions will automatically deploy
-   - Configure backend URL in `build_static.py`
+The API follows RESTful conventions:
 
-### Backend Hosting
-
-The Flask backend can be deployed to:
-- Heroku
-- Railway
-- PythonAnywhere
-- DigitalOcean App Platform
-
-See `DEPLOYMENT.md` for detailed deployment instructions.
-
-## API Endpoints
-
-- `GET /api/projects` - List all projects
-- `POST /api/projects` - Create new project
-- `GET /api/projects/{id}` - Get project details
-- `PUT /api/projects/{id}` - Update project
-- `POST /api/projects/{id}/upload` - Upload file
-- `POST /api/projects/{id}/timeline` - Add timeline entry
-- `POST /api/projects/{id}/causal-analysis` - Run causal analysis
-- `POST /api/projects/{id}/generate-roi` - Generate ROI document
+- `GET /api/projects` - List projects
+- `POST /api/projects` - Create project
+- `GET /api/projects/:id` - Get project details
+- `POST /api/evidence/upload` - Upload evidence
+- `POST /api/projects/:id/timeline` - Add timeline entry
+- `POST /api/projects/:id/generate-roi` - Generate ROI
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Security
+
+- All API endpoints require authentication (except auth endpoints)
+- Input validation and sanitization on all user inputs
+- Rate limiting to prevent abuse
+- Environment variables for sensitive configuration
+- CSRF protection enabled
 
 ## License
 
-This project is developed for the U.S. Coast Guard and is intended for official use in marine casualty investigations.
+This project is proprietary software for the U.S. Coast Guard.
 
 ## Support
 
-For technical support or questions about ROI methodology, please contact the development team or refer to the USCG Marine Investigations Documentation and Reporting Procedures Manual.
+For issues and questions:
+- Create an issue in the GitHub repository
+- Contact the development team
 
-## Security Notes
+## Acknowledgments
 
-- Never commit API keys to version control
-- Use environment variables for sensitive configuration
-- Ensure proper CORS configuration for production deployment
-- Validate all user inputs and uploaded files
-
+- U.S. Coast Guard for project requirements
+- Anthropic Claude AI for analysis capabilities
+- Open source community for excellent tools and libraries
